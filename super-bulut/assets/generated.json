@@ -49,9 +49,14 @@
     "ari": {
       "prompt": "Chubby cartoon bumblebee enemy for a platformer game, round fuzzy body with yellow and black stripes, two translucent wings, tiny stinger, big angry but cute eyes, small antennae, stylized game character, facing forward",
       "tasks": {
-        "preview": "01a0d507-e034-73f7-9156-f59243430705"
+        "preview": "01a0d507-e034-73f7-9156-f59243430705",
+        "refine": "01a0d50a-ed32-7599-ba77-ba4fb301455c"
       },
-      "done": false
+      "done": true,
+      "thumbnail": "thumbs/ari.webp",
+      "model": "models/ari.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:11:39.520Z"
     },
     "coin": {
       "prompt": "Shiny thick gold coin standing upright, embossed fluffy cloud symbol in the center, raised rim, stylized cartoon game collectible, facing forward",
@@ -68,23 +73,170 @@
     "simit": {
       "prompt": "Turkish simit bread ring standing upright, glossy golden brown crust densely covered with sesame seeds, stylized cartoon game power-up item, facing forward",
       "tasks": {
-        "preview": "01a0d509-7853-7549-95c5-6e4bb98502b8"
+        "preview": "01a0d509-7853-7549-95c5-6e4bb98502b8",
+        "refine": "01a0d50a-6ca2-723e-9cf0-fde092c504f5"
       },
-      "done": false
+      "done": true,
+      "thumbnail": "thumbs/simit.webp",
+      "model": "models/simit.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:11:06.384Z"
     },
     "nazar": {
       "prompt": "Turkish evil eye bead amulet standing upright, flat round glossy glass bead with a dark cobalt blue outer ring, a white ring, a light blue ring and a black center, small loop on top, stylized cartoon game item, facing forward",
       "tasks": {
-        "preview": "01a0d509-9f62-7421-b4b2-60bf0047cbbf"
+        "preview": "01a0d509-9f62-7421-b4b2-60bf0047cbbf",
+        "refine": "01a0d50a-57bc-7536-9b4c-82c217049393"
       },
-      "done": false
+      "done": true,
+      "thumbnail": "thumbs/nazar.webp",
+      "model": "models/nazar.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:10:56.047Z"
     },
     "block_ground_top": {
       "prompt": "Perfect cube block tile for a platformer game, thick bright green grass layer on top slightly hanging over the edges, brown soil sides with small pebbles, stylized cartoon, hand-painted",
       "tasks": {
-        "preview": "01a0d509-b33a-7043-ae47-5a3c4f4554b7"
+        "preview": "01a0d509-b33a-7043-ae47-5a3c4f4554b7",
+        "refine": "01a0d50a-4515-70f8-9007-ece6bf3b78a9"
       },
-      "done": false
+      "done": true,
+      "thumbnail": "thumbs/block_ground_top.webp",
+      "model": "models/block_ground_top.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:11:01.096Z"
+    },
+    "block_ground_fill": {
+      "prompt": "Solid cube-shaped block of packed brown soil, a perfect cube with six flat square faces and sharp edges, earthy brown texture with small embedded pebbles, stylized hand-painted platformer game tile, no grass, no plants, no leaves",
+      "tasks": {
+        "preview": "01a0d511-aecc-715c-9a7d-6a3d56afd976",
+        "refine": "01a0d512-7f2f-7171-a75f-7831a0f1959f"
+      },
+      "done": true,
+      "thumbnail": "thumbs/block_ground_fill.webp",
+      "model": "models/block_ground_fill.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:19:56.028Z"
+    },
+    "block_brick": {
+      "prompt": "Perfect cube block tile made of orange-red bricks with light mortar lines, stylized cartoon platformer game tile, hand-painted",
+      "tasks": {
+        "preview": "01a0d50a-f8c0-73de-b5e2-b3af198856f3",
+        "refine": "01a0d50b-b395-7232-9012-bc30060bd0b3"
+      },
+      "done": true,
+      "thumbnail": "thumbs/block_brick.webp",
+      "model": "models/block_brick.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:12:30.069Z"
+    },
+    "block_mystery": {
+      "prompt": "Perfect cube block tile, shiny golden yellow with a white fluffy cloud emblem on every side and small rivets in the corners, stylized cartoon platformer item block",
+      "tasks": {
+        "preview": "01a0d50b-0d5d-7669-8bc2-deafbd7fe9ff",
+        "refine": "01a0d50b-dadf-7029-a5bb-166467ed9fb4"
+      },
+      "done": true,
+      "thumbnail": "thumbs/block_mystery.webp",
+      "model": "models/block_mystery.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:12:40.003Z"
+    },
+    "block_used": {
+      "prompt": "Perfect cube block tile, dull brown metal with dark beveled edges and small rivets in the corners, empty used item block, stylized cartoon platformer tile",
+      "tasks": {
+        "preview": "01a0d50b-8eca-7211-91d8-ccf26701a2a9",
+        "refine": "01a0d50c-109a-72ab-bb5a-afd3e7c48362"
+      },
+      "done": true,
+      "thumbnail": "thumbs/block_used.webp",
+      "model": "models/block_used.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:12:48.786Z"
+    },
+    "block_stone": {
+      "prompt": "Perfect cube block tile of smooth grey stone with beveled edges and a carved square border, stylized cartoon platformer tile, hand-painted",
+      "tasks": {
+        "preview": "01a0d50c-0524-777e-aafe-456fad5c11dd",
+        "refine": "01a0d50c-d430-771e-8c38-01c1ddf2fe78"
+      },
+      "done": true,
+      "thumbnail": "thumbs/block_stone.webp",
+      "model": "models/block_stone.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:13:43.835Z"
+    },
+    "cloud_platform": {
+      "prompt": "Small flat fluffy white cartoon cloud platform, thick flat top, soft rounded puffs on the sides and bottom, stylized game platform",
+      "tasks": {
+        "preview": "01a0d50c-5443-74de-a8f8-4042c04ca926",
+        "refine": "01a0d50c-d474-7633-80bb-87a1025b344d"
+      },
+      "done": true,
+      "thumbnail": "thumbs/cloud_platform.webp",
+      "model": "models/cloud_platform.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:13:43.872Z"
+    },
+    "flag": {
+      "prompt": "Tall thin white flagpole with a golden ball on top and a white triangular pennant flag with a blue cloud emblem near the top, stylized cartoon game goal, no base",
+      "tasks": {
+        "preview": "01a0d50c-7b0d-7321-90bb-953412dc4f74",
+        "refine": "01a0d50c-d4bb-72c0-b7d8-e6c1b0a3684f"
+      },
+      "done": true,
+      "thumbnail": "thumbs/flag.webp",
+      "model": "models/flag.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:13:33.939Z"
+    },
+    "tower": {
+      "prompt": "Small cute round stone castle tower with battlements, a red cone roof with a tiny flag, an arched wooden door and one small window, stylized cartoon game building",
+      "tasks": {
+        "preview": "01a0d50c-9d5d-7278-b3be-445b04b94174",
+        "refine": "01a0d50d-7e3e-708b-9023-ffee7880a5be"
+      },
+      "done": true,
+      "thumbnail": "thumbs/tower.webp",
+      "model": "models/tower.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:14:17.401Z"
+    },
+    "tree": {
+      "prompt": "Stylized cartoon tree with a thick short brown trunk and a big round fluffy green canopy, low poly game decoration",
+      "tasks": {
+        "preview": "01a0d50d-4dbd-772d-818a-fd501f3081a6",
+        "refine": "01a0d50d-b954-7126-a8b5-f5b3d55d8d0a"
+      },
+      "done": true,
+      "thumbnail": "thumbs/tree.webp",
+      "model": "models/tree.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:14:37.689Z"
+    },
+    "bush": {
+      "prompt": "Round fluffy green cartoon bush made of three soft puffs, wider than tall, stylized game decoration",
+      "tasks": {
+        "preview": "01a0d50d-7467-715a-9eaa-bbd86f1c7c15",
+        "refine": "01a0d50d-f0bf-7616-ade5-e42869fb55cb"
+      },
+      "done": true,
+      "thumbnail": "thumbs/bush.webp",
+      "model": "models/bush.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:14:51.854Z"
+    },
+    "cloud": {
+      "prompt": "Fluffy white cartoon cloud made of soft rounded puffs, wider than tall, stylized game decoration",
+      "tasks": {
+        "preview": "01a0d50d-75dc-7439-a409-4e6018ea4da1",
+        "refine": "01a0d50d-df02-70d6-b643-cff5c9cee313"
+      },
+      "done": true,
+      "thumbnail": "thumbs/cloud.webp",
+      "model": "models/cloud.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:14:57.150Z"
     }
   }
 }

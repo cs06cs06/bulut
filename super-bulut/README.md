@@ -1,8 +1,22 @@
 # Süper Bulut
 
-Tarayıcıda oynanan, Süper Mario tarzı 2.5D bir platform oyunu. Three.js ile çizilir. Karakterler, düşmanlar, bloklar ve dekorlar **Meshy AI** ile üretilen 3D modellerden gelir. Modeller henüz üretilmediyse oyun aynı ölçülerde yer tutucu modellerle çalışır. Meshy çıktısı `assets/models/` klasörüne düştüğü anda otomatik olarak kullanılır.
+Tarayıcıda oynanan, Süper Mario tarzı 2.5D bir platform oyunu. Three.js ile çizilir. Karakterler, düşmanlar, bloklar ve dekorlar **Meshy AI** ile üretilmiş 3D modellerdir (`assets/models/`). Bir modelin kaydı `assets/generated.json` dosyasında yoksa oyun onun yerine aynı ölçülerde prosedürel bir yer tutucu çizer.
 
 ![Oyun ekranı](docs/oyun.webp)
+
+## Meshy AI ile üretilen modeller
+
+Aşağıdaki 19 modelin hepsi `tools/meshy-generate.mjs` ile Meshy AI'da üretildi. Oyuncu karakteri otomatik olarak iskeletlendirildi ve animasyonlandı.
+
+| <img src="assets/thumbs/player.webp" width="120" alt=""> | <img src="assets/thumbs/kestane.webp" width="120" alt=""> | <img src="assets/thumbs/kirpi.webp" width="120" alt=""> | <img src="assets/thumbs/ari.webp" width="120" alt=""> | <img src="assets/thumbs/coin.webp" width="120" alt=""> |
+| --- | --- | --- | --- | --- |
+| Bulut (oyuncu) | Kestane (yürüyen düşman) | Kirpi (dikenli düşman) | Arı (uçan düşman) | Altın |
+| <img src="assets/thumbs/simit.webp" width="120" alt=""> | <img src="assets/thumbs/nazar.webp" width="120" alt=""> | <img src="assets/thumbs/block_ground_top.webp" width="120" alt=""> | <img src="assets/thumbs/block_ground_fill.webp" width="120" alt=""> | <img src="assets/thumbs/block_brick.webp" width="120" alt=""> |
+| Simit (büyüten güç) | Nazar boncuğu (dokunulmazlık) | Çimenli toprak blok | Toprak blok | Tuğla blok |
+| <img src="assets/thumbs/block_mystery.webp" width="120" alt=""> | <img src="assets/thumbs/block_used.webp" width="120" alt=""> | <img src="assets/thumbs/block_stone.webp" width="120" alt=""> | <img src="assets/thumbs/cloud_platform.webp" width="120" alt=""> | <img src="assets/thumbs/flag.webp" width="120" alt=""> |
+| Sürpriz blok | Kullanılmış blok | Taş blok | Bulut platformu | Bitiş direği |
+| <img src="assets/thumbs/tower.webp" width="120" alt=""> | <img src="assets/thumbs/tree.webp" width="120" alt=""> | <img src="assets/thumbs/bush.webp" width="120" alt=""> | <img src="assets/thumbs/cloud.webp" width="120" alt=""> |  |
+| Kule (bölüm sonu) | Ağaç | Çalı | Bulut (arka plan) |  |
 
 ## İçerik
 
@@ -105,6 +119,7 @@ node tools/meshy-generate.mjs --no-optimize              # dokuları küçültme
   - `"height"`: yüksekliği bu kadar blok yapar.
   - `"width"`: genişliği bu kadar blok yapar.
   - `"box"`: modeli verilen kutuya sığdırır; bloklar için `[1, 1, 1]` kullanılır.
+- Meshy bazen modelin altına bir kaide ya da zemin plakası ekler. `fit` içine `"trimBase": 0.2` yazarsanız modelin en alttaki %20'lik kısmı kırpılır (toprak blokta böyle yapıldı).
 - Oyuncunun rigging'i başarısız olursa model iskeletsiz kullanılır ve gövdeyle zıplayarak yürür.
 
 ## Kendi bölümünü yap

@@ -109,7 +109,7 @@
       "target_polycount": 1500,
       "fit": {
         "mode": "box",
-        "size": [1, 1, 1],
+        "size": [1.03, 1, 1.03],
         "anchor": "center"
       },
       "rotationY": 0,
@@ -117,13 +117,13 @@
     },
     "block_ground_fill": {
       "label": "Toprak blok",
-      "prompt": "Perfect cube block tile of brown soil with small pebbles and tiny roots, stylized cartoon platformer game tile, hand-painted",
-      "ai_model": "meshy-6-lite",
+      "prompt": "Solid cube-shaped block of packed brown soil, a perfect cube with six flat square faces and sharp edges, earthy brown texture with small embedded pebbles, stylized hand-painted platformer game tile, no grass, no plants, no leaves",
       "target_polycount": 800,
       "fit": {
         "mode": "box",
-        "size": [1, 1, 1],
-        "anchor": "center"
+        "size": [1.03, 1, 1.03],
+        "anchor": "center",
+        "trimBase": 0.2
       },
       "rotationY": 0,
       "textureSize": 512

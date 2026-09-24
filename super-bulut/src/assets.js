@@ -19,6 +19,45 @@ async function fetchJson(path, fallback) {
   }
 }
 
+// Meshy bazen modelin altına bir kaide/zemin plakası ekler. Ağırlık merkezi alttaki
+// 'frac' oranının (ör. 0.2 = en alttaki %20) altında kalan üçgenleri atar.
+function trimBase(root, frac) {
+  root.updateMatrixWorld(true);
+  const meshes = [];
+  root.traverse((o) => o.isMesh && !o.isSkinnedMesh && meshes.push(o));
+  const v = new THREE.Vector3();
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const m of meshes) {
+    const pos = m.geometry.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld);
+      minY = Math.min(minY, v.y);
+      maxY = Math.max(maxY, v.y);
+    }
+  }
+  const limit = minY + (maxY - minY) * frac;
+  for (const m of meshes) {
+    const g = m.geometry;
+    const pos = g.attributes.position;
+    const index = g.index ? g.index.array : Array.from({ length: pos.count }, (_, i) => i);
+    const ys = new Float32Array(pos.count);
+    for (let i = 0; i < pos.count; i++) ys[i] = v.fromBufferAttribute(pos, i).applyMatrix4(m.matrixWorld).y;
+    const kept = [];
+    for (let t = 0; t < index.length; t += 3) {
+      const a = index[t],
+        b = index[t + 1],
+        c = index[t + 2];
+      if ((ys[a] + ys[b] + ys[c]) / 3 >= limit) kept.push(a, b, c);
+    }
+    const trimmed = g.clone();
+    trimmed.setIndex(kept);
+    m.geometry = trimmed.toNonIndexed(); // kullanılmayan köşeler de gitsin (sınır kutusu doğru olsun)
+    m.geometry.computeBoundingBox();
+    m.geometry.computeBoundingSphere();
+  }
+}
+
 // Modeli sarmalayıp ölçekler: pivot → scaler (ölçek + konum) → rotator (Y dönüşü) → model
 function normalize(root, fit = { mode: 'height', value: 1 }, rotationY = 0) {
   const pivot = new THREE.Group();
@@ -83,6 +122,7 @@ export class Assets {
           tpl = { root: createPlaceholder(id), clips: [], source: 'placeholder' };
           this.stats.placeholder++;
         }
+        if (tpl.source === 'meshy' && def.fit?.trimBase) trimBase(tpl.root, def.fit.trimBase);
         tpl.pivot = normalize(tpl.root, def.fit, def.rotationY || 0);
         tpl.skinned = false;
         tpl.pivot.traverse((o) => {
