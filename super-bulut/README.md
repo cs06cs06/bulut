@@ -78,13 +78,14 @@ Windows PowerShell: `$env:MESHY_API_KEY="msy_..."; npm run assets`
 
 Meshy fiyat listesine göre: önizleme 20 kredi (`meshy-6-lite` ile 5), doku 10 kredi, rigging 5 kredi, animasyon başına 3 kredi.
 
-| Varlık | Adımlar | Kredi |
-| --- | --- | --- |
-| Oyuncu | önizleme + doku + rigging + 3 animasyon | 44 |
-| Diğer 18 varlık | önizleme + doku | 18 × 30 = 540 |
-| **Toplam** | | **~584** |
+| Varlık | Model | Adımlar | Kredi |
+| --- | --- | --- | --- |
+| Oyuncu | latest | önizleme + doku + rigging + 3 animasyon | 44 |
+| Düşmanlar, eşyalar, kule (7 varlık) | latest | önizleme + doku | 7 × 30 = 210 |
+| Bloklar ve dekorlar (11 varlık) | meshy-6-lite | önizleme + doku | 11 × 15 = 165 |
+| **Toplam** | | | **~419** |
 
-Daha ucuz bir deneme için `manifest.json` içinde `"ai_model": "meshy-6-lite"` yapın; toplam yaklaşık 300 krediye düşer. Betik başlamadan önce bakiyenizi kontrol eder ve onayınızı ister.
+Her varlık `manifest.json` içinde kendi `ai_model` değerini taşıyabilir; yazılmamışsa üstteki `meshy.ai_model` kullanılır. Hepsini `latest` yaparsanız toplam ~584 kredi olur. Betik başlamadan önce bakiyenizi kontrol eder ve onayınızı ister.
 
 ### Seçenekler
 

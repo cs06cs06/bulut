@@ -14,17 +14,18 @@ function canonicalName(name) {
 }
 
 // Kök kemiğin yatay hareketini (root motion) sıfırla; karakter olduğu yerde yürüsün.
-function removeRootMotion(clip) {
+// keepY=false ise dikey hareket de silinir (zıplama yüksekliğini fizik belirler).
+function removeRootMotion(clip, keepY = true) {
   const c = clip.clone();
   for (const track of c.tracks) {
     if (!track.name.endsWith('.position')) continue;
     const bone = track.name.slice(0, -'.position'.length).toLowerCase();
     if (!/hips|pelvis|root|armature/.test(bone)) continue;
     const v = track.values;
-    const x0 = v[0];
-    const z0 = v[2];
+    const [x0, y0, z0] = v;
     for (let i = 0; i < v.length; i += 3) {
       v[i] = x0;
+      if (!keepY) v[i + 1] = y0;
       v[i + 2] = z0;
     }
   }
@@ -40,7 +41,7 @@ export class Animator {
     for (const clip of clips) {
       const name = canonicalName(clip.name);
       if (this.actions.has(name)) continue;
-      this.actions.set(name, this.mixer.clipAction(removeRootMotion(clip)));
+      this.actions.set(name, this.mixer.clipAction(removeRootMotion(clip, name !== 'jump')));
     }
   }
 

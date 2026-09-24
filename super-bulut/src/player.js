@@ -289,7 +289,7 @@ export class Player {
         a.play('run', { timeScale: THREE.MathUtils.clamp(speed / 8, 0.8, 1.4) }) || a.play('walk', { timeScale: 1.8 });
         break;
       case 'jump':
-        a.play('jump', { loop: false, startAt: 0.2, fade: 0.08 }) || a.play('idle');
+        a.play('jump', { loop: false, startAt: 0.26, fade: 0.08 }) || a.play('idle');
         break;
       case 'fall':
         if (a.currentName !== 'jump') a.play('jump', { loop: false, startAt: 0.5, fade: 0.1 }) || a.play('idle');

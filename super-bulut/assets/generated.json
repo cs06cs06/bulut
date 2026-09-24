@@ -1,3 +1,90 @@
 {
-  "assets": {}
+  "assets": {
+    "player": {
+      "prompt": "Cute chibi cartoon hero kid for a family platformer game, oversized round head, sky-blue hoodie with the hood up and two small white cloud-shaped puffs on top of the hood, red scarf, navy shorts, chunky brown boots, big friendly eyes, rosy cheeks, clean bright colors, stylized, full body, arms slightly away from the body, standing straight, facing forward",
+      "tasks": {
+        "preview": "01a0d502-8311-72a0-8612-67fcf67a84a4",
+        "refine": "01a0d503-7ccf-7099-802a-20f87537aed1",
+        "rig": "01a0d504-1170-75c0-9897-e080a1e369b8",
+        "anim:idle": "01a0d505-079f-739a-b79e-82e9012fc396",
+        "anim:jump": "01a0d505-4577-7650-bc92-5f54156cad72",
+        "anim:victory": "01a0d505-8532-748f-b465-6246d50e2926"
+      },
+      "done": true,
+      "thumbnail": "thumbs/player.webp",
+      "model": "models/player.glb",
+      "animations": {
+        "walk": "models/player.walk.glb",
+        "run": "models/player.run.glb",
+        "idle": "models/player.idle.glb",
+        "jump": "models/player.jump.glb",
+        "victory": "models/player.victory.glb"
+      },
+      "updatedAt": "2026-09-24T20:05:27.514Z"
+    },
+    "kestane": {
+      "prompt": "Angry cartoon chestnut creature enemy for a platformer game, round glossy brown shell with a pale cream bottom and a small pointed tip on top, big white eyes with black pupils, thick angry eyebrows, two tiny dark feet, cute and stylized, facing forward",
+      "tasks": {
+        "preview": "01a0d507-dfe3-72d0-8834-f42294e5b011",
+        "refine": "01a0d508-ae7f-70ad-b4db-fceb4fe8da8e"
+      },
+      "done": true,
+      "thumbnail": "thumbs/kestane.webp",
+      "model": "models/kestane.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:09:22.694Z"
+    },
+    "kirpi": {
+      "prompt": "Grumpy cute cartoon hedgehog enemy for a platformer game, tan round body covered with sharp dark brown spikes on its back, small pointed snout with a black nose, beady eyes, four tiny legs, stylized game character, facing forward",
+      "tasks": {
+        "preview": "01a0d507-e021-732f-9aad-f5772c355832",
+        "refine": "01a0d508-ea8f-7030-b77c-d9b2d71becfd"
+      },
+      "done": true,
+      "thumbnail": "thumbs/kirpi.webp",
+      "model": "models/kirpi.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:09:37.775Z"
+    },
+    "ari": {
+      "prompt": "Chubby cartoon bumblebee enemy for a platformer game, round fuzzy body with yellow and black stripes, two translucent wings, tiny stinger, big angry but cute eyes, small antennae, stylized game character, facing forward",
+      "tasks": {
+        "preview": "01a0d507-e034-73f7-9156-f59243430705"
+      },
+      "done": false
+    },
+    "coin": {
+      "prompt": "Shiny thick gold coin standing upright, embossed fluffy cloud symbol in the center, raised rim, stylized cartoon game collectible, facing forward",
+      "tasks": {
+        "preview": "01a0d507-e01e-75ca-8f54-2ac0be81f783",
+        "refine": "01a0d508-aeb5-72ba-bdac-92bec947f214"
+      },
+      "done": true,
+      "thumbnail": "thumbs/coin.webp",
+      "model": "models/coin.glb",
+      "animations": {},
+      "updatedAt": "2026-09-24T20:09:32.692Z"
+    },
+    "simit": {
+      "prompt": "Turkish simit bread ring standing upright, glossy golden brown crust densely covered with sesame seeds, stylized cartoon game power-up item, facing forward",
+      "tasks": {
+        "preview": "01a0d509-7853-7549-95c5-6e4bb98502b8"
+      },
+      "done": false
+    },
+    "nazar": {
+      "prompt": "Turkish evil eye bead amulet standing upright, flat round glossy glass bead with a dark cobalt blue outer ring, a white ring, a light blue ring and a black center, small loop on top, stylized cartoon game item, facing forward",
+      "tasks": {
+        "preview": "01a0d509-9f62-7421-b4b2-60bf0047cbbf"
+      },
+      "done": false
+    },
+    "block_ground_top": {
+      "prompt": "Perfect cube block tile for a platformer game, thick bright green grass layer on top slightly hanging over the edges, brown soil sides with small pebbles, stylized cartoon, hand-painted",
+      "tasks": {
+        "preview": "01a0d509-b33a-7043-ae47-5a3c4f4554b7"
+      },
+      "done": false
+    }
+  }
 }

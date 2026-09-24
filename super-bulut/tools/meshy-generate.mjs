@@ -92,8 +92,8 @@ function steps(def) {
   return s;
 }
 
-function stepCost(step, cfg) {
-  if (step === 'preview') return cfg.ai_model === 'meshy-6-lite' ? 5 : 20;
+function stepCost(step, cfg, def) {
+  if (step === 'preview') return (def.ai_model || cfg.ai_model) === 'meshy-6-lite' ? 5 : 20;
   if (step === 'refine') return cfg.texture_resolution === '8k' ? 15 : 10;
   if (step === 'rig') return 5;
   return 3;
@@ -141,7 +141,7 @@ async function main() {
     const fresh = args.force || status === 'prompt değişti' || entry?.prompt !== def.prompt;
     const done = fresh ? {} : entry?.tasks || {};
     const todo = steps(def).filter((s) => !done[s]);
-    plan.push({ id, def, fresh, todo, cost: todo.reduce((n, s) => n + stepCost(s, cfg), 0), status });
+    plan.push({ id, def, fresh, todo, cost: todo.reduce((n, s) => n + stepCost(s, cfg, def), 0), status });
   }
 
   if (!plan.length) {
@@ -150,10 +150,11 @@ async function main() {
   }
   const total = plan.reduce((n, p) => n + p.cost, 0);
   console.log(`Üretilecek ${plan.length} varlık (model: ${cfg.ai_model}, doku: ${cfg.texture_resolution}):`);
-  for (const p of plan)
-    console.log(
-      `  ${p.id.padEnd(18)} ${String(p.cost).padStart(3)} kredi  ${p.todo.join(' → ')}${p.status !== 'yok' ? `  (${p.status})` : ''}`,
-    );
+  for (const p of plan) {
+    const model = p.def.ai_model && p.def.ai_model !== cfg.ai_model ? `  [${p.def.ai_model}]` : '';
+    const note = p.status !== 'yok' ? `  (${p.status})` : '';
+    console.log(`  ${p.id.padEnd(18)} ${String(p.cost).padStart(3)} kredi  ${p.todo.join(' → ')}${model}${note}`);
+  }
   console.log(`Tahmini toplam: ${total} kredi (Meshy fiyat listesine göre; gerçek tüketim farklı olabilir)`);
   if (args.dryRun) return;
 
@@ -257,7 +258,7 @@ async function generate(api, cfg, state, p, optimize) {
     () =>
       api.createPreview({
         prompt: def.prompt,
-        ai_model: cfg.ai_model,
+        ai_model: def.ai_model || cfg.ai_model,
         topology: cfg.topology,
         should_remesh: true,
         target_polycount: def.target_polycount ?? 10000,
