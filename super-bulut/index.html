@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Süper Bulut</title>
+  <meta name="description" content="Meshy AI ile üretilen 3D modellerle, tarayıcıda oynanan bir platform oyunu.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;800&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!--GAME-->
+  <div id="game">
+    <canvas id="view"></canvas>
+    <div id="popups" aria-hidden="true"></div>
+
+    <header id="hud" hidden>
+      <div class="hud-cell"><span class="hud-label">PUAN</span><span class="hud-value" id="hud-score">000000</span></div>
+      <div class="hud-cell"><span class="hud-label">ALTIN</span><span class="hud-value"><i class="coin-icon" aria-hidden="true"></i>×<span id="hud-coins">00</span></span></div>
+      <div class="hud-cell"><span class="hud-label">DÜNYA</span><span class="hud-value" id="hud-world">1-1</span></div>
+      <div class="hud-cell"><span class="hud-label">SÜRE</span><span class="hud-value" id="hud-time">300</span></div>
+      <div class="hud-cell"><span class="hud-label">CAN</span><span class="hud-value"><i class="heart" aria-hidden="true">♥</i><span id="hud-lives">3</span></span></div>
+      <div class="hud-buttons">
+        <button id="btn-mute" type="button" aria-label="Sesi aç veya kapat" aria-pressed="false">♪</button>
+        <button id="btn-pause" type="button" aria-label="Duraklat">II</button>
+      </div>
+    </header>
+
+    <section class="screen" id="screen-title">
+      <div class="title-card">
+        <p class="eyebrow">Kestane Vadisi'nde bir platform macerası</p>
+        <h1 class="logo"><span class="logo-top">Süper</span><span class="logo-main">BULUT</span></h1>
+        <button id="btn-start" class="btn-primary" type="button" disabled>Yükleniyor…</button>
+        <ul class="controls">
+          <li><kbd>←</kbd><kbd>→</kbd> yürü</li>
+          <li><kbd>Boşluk</kbd> zıpla</li>
+          <li><kbd>Shift</kbd> koş</li>
+          <li><kbd>↓</kbd> buluttan in</li>
+          <li><kbd>P</kbd> duraklat</li>
+          <li><kbd>M</kbd> ses</li>
+        </ul>
+        <p class="touch-hint">Sol altta yön, sağ altta <b>A</b> zıpla, <b>B</b> koş. Telefonu yatay tutarsan daha geniş görürsün.</p>
+        <p class="asset-status" id="asset-status">Modeller yükleniyor…</p>
+        <p class="best">En yüksek puan: <b id="best-score">0</b></p>
+      </div>
+    </section>
+
+    <section class="screen" id="screen-intro" hidden>
+      <div class="intro-card">
+        <p class="world-label">DÜNYA <b id="intro-world">1-1</b></p>
+        <h2 id="intro-name">Yeşil Vadi</h2>
+        <p class="intro-lives"><i class="hood-icon" aria-hidden="true"></i>× <span id="intro-lives">3</span></p>
+      </div>
+    </section>
+
+    <section class="screen screen-dim" id="screen-pause" hidden>
+      <div class="panel">
+        <h2>Duraklatıldı</h2>
+        <button id="btn-resume" class="btn-primary" type="button">Devam et</button>
+        <p class="panel-note">Klavyede <kbd>P</kbd> ya da <kbd>Esc</kbd></p>
+      </div>
+    </section>
+
+    <section class="screen screen-dark" id="screen-gameover" hidden>
+      <div class="panel">
+        <h2 class="big-word">Oyun Bitti</h2>
+        <p class="panel-score">Puan <b id="final-score">000000</b></p>
+        <button id="btn-restart" class="btn-primary" type="button">Başa dön</button>
+      </div>
+    </section>
+
+    <section class="screen screen-dark" id="screen-win" hidden>
+      <div class="panel">
+        <h2 class="big-word">Tebrikler!</h2>
+        <p class="panel-lead">Bulut üç bölümün hepsini bitirdi ve Kirpi Kayalıkları'nı aştı.</p>
+        <p class="panel-score">Puan <b id="win-score">000000</b></p>
+        <p class="new-best" id="win-best" hidden>Yeni rekor!</p>
+        <button id="btn-again" class="btn-primary" type="button">Tekrar oyna</button>
+      </div>
+    </section>
+
+    <div id="touch" hidden>
+      <div class="dpad" data-dpad aria-label="Yön tuşları"><span class="dpad-l">◀</span><span class="dpad-r">▶</span></div>
+      <div class="touch-actions">
+        <button class="t-btn t-run" data-act="run" type="button" aria-label="Koş">B<small>KOŞ</small></button>
+        <button class="t-btn t-jump" data-act="jump" type="button" aria-label="Zıpla">A<small>ZIPLA</small></button>
+      </div>
+    </div>
+  </div>
+  <!--/GAME-->
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "super-bulut",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Meshy AI ile üretilen 3D modellerle tarayıcıda oynanan platform oyunu",
+  "type": "module",
+  "scripts": {
+    "start": "node tools/serve.mjs",
+    "assets": "node tools/meshy-generate.mjs",
+    "assets:plan": "node tools/meshy-generate.mjs --dry-run",
+    "assets:list": "node tools/meshy-generate.mjs --list"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
+    "sharp": "^0.35.4"
+  }
+}

@@ -1,0 +1,168 @@
+{
+  "$comment": "Oyundaki her 3D varlığın tanımı. 'prompt' alanları Meshy AI text-to-3D için kullanılır; 'fit' modelin oyunda nasıl ölçekleneceğini belirler (1 birim = 1 blok). Model üretilmemişse oyun aynı ölçülerde yer tutucu bir model çizer.",
+  "meshy": {
+    "ai_model": "latest",
+    "topology": "triangle",
+    "texture_resolution": "2k",
+    "enable_pbr": false,
+    "poll_seconds": 5
+  },
+  "assets": {
+    "player": {
+      "label": "Bulut (oyuncu)",
+      "prompt": "Cute chibi cartoon hero kid for a family platformer game, oversized round head, sky-blue hoodie with the hood up and two small white cloud-shaped puffs on top of the hood, red scarf, navy shorts, chunky brown boots, big friendly eyes, rosy cheeks, clean bright colors, stylized, full body, arms slightly away from the body, standing straight, facing forward",
+      "texture_prompt": "bright saturated cartoon colors, sky-blue hoodie, red scarf, brown boots, soft hand-painted look",
+      "target_polycount": 15000,
+      "pose_mode": "a-pose",
+      "rig": { "height_meters": 1.1 },
+      "animations": { "idle": 0, "jump": 466, "victory": 59 },
+      "fit": { "mode": "height", "value": 0.95, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 1024
+    },
+    "kestane": {
+      "label": "Kestane (yürüyen düşman)",
+      "prompt": "Angry cartoon chestnut creature enemy for a platformer game, round glossy brown shell with a pale cream bottom and a small pointed tip on top, big white eyes with black pupils, thick angry eyebrows, two tiny dark feet, cute and stylized, facing forward",
+      "target_polycount": 6000,
+      "fit": { "mode": "height", "value": 0.85, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "kirpi": {
+      "label": "Kirpi (dikenli düşman)",
+      "prompt": "Grumpy cute cartoon hedgehog enemy for a platformer game, tan round body covered with sharp dark brown spikes on its back, small pointed snout with a black nose, beady eyes, four tiny legs, stylized game character, facing forward",
+      "target_polycount": 8000,
+      "fit": { "mode": "height", "value": 0.75, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "ari": {
+      "label": "Arı (uçan düşman)",
+      "prompt": "Chubby cartoon bumblebee enemy for a platformer game, round fuzzy body with yellow and black stripes, two translucent wings, tiny stinger, big angry but cute eyes, small antennae, stylized game character, facing forward",
+      "target_polycount": 6000,
+      "fit": { "mode": "height", "value": 0.8, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "coin": {
+      "label": "Altın",
+      "prompt": "Shiny thick gold coin standing upright, embossed fluffy cloud symbol in the center, raised rim, stylized cartoon game collectible, facing forward",
+      "target_polycount": 1500,
+      "fit": { "mode": "height", "value": 0.8, "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 256
+    },
+    "simit": {
+      "label": "Simit (büyüten güç)",
+      "prompt": "Turkish simit bread ring standing upright, glossy golden brown crust densely covered with sesame seeds, stylized cartoon game power-up item, facing forward",
+      "target_polycount": 3000,
+      "fit": { "mode": "height", "value": 0.75, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "nazar": {
+      "label": "Nazar boncuğu (dokunulmazlık)",
+      "prompt": "Turkish evil eye bead amulet standing upright, flat round glossy glass bead with a dark cobalt blue outer ring, a white ring, a light blue ring and a black center, small loop on top, stylized cartoon game item, facing forward",
+      "target_polycount": 2000,
+      "fit": { "mode": "height", "value": 0.8, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_ground_top": {
+      "label": "Çimenli toprak blok",
+      "prompt": "Perfect cube block tile for a platformer game, thick bright green grass layer on top slightly hanging over the edges, brown soil sides with small pebbles, stylized cartoon, hand-painted",
+      "target_polycount": 1500,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_ground_fill": {
+      "label": "Toprak blok",
+      "prompt": "Perfect cube block tile of brown soil with small pebbles and tiny roots, stylized cartoon platformer game tile, hand-painted",
+      "target_polycount": 800,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_brick": {
+      "label": "Tuğla blok",
+      "prompt": "Perfect cube block tile made of orange-red bricks with light mortar lines, stylized cartoon platformer game tile, hand-painted",
+      "target_polycount": 1200,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_mystery": {
+      "label": "Sürpriz blok",
+      "prompt": "Perfect cube block tile, shiny golden yellow with a white fluffy cloud emblem on every side and small rivets in the corners, stylized cartoon platformer item block",
+      "target_polycount": 1200,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_used": {
+      "label": "Kullanılmış blok",
+      "prompt": "Perfect cube block tile, dull brown metal with dark beveled edges and small rivets in the corners, empty used item block, stylized cartoon platformer tile",
+      "target_polycount": 1000,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "block_stone": {
+      "label": "Taş blok",
+      "prompt": "Perfect cube block tile of smooth grey stone with beveled edges and a carved square border, stylized cartoon platformer tile, hand-painted",
+      "target_polycount": 1000,
+      "fit": { "mode": "box", "size": [1, 1, 1], "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "cloud_platform": {
+      "label": "Bulut platformu",
+      "prompt": "Small flat fluffy white cartoon cloud platform, thick flat top, soft rounded puffs on the sides and bottom, stylized game platform",
+      "target_polycount": 2000,
+      "fit": { "mode": "box", "size": [1.05, 0.5, 1], "anchor": "center", "offset": [0, 0.25, 0] },
+      "rotationY": 0,
+      "textureSize": 256
+    },
+    "flag": {
+      "label": "Bitiş direği",
+      "prompt": "Tall thin white flagpole with a golden ball on top and a white triangular pennant flag with a blue cloud emblem near the top, stylized cartoon game goal, no base",
+      "target_polycount": 3000,
+      "fit": { "mode": "height", "value": 8, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "tower": {
+      "label": "Kule (bölüm sonu)",
+      "prompt": "Small cute round stone castle tower with battlements, a red cone roof with a tiny flag, an arched wooden door and one small window, stylized cartoon game building",
+      "target_polycount": 8000,
+      "fit": { "mode": "height", "value": 4.8, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 1024
+    },
+    "tree": {
+      "label": "Ağaç",
+      "prompt": "Stylized cartoon tree with a thick short brown trunk and a big round fluffy green canopy, low poly game decoration",
+      "target_polycount": 4000,
+      "fit": { "mode": "height", "value": 3.4, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 512
+    },
+    "bush": {
+      "label": "Çalı",
+      "prompt": "Round fluffy green cartoon bush made of three soft puffs, wider than tall, stylized game decoration",
+      "target_polycount": 2000,
+      "fit": { "mode": "height", "value": 0.9, "anchor": "bottom" },
+      "rotationY": 0,
+      "textureSize": 256
+    },
+    "cloud": {
+      "label": "Bulut (arka plan)",
+      "prompt": "Fluffy white cartoon cloud made of soft rounded puffs, wider than tall, stylized game decoration",
+      "target_polycount": 2000,
+      "fit": { "mode": "width", "value": 3.4, "anchor": "center" },
+      "rotationY": 0,
+      "textureSize": 256
+    }
+  }
+}
