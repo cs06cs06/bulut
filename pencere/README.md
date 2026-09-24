@@ -43,14 +43,20 @@ npm start          # ya da: node server.js
 Bilgisayarın yerel IP'sini bul (ör. `192.168.1.20`) ve telefonda `http://192.168.1.20:3000` adresini aç.
 Tarayıcı menüsünden *Ana ekrana ekle* ile uygulama gibi kullanabilirsin.
 
-**B) Doğrudan Android telefonda (Termux):**
-```bash
-pkg install nodejs git
-git clone https://github.com/cs06cs06/bulut && cd bulut/pencere
-node server.js
-```
-Sonra Chrome'da `http://localhost:3000` → *Ana ekrana ekle*. Bu yöntemde istekler senin ev/mobil
-IP'nden gittiği için Instagram en az kısıtlamayı uygular.
+**B) Doğrudan Android telefonda — tek dosya, hesap/sunucu gerekmez (önerilen):**
+
+1. Play Store'daki eski sürüm yerine [F-Droid](https://f-droid.org/packages/com.termux/)'den **Termux**'u kur.
+2. `pencere.js` dosyasını telefona indir (`npm run bundle` ile `dist/pencere.js` olarak üretilir).
+3. Termux'ta:
+   ```bash
+   pkg install nodejs        # yalnızca ilk seferde
+   termux-setup-storage      # yalnızca ilk seferde (İndirilenler klasörüne erişim)
+   node ~/storage/downloads/pencere.js
+   ```
+4. Tarayıcı otomatik açılır (açılmazsa Chrome'da `http://localhost:3000`). Menüden **Ana ekrana ekle**.
+
+İstekler senin ev/mobil IP'nden gittiği için Instagram en az kısıtlamayı uygular. Kullanırken Termux
+açık kalmalıdır (bildirim çubuğunda görünür).
 
 **C) Tek tıkla internette yayınla (Render, ücretsiz):**
 
@@ -97,6 +103,7 @@ Sunucu yanıtları birkaç dakika önbelleğe alır, aynı anda gelen aynı iste
 ```bash
 npm test            # birim + sunucu güvenlik testleri
 npm run icons       # public/icons altındaki PNG ikonlarını yeniden üret
+npm run bundle      # tek dosyalık dist/pencere.js paketini üret
 ```
 
 Proje yapısı:

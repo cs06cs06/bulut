@@ -79,9 +79,27 @@ async function proxyMedia(req, res, rawUrl) {
     .pipe(res);
 }
 
+// Tek dosyalık paket (scripts/bundle.js) statik dosyaları bellekte taşır.
+const EMBEDDED = globalThis.__PENCERE_ASSETS || null;
+
 function serveStatic(req, res, pathname) {
   let rel = decodeURIComponent(pathname);
   if (rel === '/' || !path.extname(rel)) rel = '/index.html'; // SPA yönlendirmesi
+  if (EMBEDDED) {
+    const body = Object.hasOwn(EMBEDDED, rel) ? Buffer.from(EMBEDDED[rel], 'base64') : null;
+    if (!body) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Bulunamadı');
+    }
+    const ext = path.extname(rel);
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Content-Length': body.length,
+      'Cache-Control': ext === '.html' || rel === '/sw.js' ? 'no-cache' : 'public, max-age=3600',
+      'X-Content-Type-Options': 'nosniff',
+    });
+    return res.end(req.method === 'HEAD' ? undefined : body);
+  }
   const file = path.normalize(path.join(PUBLIC_DIR, rel));
   if (!file.startsWith(PUBLIC_DIR + path.sep)) {
     res.writeHead(403);
@@ -151,7 +169,19 @@ const server = http.createServer((req, res) => {
 
 if (require.main === module) {
   server.listen(PORT, HOST, () => {
-    console.log(`Pencere çalışıyor → http://localhost:${PORT}`);
+    const url = `http://localhost:${PORT}`;
+    console.log(`Pencere çalışıyor → ${url}`);
+    // Aynı ağdaki diğer cihazlar için yerel IP adresleri
+    for (const list of Object.values(require('node:os').networkInterfaces())) {
+      for (const a of list || []) {
+        if (a.family === 'IPv4' && !a.internal) console.log(`  Aynı Wi-Fi'deki cihazlardan: http://${a.address}:${PORT}`);
+      }
+    }
+    // Termux'ta tarayıcıyı otomatik aç
+    if (process.env.TERMUX_VERSION && !process.env.PENCERE_NO_OPEN) {
+      require('node:child_process').spawn('termux-open-url', [url], { stdio: 'ignore', detached: true }).on('error', () => {}).unref();
+    }
+    console.log('Durdurmak için Ctrl+C');
   });
 }
 
