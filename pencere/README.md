@@ -52,7 +52,15 @@ node server.js
 Sonra Chrome'da `http://localhost:3000` → *Ana ekrana ekle*. Bu yöntemde istekler senin ev/mobil
 IP'nden gittiği için Instagram en az kısıtlamayı uygular.
 
-**C) Bir sunucuya kur (Docker):**
+**C) Tek tıkla internette yayınla (Render, ücretsiz):**
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/cs06cs06/bulut)
+
+Düğmeye bas → GitHub ile giriş yap → *Apply*. Birkaç dakika sonra `https://pencere-xxxx.onrender.com`
+gibi kalıcı bir HTTPS adresin olur (depo köküdeki `render.yaml` kullanılır). Ücretsiz planda uygulama
+15 dk kullanılmazsa uyur; ilk açılış ~30 sn sürebilir.
+
+**D) Bir sunucuya kur (Docker):**
 ```bash
 docker build -t pencere .
 docker run -p 3000:3000 pencere

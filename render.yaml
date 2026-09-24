@@ -1,0 +1,14 @@
+# Render Blueprint — "Deploy to Render" düğmesiyle tek tıkla kurulum
+services:
+  - type: web
+    name: pencere
+    runtime: node
+    plan: free
+    rootDir: pencere
+    buildCommand: echo "Bağımlılık yok"
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
