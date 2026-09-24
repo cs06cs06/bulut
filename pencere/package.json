@@ -1,0 +1,16 @@
+{
+  "name": "pencere",
+  "version": "1.0.0",
+  "description": "Hesap açmadan herkese açık Instagram profillerini, fotoğraf ve videolarını görüntüleyen mobil öncelikli web uygulaması (PWA).",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js",
+    "icons": "node scripts/make-icons.js"
+  },
+  "engines": {
+    "node": ">=18.17"
+  },
+  "license": "MIT"
+}
