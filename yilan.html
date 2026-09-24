@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Yılan Oyunu</title>
+<style>
+  :root {
+    --bg: #10151c;
+    --panel: #1a222d;
+    --grid: #1f2935;
+    --snake: #4ade80;
+    --snake-head: #22c55e;
+    --food: #f43f5e;
+    --text: #e5e7eb;
+    --muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 16px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  h1 { margin: 0; font-size: 28px; letter-spacing: 1px; }
+  .skor {
+    display: flex;
+    gap: 24px;
+    font-size: 18px;
+    color: var(--muted);
+  }
+  .skor b { color: var(--text); }
+  .kap {
+    position: relative;
+    width: min(92vw, 480px);
+    aspect-ratio: 1;
+  }
+  canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    background: var(--panel);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+  .ekran {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: rgba(16,21,28,.82);
+    border-radius: 12px;
+    text-align: center;
+    padding: 16px;
+  }
+  .ekran.gizli { display: none; }
+  .ekran h2 { margin: 0; font-size: 26px; }
+  .ekran p { margin: 0; color: var(--muted); }
+  button {
+    font: inherit;
+    font-size: 18px;
+    padding: 10px 28px;
+    border: none;
+    border-radius: 8px;
+    background: var(--snake-head);
+    color: #06210f;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.1); }
+  .ok-tuslari {
+    display: grid;
+    grid-template-columns: repeat(3, 56px);
+    grid-template-rows: repeat(2, 56px);
+    gap: 8px;
+  }
+  .ok-tuslari button {
+    padding: 0;
+    font-size: 22px;
+    background: var(--grid);
+    color: var(--text);
+  }
+  .ok-tuslari .yukari { grid-column: 2; grid-row: 1; }
+  .ok-tuslari .sol    { grid-column: 1; grid-row: 2; }
+  .ok-tuslari .asagi  { grid-column: 2; grid-row: 2; }
+  .ok-tuslari .sag    { grid-column: 3; grid-row: 2; }
+  .ipucu { color: var(--muted); font-size: 14px; margin: 0; }
+  @media (hover: hover) and (pointer: fine) {
+    .ok-tuslari { display: none; }
+  }
+</style>
+</head>
+<body>
+  <h1>🐍 Yılan Oyunu</h1>
+  <div class="skor">
+    <span>Skor: <b id="skor">0</b></span>
+    <span>En Yüksek: <b id="rekor">0</b></span>
+  </div>
+
+  <div class="kap">
+    <canvas id="tuval" width="480" height="480"></canvas>
+    <div class="ekran" id="ekran">
+      <h2 id="baslik">Yılan Oyunu</h2>
+      <p id="mesaj">Yemleri ye, büyü, kendine ve duvarlara çarpma!</p>
+      <button id="baslat">Başla</button>
+    </div>
+  </div>
+
+  <div class="ok-tuslari">
+    <button class="yukari" data-yon="yukari" aria-label="Yukarı">▲</button>
+    <button class="sol" data-yon="sol" aria-label="Sol">◀</button>
+    <button class="asagi" data-yon="asagi" aria-label="Aşağı">▼</button>
+    <button class="sag" data-yon="sag" aria-label="Sağ">▶</button>
+  </div>
+  <p class="ipucu">Ok tuşları / WASD ile yönlendir · Boşluk: duraklat</p>
+
+<script>
+(() => {
+  const HUCRE_SAYISI = 20;
+  const tuval = document.getElementById("tuval");
+  const ctx = tuval.getContext("2d");
+  const hucre = tuval.width / HUCRE_SAYISI;
+
+  const skorEl = document.getElementById("skor");
+  const rekorEl = document.getElementById("rekor");
+  const ekran = document.getElementById("ekran");
+  const baslik = document.getElementById("baslik");
+  const mesaj = document.getElementById("mesaj");
+  const baslatBtn = document.getElementById("baslat");
+
+  const YONLER = {
+    yukari: { x: 0, y: -1 },
+    asagi:  { x: 0, y: 1 },
+    sol:    { x: -1, y: 0 },
+    sag:    { x: 1, y: 0 },
+  };
+
+  let yilan, yon, yonKuyrugu, yem, skor, hiz, zamanlayici, durum;
+  let rekor = 0;
+  try { rekor = Number(localStorage.getItem("yilan-rekor")) || 0; } catch (e) {}
+  rekorEl.textContent = rekor;
+
+  function sifirla() {
+    const orta = Math.floor(HUCRE_SAYISI / 2);
+    yilan = [
+      { x: orta, y: orta },
+      { x: orta - 1, y: orta },
+      { x: orta - 2, y: orta },
+    ];
+    yon = YONLER.sag;
+    yonKuyrugu = [];
+    skor = 0;
+    hiz = 130;
+    skorEl.textContent = skor;
+    yemKoy();
+  }
+
+  function yemKoy() {
+    const bos = [];
+    for (let x = 0; x < HUCRE_SAYISI; x++) {
+      for (let y = 0; y < HUCRE_SAYISI; y++) {
+        if (!yilan.some(p => p.x === x && p.y === y)) bos.push({ x, y });
+      }
+    }
+    yem = bos.length ? bos[Math.floor(Math.random() * bos.length)] : null;
+  }
+
+  function yonDegistir(yeniAd) {
+    const yeni = YONLER[yeniAd];
+    if (!yeni) return;
+    // Aynı tik içinde birden fazla tuşa basılabilsin diye kuyruk kullanılır
+    const son = yonKuyrugu.length ? yonKuyrugu[yonKuyrugu.length - 1] : yon;
+    if (yeni.x === -son.x && yeni.y === -son.y) return; // geri dönüş yok
+    if (yeni.x === son.x && yeni.y === son.y) return;
+    if (yonKuyrugu.length < 3) yonKuyrugu.push(yeni);
+  }
+
+  function adim() {
+    if (yonKuyrugu.length) yon = yonKuyrugu.shift();
+    const bas = { x: yilan[0].x + yon.x, y: yilan[0].y + yon.y };
+
+    const duvar = bas.x < 0 || bas.y < 0 || bas.x >= HUCRE_SAYISI || bas.y >= HUCRE_SAYISI;
+    const yiyecek = yem && bas.x === yem.x && bas.y === yem.y;
+    // Yem yenmiyorsa kuyruk bu adımda çekileceği için kuyruğa çarpmak sayılmaz
+    const govde = yiyecek ? yilan : yilan.slice(0, -1);
+    const kendine = govde.some(p => p.x === bas.x && p.y === bas.y);
+
+    if (duvar || kendine) return bitir();
+
+    yilan.unshift(bas);
+    if (yiyecek) {
+      skor += 10;
+      skorEl.textContent = skor;
+      if (skor > rekor) {
+        rekor = skor;
+        rekorEl.textContent = rekor;
+        try { localStorage.setItem("yilan-rekor", rekor); } catch (e) {}
+      }
+      yemKoy();
+      if (!yem) return bitir(true);
+      hiz = Math.max(60, hiz - 3);
+    } else {
+      yilan.pop();
+    }
+    ciz();
+    zamanlayici = setTimeout(adim, hiz);
+  }
+
+  function ciz() {
+    ctx.fillStyle = "#1a222d";
+    ctx.fillRect(0, 0, tuval.width, tuval.height);
+
+    // Dama deseni
+    ctx.fillStyle = "#1f2935";
+    for (let x = 0; x < HUCRE_SAYISI; x++) {
+      for (let y = 0; y < HUCRE_SAYISI; y++) {
+        if ((x + y) % 2 === 0) ctx.fillRect(x * hucre, y * hucre, hucre, hucre);
+      }
+    }
+
+    // Yem
+    if (yem) {
+      ctx.fillStyle = "#f43f5e";
+      ctx.beginPath();
+      ctx.arc((yem.x + 0.5) * hucre, (yem.y + 0.5) * hucre, hucre * 0.38, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Yılan
+    yilan.forEach((p, i) => {
+      ctx.fillStyle = i === 0 ? "#22c55e" : "#4ade80";
+      const b = 2;
+      yuvarlakKare(p.x * hucre + b, p.y * hucre + b, hucre - b * 2, hucre - b * 2, 5);
+    });
+
+    // Gözler
+    const h = yilan[0];
+    const cx = (h.x + 0.5) * hucre, cy = (h.y + 0.5) * hucre;
+    const ileri = hucre * 0.18, yan = hucre * 0.2;
+    ctx.fillStyle = "#06210f";
+    [-1, 1].forEach(s => {
+      const ex = cx + yon.x * ileri + (-yon.y) * yan * s;
+      const ey = cy + yon.y * ileri + yon.x * yan * s;
+      ctx.beginPath();
+      ctx.arc(ex, ey, hucre * 0.08, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function yuvarlakKare(x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function baslat() {
+    clearTimeout(zamanlayici);
+    sifirla();
+    durum = "oynuyor";
+    ekran.classList.add("gizli");
+    ciz();
+    zamanlayici = setTimeout(adim, hiz);
+  }
+
+  function duraklat() {
+    if (durum === "oynuyor") {
+      durum = "durdu";
+      clearTimeout(zamanlayici);
+      ekranGoster("Duraklatıldı", "Devam etmek için Boşluk'a bas.", "Devam");
+    } else if (durum === "durdu") {
+      durum = "oynuyor";
+      ekran.classList.add("gizli");
+      zamanlayici = setTimeout(adim, hiz);
+    }
+  }
+
+  function bitir(kazandi = false) {
+    durum = "bitti";
+    clearTimeout(zamanlayici);
+    ciz();
+    ekranGoster(
+      kazandi ? "Tebrikler, kazandın! 🎉" : "Oyun Bitti",
+      `Skorun: ${skor}` + (skor > 0 && skor === rekor ? " · Yeni rekor!" : ""),
+      "Tekrar Oyna"
+    );
+  }
+
+  function ekranGoster(b, m, dugme) {
+    baslik.textContent = b;
+    mesaj.textContent = m;
+    baslatBtn.textContent = dugme;
+    ekran.classList.remove("gizli");
+  }
+
+  baslatBtn.addEventListener("click", () => {
+    if (durum === "durdu") duraklat(); else baslat();
+  });
+
+  const TUSLAR = {
+    ArrowUp: "yukari", w: "yukari", W: "yukari",
+    ArrowDown: "asagi", s: "asagi", S: "asagi",
+    ArrowLeft: "sol", a: "sol", A: "sol",
+    ArrowRight: "sag", d: "sag", D: "sag",
+  };
+
+  document.addEventListener("keydown", e => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      if (durum === "oynuyor" || durum === "durdu") duraklat();
+      else baslat();
+      return;
+    }
+    const ad = TUSLAR[e.key];
+    if (ad) {
+      e.preventDefault();
+      if (durum === "oynuyor") yonDegistir(ad);
+    }
+  });
+
+  document.querySelectorAll(".ok-tuslari button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      if (durum === "oynuyor") yonDegistir(btn.dataset.yon);
+    });
+  });
+
+  // Kaydırma (swipe) desteği
+  let dokunma = null;
+  tuval.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    dokunma = { x: t.clientX, y: t.clientY };
+  }, { passive: true });
+  tuval.addEventListener("touchend", e => {
+    if (!dokunma || durum !== "oynuyor") return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - dokunma.x, dy = t.clientY - dokunma.y;
+    if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+    if (Math.abs(dx) > Math.abs(dy)) yonDegistir(dx > 0 ? "sag" : "sol");
+    else yonDegistir(dy > 0 ? "asagi" : "yukari");
+    dokunma = null;
+  });
+
+  sifirla();
+  ciz();
+})();
+</script>
+</body>
+</html>
