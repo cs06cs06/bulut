@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#6fc9d6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Meshy AI ile üretilmiş 3D model ve animasyonlarla, mobil uyumlu Flappy Bird.">
+  <!-- build:head -->
+  <title>Flappy Bird 3D</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Lilita+One&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <!-- /build:head -->
+</head>
+<body>
+  <!-- build:body -->
+  <div id="app">
+    <canvas id="scene" aria-label="Oyun alanı"></canvas>
+    <div id="flash" aria-hidden="true"></div>
+
+    <div id="hud" hidden>
+      <div id="score" aria-live="polite">0</div>
+    </div>
+
+    <div class="corner corner--left">
+      <button id="pause-btn" class="icon-btn" type="button" aria-label="Duraklat" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+    </div>
+    <div class="corner corner--right">
+      <button id="mute-btn" class="icon-btn" type="button" aria-label="Sesi kapat" aria-pressed="false">
+        <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <section id="loading" class="screen">
+      <div class="panel panel--compact">
+        <p class="eyebrow">Meshy AI modelleri yükleniyor</p>
+        <div class="bar"><div id="load-bar"></div></div>
+        <p id="load-text" class="muted">%0</p>
+        <button id="retry-btn" class="btn" type="button" hidden>Tekrar dene</button>
+      </div>
+    </section>
+
+    <section id="menu" class="screen" hidden>
+      <h1 class="logo"><span>Flappy</span> <span>Bird</span> <em>3D</em></h1>
+      <div class="menu-bottom">
+        <div class="tap-hint">
+          <div class="tap-icon" aria-hidden="true"><span></span></div>
+          <p>Uçmak için <strong>dokun</strong></p>
+          <p class="muted desktop-only">ya da <kbd>Boşluk</kbd> tuşuna bas</p>
+        </div>
+        <p class="best-line">En iyi skor: <strong id="menu-best">0</strong></p>
+        <p class="credit">3D modeller ve animasyonlar Meshy AI ile üretildi</p>
+      </div>
+    </section>
+
+    <section id="paused" class="screen" hidden>
+      <div class="panel panel--compact">
+        <h2>Duraklatıldı</h2>
+        <p class="muted">Devam etmek için dokun</p>
+      </div>
+    </section>
+
+    <section id="gameover" class="screen" hidden>
+      <h2 class="title-over">Oyun Bitti</h2>
+      <div class="panel scoreboard">
+        <div class="medal-slot">
+          <span class="label">Madalya</span>
+          <div id="medal" class="medal medal--none" aria-label="Madalya yok"></div>
+        </div>
+        <dl class="stats">
+          <div><dt>Skor</dt><dd id="final-score">0</dd></div>
+          <div><dt>En iyi <span id="new-best" class="badge" hidden>Yeni</span></dt><dd id="final-best">0</dd></div>
+        </dl>
+      </div>
+      <button id="restart-btn" class="btn btn--play" type="button">Tekrar oyna</button>
+    </section>
+  </div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="src/main.js"></script>
+  <!-- /build:body -->
+</body>
+</html>

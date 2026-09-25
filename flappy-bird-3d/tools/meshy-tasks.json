@@ -1,0 +1,20 @@
+{
+  "pipe": {
+    "preview": "01a0d858-dbb5-70c8-ba99-d9fa18e946bf",
+    "refine": "01a0d859-4f4b-740b-9718-8ce818fe7c23"
+  },
+  "cloud": {
+    "preview": "01a0d858-dba2-7104-8ded-6066d86c58d0"
+  },
+  "bush": {
+    "preview": "01a0d858-dbb0-71be-bc13-daa7b6d009b7"
+  },
+  "bird": {
+    "preview": "01a0d860-0b96-712a-b31c-73b8853c8b41",
+    "refine": "01a0d860-cfe7-7643-8b4d-8d7ccdc1b553",
+    "rig": "01a0d861-82c6-7584-95c7-04bad0e9c84e",
+    "anim_flap": "01a0d862-09ea-777a-8737-10732fa2c76b",
+    "anim_fall": "01a0d862-399f-74ff-9205-7aae46d48066",
+    "anim_wave": "01a0d862-697e-754b-aa72-de0440606c84"
+  }
+}

@@ -1,0 +1,4 @@
+node_modules/
+# Meshy ham çıktıları (~15 MB). Görev kimlikleri tools/meshy-tasks.json içinde
+# kayıtlı; `npm run assets:generate` bunları kredi harcamadan yeniden indirir.
+tools/raw/

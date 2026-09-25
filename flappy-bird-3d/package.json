@@ -1,0 +1,17 @@
+{
+  "name": "flappy-bird-3d",
+  "private": true,
+  "type": "module",
+  "description": "Meshy AI ile üretilmiş 3D model ve animasyonlarla, mobil uyumlu Flappy Bird",
+  "scripts": {
+    "start": "npx --yes serve -l 8080 .",
+    "assets:generate": "node tools/generate-assets.mjs",
+    "assets:optimize": "node tools/optimize-assets.mjs"
+  },
+  "devDependencies": {
+    "@gltf-transform/core": "4.5.0",
+    "@gltf-transform/extensions": "4.5.0",
+    "@gltf-transform/functions": "4.5.0",
+    "sharp": "^0.35.0"
+  }
+}
