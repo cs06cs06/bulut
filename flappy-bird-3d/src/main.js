@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Sfx } from './audio.js';
+import { rigBird } from './bird-rig.js';
 
 // ---------------------------------------------------------------------------
 // Ayarlar (dünya birimi: z=0 düzleminde 1 birim)
@@ -33,11 +34,12 @@ const GAP_MIN = 1.1 + PIPE_GAP / 2;
 const GAP_MAX = 9.5 - PIPE_GAP / 2;
 
 const BIRD_X = 0;
-const BIRD_H = 1.6;
+const BIRD_LEN = 1.55; // gagadan kuyruğa
 const BIRD_R = 0.42;
 const BIRD_SCREEN_X = 0.3; // oyun sırasında kuşun ekrandaki yatay konumu (0-1)
-const FACE_PLAY = Math.PI / 2 - 0.55; // sağa bakar, biraz kameraya dönük
-const FACE_MENU = 0.35; // menüde oyuncuya el sallar
+const FACE_PLAY = Math.PI / 2 - 0.5; // sağa uçar, biraz kameraya dönük
+const FACE_MENU = 0.4; // menüde oyuncuya dönük havada asılı kalır
+const BANK_PLAY = 0.28; // kanatların üstü görünsün diye hafif yatış
 
 const STEP = 1 / 120;
 
@@ -425,6 +427,7 @@ const bird = {
   root: new THREE.Group(),
   tilt: new THREE.Group(),
   face: new THREE.Group(),
+  bank: new THREE.Group(),
   mixer: null,
   actions: {},
   current: null,
@@ -436,31 +439,16 @@ const bird = {
 };
 bird.root.add(bird.tilt);
 bird.tilt.add(bird.face);
+bird.face.add(bird.bank);
 scene.add(bird.root);
 
 function setupBird(gltf) {
-  const model = gltf.scene;
-  model.traverse((o) => {
-    if (o.isMesh) {
-      o.frustumCulled = false; // iskelet animasyonu sınır kutusunun dışına taşabilir
-      const m = o.material;
-      m.metalness = 0;
-      m.roughness = 0.62;
-    }
-  });
-  model.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(model);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  const s = BIRD_H / size.y;
-  model.scale.setScalar(s);
-  model.position.set(-center.x * s, -center.y * s, -center.z * s);
-  bird.face.add(model);
-
-  bird.mixer = new THREE.AnimationMixer(model);
-  for (const clip of gltf.animations) {
-    // Klipler (flap, fall, wave) tools/optimize-assets.mjs ile birleştirildi.
-    const name = clip.name.toLowerCase();
+  const { mesh, clips } = rigBird(gltf, BIRD_LEN);
+  mesh.material.metalness = 0;
+  mesh.material.roughness = 0.62;
+  bird.bank.add(mesh);
+  bird.mixer = new THREE.AnimationMixer(mesh);
+  for (const [name, clip] of Object.entries(clips)) {
     const action = bird.mixer.clipAction(clip);
     action.setLoop(THREE.LoopRepeat, Infinity);
     bird.actions[name] = action;
@@ -645,8 +633,7 @@ function goToMenu() {
   bird.angle = 0;
   ui.menuBest.textContent = game.best;
   ui.score.textContent = '0';
-  if (bird.actions.wave) playAction('wave', 0.3);
-  else playAction('flap', 0.3);
+  playAction('flap', 0.3);
   setMode('menu');
 }
 
@@ -882,19 +869,15 @@ function updateVisuals(dt) {
   bird.root.position.set(BIRD_X, bird.y, 0);
   bird.tilt.rotation.z = bird.angle;
 
-  if (bird.mixer) {
-    if (bird.current === bird.actions.flap) {
-      bird.flapBoost = Math.max(0, bird.flapBoost - dt * 2.5);
-      bird.current.timeScale = 1.35 + bird.flapBoost * 1.4;
-    }
-    if (bird.current === bird.actions.fall && mode === 'over') {
-      bird.current.timeScale = Math.max(0, bird.current.timeScale - dt * 2);
-    }
-    bird.mixer.update(dt);
-  } else {
-    // Animasyon yoksa basit bir yaylanma.
-    bird.face.scale.y = 1 + Math.sin(game.time * 14) * 0.04;
+  bird.bank.rotation.z = lerp(bird.bank.rotation.z, playing ? BANK_PLAY : 0, 1 - Math.exp(-dt * 6));
+
+  // Kanat çırpma hızı: menüde yavaş süzülme, her dokunuşta hızlı bir vuruş.
+  if (bird.current === bird.actions.flap) {
+    bird.flapBoost = Math.max(0, bird.flapBoost - dt * 2.2);
+    bird.current.timeScale = (mode === 'menu' ? 1.8 : 2.3) + bird.flapBoost * 3;
   }
+  if (mode === 'over') playAction('rest', 0.4);
+  if (bird.mixer) bird.mixer.update(dt);
 
   // Gölge yüksekliğe göre küçülür ve silikleşir.
   const hgt = clamp(bird.y / 9, 0, 1);

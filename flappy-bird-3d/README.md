@@ -1,8 +1,9 @@
 # Flappy Bird 3D
 
-Klasik Flappy Bird'ün 3D, mobil uyumlu bir yorumu. Oyundaki tüm 3D modeller ve
-kuşun animasyonları [Meshy AI](https://www.meshy.ai) API'si ile üretildi; oyun
-[three.js](https://threejs.org) ile tarayıcıda çalışır, kurulum gerektirmez.
+Klasik Flappy Bird'ün 3D, mobil uyumlu bir yorumu. Oyundaki tüm 3D modeller
+[Meshy AI](https://www.meshy.ai) API'si ile üretildi; kuşun kanat iskeleti ve
+çırpma animasyonu oyunda kodla kurulur. Oyun [three.js](https://threejs.org) ile
+tarayıcıda çalışır, kurulum gerektirmez.
 
 ## Nasıl oynanır
 
@@ -28,19 +29,28 @@ yayınlayabilirsin.
 
 | Dosya | Meshy işlemi | Ayrıntı |
 | --- | --- | --- |
-| `assets/models/bird.glb` | Text to 3D (önizleme + doku) → Rigging → Animation | İnsansı gövdeli sarı kuş; kolları kanat |
-| ↳ `flap` klibi | Animation, action 326 *Jumping Jacks* | Kollar yukarı-aşağı: kanat çırpma |
-| ↳ `fall` klibi | Animation, action 503 *Fall 2* | Çarpınca havada çırpınarak düşme |
-| ↳ `wave` klibi | Animation, action 28 *Big Wave Hello* | Menüde oyuncuya el sallama |
+| `assets/models/bird.glb` | Text to 3D (önizleme + doku) | Yatay uçuş pozunda, kanatları iki yana açık sarı kuş |
 | `assets/models/pipe.glb` | Text to 3D (önizleme + doku) | Yeşil boru; gövdesi oyunda ekrana göre uzatılır |
 | `assets/models/cloud.glb` | Text to 3D (önizleme) | Bulut; beyaz malzemeyle boyanır |
 | `assets/models/bush.glb` | Text to 3D (önizleme) | Çalı; yeşil malzemeyle boyanır |
 
-Meshy'nin rigging servisi yalnızca insansı (iki kol, iki bacak) karakterleri
-destekliyor. Bu yüzden kuş, kanatları kol gibi yana açık bir maskot olarak
-üretildi; insan animasyonları (ör. *Jumping Jacks*) böylece kanat çırpmaya
-dönüşüyor. Kanatları gövdeye yapışık ilk civciv denemesinde rigging "pose
-estimation failed" hatası vermişti.
+### Kuşun kanat animasyonu
+
+Meshy'nin rigging ve animasyon servisleri yalnızca insansı (iki kol, iki
+bacak, ayakta T-pozu) karakterleri destekliyor; yatay uçan bir kuşu iskeletlendiremiyor.
+Bu yüzden iskelet oyunda kuruluyor (`src/bird-rig.js`):
+
+1. Model dilimlere ayrılıp dikey kalınlığın düştüğü yer, yani kanadın gövdeden
+   ayrıldığı omuz noktası bulunur.
+2. Her kanada omuzda bir kanat, ortasında bir uç kemiği eklenir; köşe
+   ağırlıkları omuzda ve kanat ortasında yumuşak geçişle hesaplanır.
+3. Kanat çırpma (`flap`), düşme (`fall`) ve yerde dinlenme (`rest`) klipleri
+   kemik dönüşleriyle üretilir. Aşağı vuruş yukarı vuruştan hızlıdır, kanat ucu
+   geriden gelir.
+
+İlk sürümde kuş, Meshy rigging'i ve animasyon kütüphanesi (*Jumping Jacks*,
+*Fall 2*, *Big Wave Hello*) kullanılabilsin diye ayakta duran insansı bir
+maskottu; yatay uçmadığı için yatay uçuş pozunda yeniden modellendi.
 
 ### Varlıkları yeniden üretmek
 
@@ -58,9 +68,8 @@ npm run assets:optimize                          # assets/models/ dosyalarını 
   dosyadan silin.
 - `node tools/generate-assets.mjs bird --preview-only` yalnızca önizleme üretir;
   doku ve rigging'e kredi harcamadan önce şekli kontrol etmek için.
-- `optimize-assets.mjs` animasyon kliplerini tek bir `bird.glb` içinde
-  birleştirir, dokuları 1024 px WebP'ye küçültür ve Meshy'nin metalik
-  malzemelerini mat yapar (toplam indirme ~1 MB).
+- `optimize-assets.mjs` dokuları WebP'ye küçültür ve Meshy'nin metalik
+  malzemelerini mat yapar (toplam indirme ~720 KB).
 
 ## Mobil uyumluluk
 
@@ -81,9 +90,10 @@ npm run assets:optimize                          # assets/models/ dosyalarını 
 index.html                 sayfa ve arayüz
 style.css                  arayüz stilleri
 src/main.js                oyun döngüsü, fizik, sahne, girdi
+src/bird-rig.js            kuşun kanat iskeleti ve animasyonları
 src/audio.js               sentezlenmiş ses efektleri
 assets/models/*.glb        Meshy AI modelleri (optimize edilmiş)
 tools/generate-assets.mjs  Meshy API ile üretim
-tools/optimize-assets.mjs  GLB birleştirme ve sıkıştırma
+tools/optimize-assets.mjs  GLB sıkıştırma
 tools/meshy-tasks.json     Meshy görev kimlikleri
 ```

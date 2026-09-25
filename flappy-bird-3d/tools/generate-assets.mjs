@@ -31,31 +31,23 @@ export const ASSETS = {
   bird: {
     preview: {
       ai_model: 'meshy-6-lite',
-      // Önceki denemeler: (1) yuvarlak civciv -> kollar gövdeye yapışık, rigging poz
-      // tespiti başarısız; (2) kartal -> kol yerine V şeklinde kanatlar. Rigging
-      // yalnızca insansı (iki kol, iki bacak) karakterleri desteklediği için
-      // kolları kanat tüylü, insan oranlarında bir kuş maskotu istiyoruz.
+      // Kuş yatay uçuş pozunda, kanatları iki yana düz açık üretilir. Meshy'nin
+      // rigging/animasyon servisi yalnızca insansı karakterleri desteklediği için
+      // kanat iskeleti ve çırpma animasyonu oyunda kodla oluşturulur (src/bird-rig.js).
       prompt:
-        'Full body cartoon mascot character for a mobile game: a cute chibi humanoid bird ' +
-        'with human body proportions, big round yellow bird head with large friendly eyes and ' +
-        'a small orange beak, a tuft of feathers on top, yellow feathered torso with white ' +
-        'belly, two human-like arms held straight out horizontally in a T-pose with hands and ' +
-        'fingers visible, long yellow wing feathers hanging from the underside of each arm, ' +
-        'two legs standing straight with orange bird feet, symmetrical, clean stylized Pixar style',
-      pose_mode: 't-pose',
+        'A cute cartoon yellow bird flying forward, streamlined body stretched ' +
+        'horizontally from beak to tail and parallel to the ground like a sparrow in flight, ' +
+        'head in front, tail feathers behind, belly facing down, both wings spread wide open ' +
+        'to the left and right, feet tucked in, big friendly eyes, small orange beak, ' +
+        'stylized Pixar style game character, symmetrical',
       should_remesh: true,
       topology: 'triangle',
-      target_polycount: 12000,
+      target_polycount: 10000,
     },
     refine: {
       texture_prompt:
-        'bright sunny yellow feathers, white belly, orange beak and feet, big glossy cartoon eyes',
-    },
-    rig: { height_meters: 1.0 },
-    animations: {
-      flap: 326, // Jumping Jacks: kollar (kanatlar) yukarı-aşağı çırpar
-      fall: 503, // Fall 2: havada çırpınarak düşme
-      wave: 28, // Big Wave Hello: menü ekranında el sallama
+        'bright sunny yellow feathers, white belly, orange beak and feet, big glossy cartoon ' +
+        'eyes, wing feathers with lighter yellow tips',
     },
   },
   pipe: {
