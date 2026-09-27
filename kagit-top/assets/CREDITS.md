@@ -9,6 +9,13 @@ Tüm dosyalar `../download-assets.sh` ile aşağıdaki kaynaklardan indirilir.
 | `img/paper-ball.png` | [Ball of Paper](https://openclipart.org/detail/58831/ball-of-paper) | Degri |
 | `img/trash-bin.png` | [Papelera - Trash Bin](https://openclipart.org/detail/178960/papelera-trash-bin) | franklevel |
 | `img/fan.png` | [Desk Fan Speed Designed](https://openclipart.org/detail/217053/desk-fan-speed-designed) | timtjtim |
+| `img/monitor.png` | [Old CRT Monitor](https://openclipart.org/detail/26436/old-crt-monitor) | Anonymous |
+| `img/stapler.png` | [Blue Stapler](https://openclipart.org/detail/19080/blue-stapler) | jimmiet |
+| `img/trophy.png` | [trophy](https://openclipart.org/detail/170859/trophy) | hatalar205 |
+| `img/beet.png` | [Beet (extra shadows)](https://openclipart.org/detail/229792/beet-extra-shadows) | doctormo |
+| `img/water-cooler.png` | [Misc Water Cooler](https://openclipart.org/detail/210485/misc-water-cooler) | glitch |
+| `img/filing-cabinet.png` | [Metallic Filing Cabinet](https://openclipart.org/detail/229118/metallic-filing-cabinet) | GDJ |
+| `img/plant.png` | [potted plant - coloured](https://openclipart.org/detail/264098/potted-plant-coloured) | frankes |
 
 ## Sesler — [Kenney](https://kenney.nl) · CC0 1.0
 
@@ -25,13 +32,21 @@ Tüm dosyalar `../download-assets.sh` ile aşağıdaki kaynaklardan indirilir.
 | `sfx/miss.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | `error_006.ogg` |
 | `sfx/gameover.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | `error_003.ogg` |
 | `sfx/click.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | `click_001.ogg` |
+| `sfx/award.ogg` | [Interface Sounds](https://kenney.nl/assets/interface-sounds) | `confirmation_004.ogg` |
+| `sfx/box.ogg` | [Impact Sounds](https://kenney.nl/assets/impact-sounds) | `impactSoft_heavy_000.ogg` |
+| `sfx/coins.ogg` | [RPG Audio](https://kenney.nl/assets/rpg-audio) | `handleCoins.ogg` |
 
 Kenney lisans metni: `sfx/LICENSE-kenney.txt`
 
-## Font — [Google Fonts](https://fonts.google.com/specimen/Patrick+Hand) · SIL Open Font License 1.1
+## Fontlar — [Google Fonts](https://fonts.google.com) · SIL Open Font License 1.1
 
-| Dosya | Font | Tasarımcı |
-| --- | --- | --- |
-| `fonts/PatrickHand-Regular.ttf` | Patrick Hand | Patrick Wagesreiter |
+| Dosya | Font | Tasarımcı | Lisans metni |
+| --- | --- | --- | --- |
+| `fonts/PatrickHand-Regular.ttf` | [Patrick Hand](https://fonts.google.com/specimen/Patrick+Hand) | Patrick Wagesreiter | `fonts/OFL-PatrickHand.txt` |
+| `fonts/BebasNeue-Regular.ttf` | [Bebas Neue](https://fonts.google.com/specimen/Bebas+Neue) | Dharma Type | `fonts/OFL-BebasNeue.txt` |
 
-Lisans metni: `fonts/OFL.txt`
+## Not
+
+Dunder Mifflin, NBC'nin *The Office* dizisindeki kurgusal kağıt şirketidir. Oyun bir hayran
+çalışmasıdır; dizinin logosu, görselleri ya da sesleri kullanılmamıştır. Tabela ve koli
+etiketleri oyunun kendi çizimidir.

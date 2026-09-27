@@ -5,4 +5,4 @@ Github üzerinde bulutta geliştirdiğim tüm uygulamalarım
 
 | Uygulama | Açıklama |
 | --- | --- |
-| [Kağıt Top](kagit-top/) | Buruşturulmuş kağıdı rüzgâra karşı çöp kutusuna attığın tarayıcı oyunu (HTML5 Canvas) |
+| [Kağıt Top](kagit-top/) | Dunder Mifflin Scranton ofisinde buruşturulmuş kağıdı rüzgâra karşı çöp kutusuna attığın tarayıcı oyunu (HTML5 Canvas) |

@@ -4,6 +4,12 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: "Bebas Neue";
+  src: url("assets/fonts/BebasNeue-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
 :root {
   --bg: #2b2f3a;
   --paper: #fffdf6;
@@ -15,6 +21,8 @@
   --accent-dark: #2b62b0;
   --red: #e2574c;
   --gold: #e8a33d;
+  --gold-dark: #a8741c;
+  --navy: #243352;
 }
 
 * { box-sizing: border-box; }
@@ -72,7 +80,7 @@ body {
 
 .card {
   position: relative;
-  width: min(560px, 100%);
+  width: min(600px, 100%);
   max-height: 100%;
   overflow: auto;
   padding: 26px 32px 22px 72px;
@@ -136,7 +144,48 @@ body {
 }
 .btn.ghost:hover { background: rgba(58, 123, 213, .08); }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .best { margin: 6px 0 0; color: var(--ink-soft); }
+
+.fine {
+  margin: 8px 0 0;
+  font-size: 15px;
+  line-height: 20px;
+  color: var(--ink-soft);
+}
+
+.earned { margin: 0 0 4px; color: var(--gold-dark); }
+.earned[hidden] { display: none; }
+
+.dundies {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 6px 0 14px;
+  padding: 0;
+}
+.dundie {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  line-height: 21px;
+}
+.dundie img {
+  flex: none;
+  width: 32px;
+  height: 46px;
+  object-fit: contain;
+}
+.dundie b { display: block; font-weight: 400; font-size: 21px; color: var(--navy); }
+.dundie span { display: block; font-size: 16px; color: var(--ink-soft); }
+.dundie.locked img { filter: grayscale(1); opacity: .3; }
+.dundie.locked b { color: var(--ink-soft); }
 .best span { color: var(--ink); }
 
 .keys {
@@ -277,7 +326,13 @@ kbd {
   .btn.ghost { font-size: 20px; }
   .final { font-size: 32px; line-height: 40px; }
   .final span { font-size: 44px; }
-  .keys { display: none; }
+  .keys, .fine { display: none; }
+  .dundie b { font-size: 18px; }
+  .dundie span { font-size: 14px; }
   .icon-btn { width: 38px; height: 38px; }
   .icon-btn svg { width: 20px; height: 20px; }
+}
+
+@media (max-width: 520px) {
+  .dundies { grid-template-columns: 1fr; }
 }

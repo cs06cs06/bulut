@@ -1,7 +1,16 @@
 # Kağıt Top
 
 Kağıdı buruştur, top yap ve çöp kutusuna fırlat! Tarayıcıda çalışan, kurulum
-gerektirmeyen bir HTML5 Canvas oyunu.
+gerektirmeyen bir HTML5 Canvas oyunu. Mekân: Dunder Mifflin Paper Company, Scranton şubesi.
+
+## Ofis
+
+- Asma tavan, arada bir titreyen floresanlar, halıfleks zemin ve jaluzili pencere
+- DUNDER MIFFLIN tabelası ve **"Iskasız geçen atış"** panosu: serin burada tutulur,
+  ıskalayınca kırmızı kalemle sıfırlanır; rekor serin altında yazar
+- Masada tüplü monitör ve jöleye gömülmüş bir zımba
+- Dosya dolabının üstünde pancarlar, köşede su sebili ve saksı
+- **Dundies** rafı: kazandığın Dundie kupaları duvardaki rafta birikir
 
 ## Nasıl oynanır?
 
@@ -12,19 +21,40 @@ gerektirmeyen bir HTML5 Canvas oyunu.
   2. seviyeden itibaren esmeye başlar ve giderek sertleşir.
 - **Puanlama:** Basket 1 puan. Kutuya hiç değmeden (*Tertemiz!*) girerse 2 puan.
   Üst üste 3 basket ×2, 6 basket ×3 çarpan verir.
+- **Altın Bilet:** 2. seviyeden itibaren bazen parlayan altın bir kağıt gelir; kutuya
+  girerse 3 kat puan getirir.
+- **Koliler:** 3. seviyeden itibaren depodan gelen Dunder Mifflin kağıt kolileri masa ile
+  kutu arasına yığılabilir. Üstünden aşırt ya da koliden sektirip sok (*Tabela!*).
 - **Seviyeler:** Her 3 basket bir seviye. Kutu uzaklaşır ve küçülür, önizleme
   kısalır, 5. seviyeden itibaren kutu sağa sola kaymaya başlar.
 - **Haklar:** 3 ıskalama hakkın var. Iskaladığında kurulum aynı kalır, düzeltme şansın olur.
+
+### Dundie Ödülleri
+
+Menüdeki **Dundie Rafı** kazandığın ve kilitli ödülleri gösterir; ödüller tarayıcıda saklanır.
+
+| Dundie | Nasıl kazanılır |
+| --- | --- |
+| İlk Sipariş | İlk basketini at |
+| Sıfır Hata | Kutuya hiç değmeden bir basket at |
+| Kıl Payı | Çembere çarpıp içeri giren bir basket at |
+| Tabela Ustası | Topu koliden sektirip kutuya sok |
+| Altın Bilet | Altın Bilet topunu kutuya at |
+| Ayın Çalışanı | Üst üste 5 basket |
+| Bölge Müdürü | Üst üste 10 basket |
+| Scranton'ın Gururu | 5. seviyeye ulaş |
+| Yılın Satıcısı | Tek mesaide 50 puan |
+| Dünyanın En İyi Patronu | Tek mesaide 100 puan |
 
 | Tuş | İşlev |
 | --- | --- |
 | <kbd>↑</kbd> <kbd>↓</kbd> | Açı |
 | <kbd>←</kbd> <kbd>→</kbd> | Güç |
 | <kbd>Boşluk</kbd> / <kbd>Enter</kbd> | Fırlat |
-| <kbd>P</kbd> / <kbd>Esc</kbd> | Duraklat |
+| <kbd>P</kbd> / <kbd>Esc</kbd> | Kahve molası (duraklat) |
 | <kbd>M</kbd> | Sesi aç/kapat |
 
-En iyi skor tarayıcıda (`localStorage`) saklanır.
+En iyi skor, en uzun seri ve Dundie'ler tarayıcıda (`localStorage`) saklanır.
 
 ## Çalıştırma
 
@@ -49,9 +79,9 @@ orijinal kaynaklarından yeniden indirebilirsin:
 
 | Tür | Kaynak | Lisans |
 | --- | --- | --- |
-| Kağıt top, çöp kutusu, vantilatör görselleri | [Openclipart](https://openclipart.org) | CC0 |
-| Ses efektleri | [Kenney](https://kenney.nl) — Impact, Interface ve Casino ses paketleri | CC0 |
-| Patrick Hand fontu | [Google Fonts](https://fonts.google.com/specimen/Patrick+Hand) | SIL OFL 1.1 |
+| Kağıt top, çöp kutusu, vantilatör ve ofis eşyası görselleri | [Openclipart](https://openclipart.org) | CC0 |
+| Ses efektleri | [Kenney](https://kenney.nl): Impact, Interface, Casino ve RPG ses paketleri | CC0 |
+| Patrick Hand ve Bebas Neue fontları | [Google Fonts](https://fonts.google.com) | SIL OFL 1.1 |
 
 Dosya dosya ayrıntılar için: [`assets/CREDITS.md`](assets/CREDITS.md)
 
@@ -64,8 +94,11 @@ kagit-top/
 ├── game.js              # oyun döngüsü, fizik, çizim, ses
 ├── download-assets.sh   # assetleri orijinal kaynaklardan indirir
 └── assets/
-    ├── img/             # paper-ball.png, trash-bin.png, fan.png
+    ├── img/             # top, kutu, vantilatör ve ofis eşyaları (.png)
     ├── sfx/             # .ogg ses efektleri
-    ├── fonts/           # PatrickHand-Regular.ttf
+    ├── fonts/           # Patrick Hand, Bebas Neue
     └── CREDITS.md
 ```
+
+> Dunder Mifflin, *The Office* dizisindeki kurgusal kağıt şirketidir. Bu oyun bir hayran
+> çalışmasıdır; dizinin logosu, görselleri ya da sesleri kullanılmamıştır.

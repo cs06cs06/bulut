@@ -24,8 +24,22 @@
   const STEP = 1 / 240;           // sabit fizik adımı
   const LIVES = 3;
   const SETTLE_TIME = 1.25;       // atış sonucu ile yeni top arasındaki süre
-  const WINDOW_RECT = { x: 470, y: 104, w: 240, h: 220 };
-  const CLOCK = { x: 1010, y: 214, r: 44 };
+  const CEILING_H = 46;             // asma tavan yüksekliği
+  const WINDOW_RECT = { x: 706, y: 116, w: 226, h: 200 };
+  const CLOCK = { x: 1036, y: 226, r: 40 };
+  const SIGN = { x: 318, y: 96, w: 300, h: 94 };       // DUNDER MIFFLIN tabelası
+  const BOARD = { x: 356, y: 214, w: 228, h: 150 };    // "ıskasız geçen atış" panosu
+  const LIGHTS = [390, 880];                           // floresan armatürlerin merkezleri
+  const BOX_W = 92;                 // Dunder Mifflin kağıt kolisi
+  const BOX_H = 50;
+  const GOLDEN_CHANCE = 0.12;       // Altın Bilet olasılığı (2. seviyeden itibaren)
+
+  // Görsellerin boş kenarlarını kırpmak için kaynak dikdörtgenleri (oransal: x, y, w, h)
+  const CROP = {
+    trophy: [0.074, 0.05, 0.774, 0.9],
+    cooler: [0.266, 0, 0.725, 0.8975],
+    plant: [0.085, 0.01, 0.83, 0.98],
+  };
 
   // Çöp kutusu görselinin ölçüleri (trash-bin.png'den ölçüldü, oransal)
   const BIN_CROP_X = 18 / 315;    // görselin sağ/sol boşluğunu kırp
@@ -41,17 +55,38 @@
       ball: 'assets/img/paper-ball.png',
       bin: 'assets/img/trash-bin.png',
       fan: 'assets/img/fan.png',
+      monitor: 'assets/img/monitor.png',
+      stapler: 'assets/img/stapler.png',
+      trophy: 'assets/img/trophy.png',
+      beet: 'assets/img/beet.png',
+      cooler: 'assets/img/water-cooler.png',
+      cabinet: 'assets/img/filing-cabinet.png',
+      plant: 'assets/img/plant.png',
     },
     sfx: ['crumple', 'throw', 'rim1', 'rim2', 'rim3', 'thud1', 'thud2', 'bin',
-      'score', 'swish', 'levelup', 'miss', 'gameover', 'click'],
+      'score', 'swish', 'levelup', 'miss', 'gameover', 'click', 'award', 'box', 'coins'],
   };
 
   const LEVEL_MSG = {
     2: 'Rüzgâr çıktı! Vantilatörü izle.',
-    3: 'Kutu uzaklaşıyor…',
+    3: 'Depodan kağıt kolileri geldi, yolunu kesebilirler.',
     4: 'Rüzgâr sertleşiyor…',
     5: 'Çöp kutusu kıpırdamaya başladı!',
   };
+
+  // Dundie Ödülleri: Scranton şubesinin en prestijli (!) ödülleri
+  const DUNDIES = [
+    { id: 'first', name: 'İlk Sipariş', desc: 'İlk basketini at.' },
+    { id: 'swish', name: 'Sıfır Hata', desc: 'Kutuya hiç değmeden bir basket at.' },
+    { id: 'close', name: 'Kıl Payı', desc: 'Çembere çarpıp içeri giren bir basket at.' },
+    { id: 'bank', name: 'Tabela Ustası', desc: 'Topu koliden sektirip kutuya sok.' },
+    { id: 'golden', name: 'Altın Bilet', desc: 'Parlayan Altın Bilet topunu kutuya at.' },
+    { id: 'streak5', name: 'Ayın Çalışanı', desc: 'Üst üste 5 basket at.' },
+    { id: 'streak10', name: 'Bölge Müdürü', desc: 'Üst üste 10 basket at.' },
+    { id: 'level5', name: "Scranton'ın Gururu", desc: '5. seviyeye ulaş.' },
+    { id: 'score50', name: 'Yılın Satıcısı', desc: 'Tek mesaide 50 puan topla.' },
+    { id: 'score100', name: 'Dünyanın En İyi Patronu', desc: 'Tek mesaide 100 puan topla.' },
+  ];
 
   const CONFETTI = ['#e2574c', '#3a7bd5', '#e8a33d', '#3aa76d', '#9b59b6', '#f06292'];
 
@@ -65,6 +100,14 @@
   const easeInOut = t => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
   const easeOutBack = t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
   const font = size => `${size}px "Patrick Hand", "Comic Sans MS", sans-serif`;
+  const signFont = size => `${size}px "Bebas Neue", "Arial Narrow", Impact, sans-serif`;
+  const easeOutBounce = t => {
+    const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+    if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+    return n * (t -= 2.625 / d) * t + 0.984375;
+  };
 
   const store = {
     get(key, fallback) {
@@ -204,12 +247,16 @@
     newRecord: false,
     levelUpPending: false,
     lifeLostT: 1,
+    bestStreakEver: store.get('kagitTop.bestStreak', 0),
+    boardT: 1,                    // pano sayısının değiştiği andan beri geçen süre
+    boardRed: false,
+    newDundies: [],
   };
 
   const ball = {
     x: REST.x, y: REST.y, vx: 0, vy: 0, angle: 0, spin: 0,
     active: false, contact: false, restT: 0, flightT: 0, squash: 0,
-    touchedBin: false, touchedRim: false, scored: false,
+    touchedBin: false, touchedRim: false, touchedBox: false, scored: false, golden: false,
   };
 
   const bin = {
@@ -223,6 +270,12 @@
 
   const aim = { dragging: false, pointerId: null, sx: 0, sy: 0, cx: 0, cy: 0, key: false, angle: 45, power: 0.6 };
 
+  const boxes = { x: 0, n: 0, dropT: 1 };   // yığılmış kağıt kolileri (engel)
+  const dundies = new Set(store.get('kagitTop.dundies', []));
+  const toasts = [];              // kazanılan Dundie bildirimleri
+  const lights = LIGHTS.map(x => ({ x, next: rand(6, 20), flicker: 0, on: 1 }));
+  let goldenSprite = null;        // altın renge boyanmış top görseli
+  let sparkT = 0;
   const litter = [];              // ıskalanan toplar yerde kalır
   const particles = [];
   const texts = [];
@@ -249,6 +302,8 @@
       preview: Math.max(0.6 - (level - 1) * 0.06, 0.14),
       moveAmp: level >= 5 ? Math.min(40 + (level - 5) * 20, 130) : 0,
       moveSpeed: 0.7 + Math.max(0, level - 5) * 0.12,
+      boxChance: level >= 3 ? Math.min(0.45 + (level - 3) * 0.1, 0.85) : 0,
+      boxMax: Math.min(1 + Math.floor((level - 3) / 2), 3),
     };
   }
 
@@ -270,8 +325,12 @@
     };
   }
 
+  function boxTop() {
+    return GROUND - boxes.n * BOX_H;
+  }
+
   function surfaces(g) {
-    return [
+    const list = [
       { x1: -500, y1: GROUND, x2: W + 500, y2: GROUND, kind: 'floor', e: 0.32, f: 0.018 },
       { x1: 0, y1: -4000, x2: 0, y2: GROUND, kind: 'wall', e: 0.45, f: 0.01 },
       { x1: W, y1: -4000, x2: W, y2: GROUND, kind: 'wall', e: 0.45, f: 0.01 },
@@ -281,6 +340,17 @@
       { x1: g.right, y1: g.rimY, x2: g.right, y2: g.bottom, kind: 'binWall', e: 0.42, f: 0.01, thick: 2 },
       { x1: g.left, y1: g.floorY, x2: g.right, y2: g.floorY, kind: 'binFloor', e: 0.15, f: 0.05 },
     ];
+    if (boxes.n && boxes.dropT >= 1) {
+      const l = boxes.x - BOX_W / 2;
+      const r = boxes.x + BOX_W / 2;
+      const t = boxTop();
+      list.push(
+        { x1: l, y1: t, x2: r, y2: t, kind: 'box', e: 0.3, f: 0.03 },
+        { x1: l, y1: t, x2: l, y2: GROUND, kind: 'box', e: 0.3, f: 0.03 },
+        { x1: r, y1: t, x2: r, y2: GROUND, kind: 'box', e: 0.3, f: 0.03 },
+      );
+    }
+    return list;
   }
 
   // Top (daire) ile doğru parçası çarpışması. Temas varsa topu dışarı iter,
@@ -364,6 +434,13 @@
         }
         if (game.state === 'fly' && !ball.scored) missBasket();
         break;
+      case 'box':
+        ball.touchedBox = true;
+        if (imp > 80) {
+          audio.play('box', clamp(imp / 800, 0.2, 0.9), rand(0.95, 1.1));
+          shake(imp / 400);
+        }
+        break;
       default: // duvar, masa
         if (imp > 80) audio.play(Math.random() < 0.5 ? 'thud1' : 'thud2', clamp(imp / 900, 0.15, 0.7));
         break;
@@ -377,7 +454,8 @@
     Object.assign(ball, {
       x: REST.x, y: REST.y, vx: 0, vy: 0, angle: rand(0, Math.PI * 2), spin: 0,
       active: false, contact: false, restT: 0, flightT: 0, squash: 0,
-      touchedBin: false, touchedRim: false, scored: false,
+      touchedBin: false, touchedRim: false, touchedBox: false, scored: false,
+      golden: game.state !== 'menu' && game.level >= 2 && Math.random() < GOLDEN_CHANCE,
     });
     trail.length = 0;
     game.spawnT = 0;
@@ -402,14 +480,30 @@
     bin.ampTo = amp;
     bin.slideT = 0;
     bin.speed = p.moveSpeed;
+    placeBoxes(p, x, amp);
+  }
+
+  // 3. seviyeden itibaren masa ile kutu arasına kağıt kolileri yığılabilir
+  function placeBoxes(p, binX, amp) {
+    boxes.n = 0;
+    if (!p.boxChance || Math.random() > p.boxChance) return;
+    const binHalf = (p.binH * binAspect) / 2;
+    const minX = DESK.x2 + 80 + BOX_W / 2;
+    const maxX = binX - binHalf - amp - 70 - BOX_W / 2;
+    if (maxX < minX) return;
+    boxes.x = rand(minX, maxX);
+    boxes.n = 1 + Math.floor(Math.random() * p.boxMax);
+    boxes.dropT = 0;
   }
 
   function startGame() {
     Object.assign(game, {
       score: 0, lives: LIVES, level: 1, baskets: 0, swishes: 0, streak: 0, bestStreak: 0,
       throws: 0, wind: 0, lastResult: null, newRecord: false, levelUpPending: false,
-      paused: false, lifeLostT: 1,
+      paused: false, lifeLostT: 1, boardT: 1, boardRed: false, newDundies: [],
     });
+    boxes.n = 0;
+    toasts.length = 0;
     const p = levelParams(1);
     Object.assign(bin, {
       baseX: 780, from: 780, to: 780, slideT: 1, h: p.binH, hFrom: p.binH, hTo: p.binH,
@@ -444,16 +538,26 @@
     game.bestStreak = Math.max(game.bestStreak, game.streak);
     if (swish) game.swishes++;
 
+    game.boardT = 0;
+    game.boardRed = false;
+    if (game.streak > game.bestStreakEver) {
+      game.bestStreakEver = game.streak;
+      store.set('kagitTop.bestStreak', game.bestStreakEver);
+    }
+
     const mult = game.streak >= 6 ? 3 : game.streak >= 3 ? 2 : 1;
-    const points = (swish ? 2 : 1) * mult;
+    const points = (swish ? 2 : 1) * mult * (ball.golden ? 3 : 1);
     game.score += points;
 
     const g = binGeom();
-    const label = swish ? 'Tertemiz!' : ball.touchedRim ? 'Kıl payı!' : 'Basket!';
-    popText(`+${points}`, g.x, g.top - 34, '#2e9c5a', 64);
+    let label = swish ? 'Tertemiz!' : ball.touchedRim ? 'Kıl payı!' : 'Basket!';
+    if (ball.touchedBox) label = 'Tabela!';
+    if (ball.golden) label = 'Altın Bilet!';
+    popText(`+${points}`, g.x, g.top - 34, ball.golden ? '#c8901a' : '#2e9c5a', ball.golden ? 76 : 64);
     popText(mult > 1 ? `${label}  ×${mult}` : label, g.x, g.top - 88, '#33363d', 40, 0.08);
-    confetti(g.x, g.top + 12, swish ? 55 : 32);
+    confetti(g.x, g.top + 12, swish || ball.golden ? 55 : 32, ball.golden);
     audio.play('score', 0.8);
+    if (ball.golden) audio.play('coins', 0.9);
     if (swish) setTimeout(() => audio.play('swish', 0.7), 140);
 
     if (game.score > game.best) {
@@ -466,10 +570,32 @@
       game.level = level;
       game.levelUpPending = true;
     }
+
+    award('first');
+    if (swish) award('swish');
+    if (ball.touchedRim) award('close');
+    if (ball.touchedBox) award('bank');
+    if (ball.golden) award('golden');
+    if (game.streak >= 5) award('streak5');
+    if (game.streak >= 10) award('streak10');
+    if (game.level >= 5) award('level5');
+    if (game.score >= 50) award('score50');
+    if (game.score >= 100) award('score100');
     resolveThrow(true);
   }
 
+  function award(id) {
+    if (dundies.has(id)) return;
+    dundies.add(id);
+    store.set('kagitTop.dundies', [...dundies]);
+    game.newDundies.push(id);
+    toasts.push({ id, t: 0 });
+    if (toasts.length === 1) setTimeout(() => audio.play('award', 0.75), 450);
+  }
+
   function missBasket() {
+    if (game.streak > 0) game.boardT = 0;
+    game.boardRed = true;
     game.streak = 0;
     game.lives--;
     game.lifeLostT = 0;
@@ -488,7 +614,7 @@
     if (game.lastResult) {
       bin.pile++;
     } else if (ball.active && ball.y > GROUND - BALL_R - 6) {
-      litter.push({ x: ball.x, y: ball.y, angle: ball.angle });
+      litter.push({ x: ball.x, y: ball.y, angle: ball.angle, golden: ball.golden });
       if (litter.length > 14) litter.shift();
     }
 
@@ -516,6 +642,10 @@
     stat('swishes').textContent = game.swishes;
     stat('streak').textContent = game.bestStreak;
     stat('level').textContent = game.level;
+    const earned = overlay.querySelector('[data-new-dundies]');
+    earned.hidden = !game.newDundies.length;
+    earned.querySelector('span').textContent = game.newDundies
+      .map(id => DUNDIES.find(d => d.id === id).name).join(', ');
     showScreen('over');
   }
 
@@ -549,13 +679,14 @@
     texts.push({ text, x, y, color, size, t: -delay, life: 1.4 });
   }
 
-  function confetti(x, y, n) {
+  function confetti(x, y, n, golden = false) {
+    const colors = golden ? ['#f5c542', '#e8a33d', '#fff1b8', '#d4a017'] : CONFETTI;
     for (let i = 0; i < n; i++) {
       particles.push({
         kind: 'confetti', x: x + rand(-20, 20), y,
         vx: rand(-280, 280), vy: rand(-680, -260),
         rot: rand(0, Math.PI), vr: rand(-12, 12),
-        size: rand(6, 10), color: CONFETTI[i % CONFETTI.length],
+        size: rand(6, 10), color: colors[i % colors.length],
         life: rand(0.9, 1.6),
       });
     }
@@ -643,6 +774,10 @@
       toggleMute();
       return;
     }
+    if (k === 'Escape' && currentScreen === 'awards') {
+      showScreen(returnScreen || 'menu');
+      return;
+    }
     if (k === 'p' || k === 'P' || k === 'Escape') {
       if (['aim', 'fly', 'settle'].includes(game.state)) setPaused(!game.paused);
       return;
@@ -675,6 +810,10 @@
     const action = btn.dataset.action;
     if (action === 'play') startGame();
     else if (action === 'resume') setPaused(false);
+    else if (action === 'awards') {
+      returnScreen = currentScreen;
+      showScreen('awards');
+    } else if (action === 'back') showScreen(returnScreen || 'menu');
     else if (action === 'menu') {
       game.paused = false;
       game.state = 'menu';
@@ -694,10 +833,35 @@
     btnPause.blur();
   });
 
+  let currentScreen = null;
+  let returnScreen = null;
+
+  function renderDundies() {
+    const list = overlay.querySelector('[data-dundie-list]');
+    list.replaceChildren(...DUNDIES.map(d => {
+      const li = document.createElement('li');
+      li.className = dundies.has(d.id) ? 'dundie' : 'dundie locked';
+      const img = document.createElement('img');
+      img.src = ASSETS.img.trophy;
+      img.alt = '';
+      const text = document.createElement('div');
+      const name = document.createElement('b');
+      name.textContent = d.name;
+      const desc = document.createElement('span');
+      desc.textContent = dundies.has(d.id) ? d.desc : `Kilitli · ${d.desc}`;
+      text.append(name, desc);
+      li.append(img, text);
+      return li;
+    }));
+  }
+
   function showScreen(name) {
+    currentScreen = name;
     overlay.hidden = !name;
     screens.forEach(s => { s.hidden = s.dataset.screen !== name; });
     overlay.querySelectorAll('[data-best]').forEach(el => { el.textContent = game.best; });
+    overlay.querySelectorAll('[data-dundie-count]').forEach(el => { el.textContent = `${dundies.size}/${DUNDIES.length}`; });
+    if (name === 'awards') renderDundies();
     btnPause.hidden = !['aim', 'fly', 'settle'].includes(game.state) || game.paused;
     if (name) {
       const primary = overlay.querySelector(`[data-screen="${name}"] .btn`);
@@ -712,7 +876,50 @@
     game.time += dt;
     game.spawnT = Math.min(game.spawnT + dt, 1);
     game.lifeLostT = Math.min(game.lifeLostT + dt, 1);
+    game.boardT = Math.min(game.boardT + dt, 1);
     game.windShown = lerp(game.windShown, game.wind, 1 - Math.exp(-dt * 4));
+    if (boxes.n && boxes.dropT < 1) {
+      boxes.dropT = Math.min(boxes.dropT + dt / 0.55, 1);
+      if (boxes.dropT >= 1) {
+        audio.play('box', 0.5);
+        dust(boxes.x, GROUND);
+      }
+    }
+
+    // Floresanlar arada bir titrer
+    for (const l of lights) {
+      l.next -= dt;
+      if (l.next <= 0 && l.flicker <= 0) {
+        l.flicker = rand(0.35, 0.8);
+        l.next = rand(12, 30);
+      }
+      if (l.flicker > 0) {
+        l.flicker -= dt;
+        l.on = Math.random() < 0.45 ? 0.2 : 1;
+        if (l.flicker <= 0) l.on = 1;
+      }
+    }
+
+    // Dundie bildirimleri sırayla gösterilir
+    if (toasts.length) {
+      toasts[0].t += dt;
+      if (toasts[0].t > 2.8) {
+        toasts.shift();
+        if (toasts.length) audio.play('award', 0.75);
+      }
+    }
+
+    // Altın Bilet parıltısı
+    if (ball.golden && !ball.scored && game.state !== 'menu') {
+      sparkT += dt;
+      if (sparkT > 0.07) {
+        sparkT = 0;
+        particles.push({
+          kind: 'spark', x: ball.x + rand(-BALL_R, BALL_R), y: ball.y + rand(-BALL_R, BALL_R),
+          vx: rand(-20, 20), vy: rand(-50, -10), size: rand(3, 6), life: rand(0.4, 0.7),
+        });
+      }
+    }
 
     // Çöp kutusu: yeni konuma kayma + (üst seviyelerde) salınım
     if (bin.slideT < 1) {
@@ -775,6 +982,8 @@
         p.vy += 900 * dt;
         p.vx *= 1 - 1.5 * dt;
         p.rot += p.vr * dt;
+      } else if (p.kind === 'spark') {
+        p.vy *= 1 - 2 * dt;
       } else {
         p.vy += 60 * dt;
       }
@@ -805,28 +1014,165 @@
     c.closePath();
   }
 
+  // Görseli alt-orta noktasından, verilen yükseklikte çizer; çizilen genişliği döndürür
+  function drawSprite(c, img, crop, cx, bottom, height, flip = false) {
+    if (!img) return 0;
+    const [fx, fy, fw, fh] = crop || [0, 0, 1, 1];
+    const sw = img.naturalWidth * fw;
+    const sh = img.naturalHeight * fh;
+    const w = (height * sw) / sh;
+    c.save();
+    c.translate(cx, bottom);
+    if (flip) c.scale(-1, 1);
+    c.drawImage(img, img.naturalWidth * fx, img.naturalHeight * fy, sw, sh, -w / 2, -height, w, height);
+    c.restore();
+    return w;
+  }
+
+  // Duvar/halı dokusu için rastgele benekler (her çizimde aynı desen)
+  function speckle(c, x, y, w, h, n, color, size) {
+    let seed = 7;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    c.fillStyle = color;
+    for (let i = 0; i < n; i++) c.fillRect(x + rnd() * w, y + rnd() * h, size, size);
+  }
+
+  function fitText(c, text, x, y, maxW) {
+    const w = c.measureText(text).width;
+    if (w <= maxW) {
+      c.fillText(text, x, y);
+      return;
+    }
+    c.save();
+    c.translate(x, y);
+    c.scale(maxW / w, 1);
+    c.fillText(text, 0, 0);
+    c.restore();
+  }
+
+  function drawSign(c) {
+    const { x, y, w, h } = SIGN;
+    c.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    roundRect(c, x + 4, y + 6, w, h, 5);
+    c.fill();
+    c.fillStyle = '#243352';
+    roundRect(c, x, y, w, h, 5);
+    c.fill();
+    c.strokeStyle = 'rgba(236, 226, 200, 0.6)';
+    c.lineWidth = 1.5;
+    roundRect(c, x + 7, y + 7, w - 14, h - 14, 3);
+    c.stroke();
+    c.textAlign = 'center';
+    c.fillStyle = '#f3ead2';
+    c.font = signFont(50);
+    fitText(c, 'DUNDER MIFFLIN', x + w / 2, y + 54, w - 36);
+    c.fillStyle = '#cdbf98';
+    c.font = signFont(18);
+    fitText(c, 'PAPER COMPANY, INC.  ·  SCRANTON ŞUBESİ', x + w / 2, y + 77, w - 36);
+    c.fillStyle = '#9da3ae';
+    for (const [sx, sy] of [[x + 4, y + 4], [x + w - 4, y + 4], [x + 4, y + h - 4], [x + w - 4, y + h - 4]]) {
+      c.beginPath();
+      c.arc(sx, sy, 2, 0, Math.PI * 2);
+      c.fill();
+    }
+  }
+
+  function drawBoardFrame(c) {
+    const { x, y, w, h } = BOARD;
+    c.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    c.fillRect(x - 2, y + 4, w + 12, h + 10);
+    c.fillStyle = '#b3b9c2';
+    roundRect(c, x - 6, y - 6, w + 12, h + 12, 4);
+    c.fill();
+    c.fillStyle = '#fbfbf7';
+    c.fillRect(x, y, w, h);
+    c.fillStyle = 'rgba(180, 190, 205, 0.18)';          // silinmiş kalem izleri
+    c.fillRect(x + 20, y + 118, 60, 3);
+    c.fillRect(x + 150, y + 60, 50, 2);
+    c.font = signFont(24);
+    c.fillStyle = '#b3261e';
+    c.textAlign = 'center';
+    c.fillText('ISKASIZ GEÇEN ATIŞ', x + w / 2, y + 30);
+    c.fillRect(x + 18, y + 37, w - 36, 2);
+    c.fillStyle = '#9aa1ab';                               // kalem rafı
+    c.fillRect(x + 24, y + h + 6, w - 48, 5);
+    c.fillStyle = '#1f4fa3';
+    c.fillRect(x + 40, y + h + 2, 26, 5);
+    c.fillStyle = '#c0392b';
+    c.fillRect(x + 74, y + h + 2, 26, 5);
+  }
+
+  function drawJelloStapler(c, cx, bottom) {
+    const w = 62;
+    const h = 38;
+    const x = cx - w / 2;
+    const y = bottom - h;
+    c.fillStyle = '#e4e8ee';                               // tabak
+    c.beginPath();
+    c.ellipse(cx, bottom - 1, w / 2 + 8, 4, 0, 0, Math.PI * 2);
+    c.fill();
+    const st = images.stapler;
+    if (st) {
+      const sw = 50;
+      const sh = (sw * st.naturalHeight) / st.naturalWidth;
+      c.drawImage(st, cx - sw / 2, bottom - 8 - sh, sw, sh);
+    }
+    const jelly = c.createLinearGradient(0, y, 0, bottom);
+    jelly.addColorStop(0, 'rgba(255, 224, 70, 0.7)');
+    jelly.addColorStop(1, 'rgba(240, 178, 20, 0.82)');
+    c.fillStyle = jelly;
+    roundRect(c, x, y, w, h, 7);
+    c.fill();
+    c.fillStyle = 'rgba(255, 255, 255, 0.45)';
+    roundRect(c, x + 5, y + 5, 7, h - 12, 3);
+    c.fill();
+    c.fillStyle = 'rgba(255, 244, 170, 0.7)';
+    c.fillRect(x + 6, y + 2, w - 12, 3);
+  }
+
   function buildBackground() {
     bg = document.createElement('canvas');
     bg.width = canvas.width;
     bg.height = canvas.height;
     const c = bg.getContext('2d');
     c.setTransform(renderScale, 0, 0, renderScale, 0, 0);
+    c.imageSmoothingQuality = 'high';
 
     // Duvar
-    const wall = c.createLinearGradient(0, 0, 0, FLOOR_TOP);
-    wall.addColorStop(0, '#e2d4bf');
-    wall.addColorStop(1, '#efe6d6');
+    const wall = c.createLinearGradient(0, CEILING_H, 0, FLOOR_TOP);
+    wall.addColorStop(0, '#d8cfbc');
+    wall.addColorStop(1, '#e8e0ce');
     c.fillStyle = wall;
     c.fillRect(0, 0, W, FLOOR_TOP);
-    c.fillStyle = 'rgba(150, 120, 80, 0.06)';
-    for (let x = 0; x < W; x += 48) c.fillRect(x, 0, 18, FLOOR_TOP);
-    const ceil = c.createLinearGradient(0, 0, 0, 100);
-    ceil.addColorStop(0, 'rgba(0, 0, 0, 0.14)');
-    ceil.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    c.fillStyle = ceil;
-    c.fillRect(0, 0, W, 100);
+    speckle(c, 0, CEILING_H, W, FLOOR_TOP - CEILING_H, 2600, 'rgba(120, 100, 70, 0.06)', 1.2);
 
-    // Pencere: çerçeve çizilir, camın olduğu yerler delinir (arkada canlı gökyüzü var)
+    // Asma tavan ve armatür kasaları (floresanlar canlı çizilir)
+    c.fillStyle = '#ecebe5';
+    c.fillRect(0, 0, W, CEILING_H);
+    speckle(c, 0, 0, W, CEILING_H, 1200, 'rgba(90, 90, 80, 0.12)', 1);
+    c.strokeStyle = '#cbc7bc';
+    c.lineWidth = 2;
+    c.beginPath();
+    for (let x = 48; x < W; x += 96) {
+      c.moveTo(x, 0);
+      c.lineTo(x, CEILING_H);
+    }
+    c.moveTo(0, 20);
+    c.lineTo(W, 20);
+    c.stroke();
+    for (const lx of LIGHTS) {
+      c.fillStyle = '#d6d2c7';
+      c.fillRect(lx - 96, 7, 192, CEILING_H - 14);
+    }
+    c.fillStyle = '#b7b2a6';
+    c.fillRect(0, CEILING_H - 3, W, 3);
+    const ceilShadow = c.createLinearGradient(0, CEILING_H, 0, CEILING_H + 30);
+    ceilShadow.addColorStop(0, 'rgba(0, 0, 0, 0.14)');
+    ceilShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    c.fillStyle = ceilShadow;
+    c.fillRect(0, CEILING_H, W, 30);
+
+    // Pencere: çerçeve çizilir, camlar delinir (arkada canlı gökyüzü var), üstte jaluzi
     const wr = WINDOW_RECT;
     c.fillStyle = 'rgba(0, 0, 0, 0.12)';
     c.fillRect(wr.x - 10, wr.y - 6, wr.w + 28, wr.h + 26);
@@ -843,7 +1189,7 @@
       for (let j = 0; j < 2; j++) c.fillRect(wr.x + i * (pw + pane), wr.y + j * (ph + pane), pw, ph);
     }
     c.restore();
-    c.save();                                                     // cam yansıması
+    c.save();
     c.beginPath();
     c.rect(wr.x, wr.y, wr.w, wr.h);
     c.clip();
@@ -855,8 +1201,32 @@
     c.lineTo(wr.x + 70, wr.y + wr.h);
     c.fill();
     c.restore();
+    const blindsH = wr.h * 0.42;
+    for (let y = wr.y - 2; y < wr.y + blindsH; y += 9) {
+      c.fillStyle = '#f3f1ea';
+      c.fillRect(wr.x - 8, y, wr.w + 16, 6.5);
+      c.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      c.fillRect(wr.x - 8, y + 6.5, wr.w + 16, 1);
+    }
+    c.fillStyle = '#e2ded4';
+    c.fillRect(wr.x - 10, wr.y + blindsH, wr.w + 20, 7);
+    c.fillRect(wr.x - 12, wr.y - 12, wr.w + 24, 10);
+    c.strokeStyle = 'rgba(120, 115, 100, 0.55)';
+    c.lineWidth = 1.2;
+    c.beginPath();
+    for (const fx of [0.22, 0.78]) {
+      c.moveTo(wr.x + wr.w * fx, wr.y - 2);
+      c.lineTo(wr.x + wr.w * fx, wr.y + blindsH);
+    }
+    c.moveTo(wr.x + 10, wr.y - 2);
+    c.lineTo(wr.x + 10, wr.y + blindsH + 70);
+    c.stroke();
+    c.fillStyle = '#d8d3c6';
+    c.fillRect(wr.x + 7, wr.y + blindsH + 70, 6, 12);
 
-    // Saat kadranı (akrep/yelkovan canlı çizilir)
+    // Tabela, pano, saat
+    drawSign(c);
+    drawBoardFrame(c);
     c.fillStyle = 'rgba(0, 0, 0, 0.14)';
     c.beginPath();
     c.arc(CLOCK.x + 4, CLOCK.y + 6, CLOCK.r + 6, 0, Math.PI * 2);
@@ -873,7 +1243,7 @@
     c.lineCap = 'round';
     for (let i = 0; i < 12; i++) {
       const a = (i / 12) * Math.PI * 2;
-      const inner = i % 3 === 0 ? CLOCK.r - 12 : CLOCK.r - 7;
+      const inner = i % 3 === 0 ? CLOCK.r - 11 : CLOCK.r - 6;
       c.lineWidth = i % 3 === 0 ? 3 : 1.5;
       c.beginPath();
       c.moveTo(CLOCK.x + Math.cos(a) * inner, CLOCK.y + Math.sin(a) * inner);
@@ -881,38 +1251,64 @@
       c.stroke();
     }
 
-    // Süpürgelik
-    c.fillStyle = '#f7f2e8';
-    c.fillRect(0, FLOOR_TOP - 22, W, 22);
-    c.fillStyle = 'rgba(0, 0, 0, 0.1)';
-    c.fillRect(0, FLOOR_TOP - 22, W, 2);
-    c.fillRect(0, FLOOR_TOP - 2, W, 2);
+    // Dundie rafı (kupalar canlı çizilir)
+    c.fillStyle = 'rgba(0, 0, 0, 0.15)';
+    c.fillRect(1088, 384, 168, 6);
+    c.fillStyle = '#7b4f31';
+    c.fillRect(1084, 372, 172, 12);
+    c.fillStyle = '#5f3d26';
+    c.fillRect(1100, 384, 6, 14);
+    c.fillRect(1234, 384, 6, 14);
+    c.font = signFont(11);
+    c.fillStyle = '#e9d9a8';
+    c.textAlign = 'center';
+    c.fillText('DUNDIES', 1170, 382);
 
-    // Parke zemin
+    // Süpürgelik (lastik kaide)
+    c.fillStyle = '#4b5059';
+    c.fillRect(0, FLOOR_TOP - 12, W, 12);
+    c.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    c.fillRect(0, FLOOR_TOP - 12, W, 1.5);
+
+    // Duvar dibindeki eşyalar (oyun düzleminin gerisinde durur)
+    const cabX = BOARD.x + BOARD.w / 2;
+    const cabH = 166;
+    c.fillStyle = 'rgba(0, 0, 0, 0.16)';
+    c.fillRect(cabX - 40, FLOOR_TOP - 4, 96, 6);
+    drawSprite(c, images.cabinet, null, cabX, FLOOR_TOP, cabH);
+    drawSprite(c, images.beet, null, cabX - 20, FLOOR_TOP - cabH + 4, 46, true);
+    drawSprite(c, images.beet, null, cabX + 8, FLOOR_TOP - cabH + 4, 38);
+    drawSprite(c, images.plant, CROP.plant, 648, FLOOR_TOP, 150);
+    drawSprite(c, images.cooler, CROP.cooler, 1192, FLOOR_TOP, 172);
+
+    // Halıfleks zemin
     const floor = c.createLinearGradient(0, FLOOR_TOP, 0, H);
-    floor.addColorStop(0, '#9c6a42');
-    floor.addColorStop(1, '#c2895a');
+    floor.addColorStop(0, '#56616e');
+    floor.addColorStop(1, '#7a8693');
     c.fillStyle = floor;
     c.fillRect(0, FLOOR_TOP, W, H - FLOOR_TOP);
-    const rows = [FLOOR_TOP, FLOOR_TOP + 9, FLOOR_TOP + 21, FLOOR_TOP + 37, FLOOR_TOP + 58, FLOOR_TOP + 86, H];
-    c.strokeStyle = 'rgba(60, 35, 15, 0.28)';
+    speckle(c, 0, FLOOR_TOP, W, H - FLOOR_TOP, 6000, 'rgba(20, 25, 35, 0.2)', 1.3);
+    speckle(c, 0, FLOOR_TOP, W, H - FLOOR_TOP, 3000, 'rgba(255, 255, 255, 0.07)', 1.2);
+    c.strokeStyle = 'rgba(20, 25, 35, 0.18)';
     c.lineWidth = 1;
-    for (let r = 1; r < rows.length; r++) {
-      const y0 = rows[r - 1];
-      const y1 = rows[r];
-      c.beginPath();
-      c.moveTo(0, y1 + 0.5);
-      c.lineTo(W, y1 + 0.5);
-      const plank = 140 + r * 40;
-      for (let x = ((r * 97) % plank); x < W; x += plank) {
-        c.moveTo(x + 0.5, y0);
-        c.lineTo(x + 0.5, y1);
-      }
-      c.stroke();
+    c.beginPath();
+    for (const y of [FLOOR_TOP + 24, FLOOR_TOP + 58]) {
+      c.moveTo(0, y + 0.5);
+      c.lineTo(W, y + 0.5);
     }
+    for (let x = -80; x < W + 160; x += 160) {
+      c.moveTo(x, FLOOR_TOP);
+      c.lineTo(x + (x - W / 2) * 0.35, H);
+    }
+    c.stroke();
+    const floorShadow = c.createLinearGradient(0, FLOOR_TOP, 0, FLOOR_TOP + 16);
+    floorShadow.addColorStop(0, 'rgba(0, 0, 0, 0.22)');
+    floorShadow.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    c.fillStyle = floorShadow;
+    c.fillRect(0, FLOOR_TOP, W, 16);
 
     // Masa gölgesi
-    c.fillStyle = 'rgba(0, 0, 0, 0.18)';
+    c.fillStyle = 'rgba(0, 0, 0, 0.2)';
     c.beginPath();
     c.ellipse(DESK.x2 / 2, GROUND - 2, DESK.x2 / 2 + 30, 12, 0, 0, Math.PI * 2);
     c.fill();
@@ -938,33 +1334,13 @@
     c.fillStyle = 'rgba(255, 255, 255, 0.25)';
     c.fillRect(0, DESK.y, DESK.x2, 2);
 
-    // Masadaki eşyalar: kağıt destesi ve kalemlik
-    for (let i = 0; i < 6; i++) {
+    // Masa üstü: kağıt destesinin üstünde tüplü monitör, jöleye gömülmüş zımba
+    for (let i = 0; i < 4; i++) {
       c.fillStyle = i % 2 ? '#f4f1ea' : '#ffffff';
-      c.fillRect(24 + (i % 3) * 2, DESK.y - 3 - i * 3, 92, 3);
+      c.fillRect(14 + (i % 2), DESK.y - 3 - i * 3, 104, 3);
     }
-    c.fillStyle = 'rgba(0, 0, 0, 0.08)';
-    c.fillRect(24, DESK.y - 21, 96, 1);
-    const pencils = [['#e8a33d', -0.12], ['#3a7bd5', 0.05], ['#e2574c', 0.18]];
-    for (const [color, a] of pencils) {
-      c.save();
-      c.translate(164, DESK.y - 30);
-      c.rotate(a);
-      c.fillStyle = color;
-      c.fillRect(-2.5, -34, 5, 34);
-      c.fillStyle = '#f2d6a2';
-      c.beginPath();
-      c.moveTo(-2.5, -34);
-      c.lineTo(2.5, -34);
-      c.lineTo(0, -42);
-      c.fill();
-      c.restore();
-    }
-    c.fillStyle = '#5b6b7c';
-    roundRect(c, 148, DESK.y - 38, 32, 38, 4);
-    c.fill();
-    c.fillStyle = 'rgba(255, 255, 255, 0.18)';
-    c.fillRect(153, DESK.y - 34, 5, 30);
+    drawSprite(c, images.monitor, null, 66, DESK.y - 12, 92);
+    drawJelloStapler(c, 168, DESK.y);
   }
 
   // ------------------------------------------------------------------
@@ -1030,9 +1406,9 @@
       ctx.stroke();
     };
     ctx.lineCap = 'round';
-    hand(h / 12, 22, 5, '#33363d');
-    hand(m / 60, 32, 3.5, '#33363d');
-    hand(s / 60, 34, 1.5, '#e2574c');
+    hand(h / 12, CLOCK.r * 0.5, 5, '#33363d');
+    hand(m / 60, CLOCK.r * 0.72, 3.5, '#33363d');
+    hand(s / 60, CLOCK.r * 0.78, 1.5, '#e2574c');
     ctx.fillStyle = '#33363d';
     ctx.beginPath();
     ctx.arc(CLOCK.x, CLOCK.y, 4, 0, Math.PI * 2);
@@ -1055,10 +1431,10 @@
     ctx.stroke();
   }
 
-  function drawBall(x, y, angle, scale = 1, squash = 0, alpha = 1) {
-    const img = images.ball;
+  function drawBall(x, y, angle, scale = 1, squash = 0, alpha = 1, golden = false) {
+    const img = golden && goldenSprite ? goldenSprite : images.ball;
     const h = BALL_R * 2.3 * scale;
-    const w = (h * img.naturalWidth) / img.naturalHeight;
+    const w = (h * images.ball.naturalWidth) / images.ball.naturalHeight;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.translate(x, y + BALL_R * squash);
@@ -1107,7 +1483,7 @@
       const [fx, dy, a] = PILE[i];
       drawBall(g.x + fx * g.w, floorY - BALL_R * 0.85 + dy, a, 0.9);
     }
-    if (inside) drawBall(ball.x, ball.y, ball.angle, 1, ball.squash);
+    if (inside) drawBall(ball.x, ball.y, ball.angle, 1, ball.squash, 1, ball.golden);
 
     // Ön katman: ağız elipsinin alt yarısından aşağısını yeniden çiz → top içeride görünür
     if (inside || bin.pile) {
@@ -1133,9 +1509,10 @@
   }
 
   function drawActiveBall() {
-    // Gölge
+    // Gölge: altındaki yüzeye (masa, koli ya da zemin) düşer
     const onDesk = ball.x < DESK.x2 + 4 && ball.y < DESK.y;
-    const surface = onDesk ? DESK.y : GROUND;
+    const overBoxes = boxes.n && boxes.dropT >= 1 && Math.abs(ball.x - boxes.x) < BOX_W / 2 && ball.y < boxTop();
+    const surface = onDesk ? DESK.y : overBoxes ? boxTop() : GROUND;
     drawShadow(ball.x, surface, surface - (ball.y + BALL_R));
 
     // Uçuş izi
@@ -1151,10 +1528,15 @@
     if (!ball.active && game.spawnT < 1) scale = easeOutBack(clamp(game.spawnT / 0.4, 0, 1));
     const spin = !ball.active && game.spawnT < 0.4 ? (1 - game.spawnT / 0.4) * 3 : 0;
     ctx.save();
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
-    ctx.shadowBlur = 6 * renderScale;
-    ctx.shadowOffsetY = 2 * renderScale;
-    drawBall(ball.x, ball.y, ball.angle + spin, scale, ball.squash);
+    if (ball.golden) {
+      ctx.shadowColor = 'rgba(255, 196, 50, 0.95)';
+      ctx.shadowBlur = (12 + Math.sin(game.time * 8) * 4) * renderScale;
+    } else {
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.25)';
+      ctx.shadowBlur = 6 * renderScale;
+      ctx.shadowOffsetY = 2 * renderScale;
+    }
+    drawBall(ball.x, ball.y, ball.angle + spin, scale, ball.squash, 1, ball.golden);
     ctx.restore();
 
     // Ekranın üstüne çıktıysa ok göster
@@ -1265,7 +1647,88 @@
   }
 
   function drawLitter() {
-    for (const l of litter) drawBall(l.x, l.y, l.angle, 1, 0, 0.85);
+    for (const l of litter) drawBall(l.x, l.y, l.angle, 1, 0, 0.85, l.golden);
+  }
+
+  function drawBoxes() {
+    if (!boxes.n) return;
+    const off = (1 - easeOutBounce(boxes.dropT)) * -340;
+    const jitter = [0, 5, -4];
+    if (boxes.dropT >= 1) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.22)';
+      ctx.beginPath();
+      ctx.ellipse(boxes.x, GROUND - 1, BOX_W * 0.6, 8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (let i = 0; i < boxes.n; i++) {
+      const x = boxes.x - BOX_W / 2 + jitter[i];
+      const y = GROUND - (i + 1) * BOX_H + off;
+      const body = ctx.createLinearGradient(x, 0, x + BOX_W, 0);
+      body.addColorStop(0, '#caa06a');
+      body.addColorStop(1, '#b3844c');
+      ctx.fillStyle = body;
+      ctx.fillRect(x, y, BOX_W, BOX_H);
+      ctx.fillStyle = 'rgba(80, 50, 20, 0.18)';          // kapak
+      ctx.fillRect(x, y, BOX_W, 9);
+      ctx.fillStyle = 'rgba(236, 212, 160, 0.75)';       // bant
+      ctx.fillRect(x + BOX_W / 2 - 7, y, 14, 15);
+      ctx.strokeStyle = 'rgba(80, 50, 20, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, BOX_W - 1, BOX_H - 1);
+      ctx.fillStyle = '#fbf8f0';                          // etiket
+      ctx.fillRect(x + 9, y + 18, BOX_W - 18, 25);
+      ctx.fillStyle = '#243352';
+      ctx.textAlign = 'center';
+      ctx.font = signFont(15);
+      ctx.fillText('DUNDER MIFFLIN', x + BOX_W / 2, y + 32);
+      ctx.font = signFont(9);
+      ctx.fillStyle = '#5b6170';
+      fitText(ctx, '8½×11 · 5000 YAPRAK', x + BOX_W / 2, y + 40, BOX_W - 24);
+    }
+  }
+
+  function drawLights() {
+    let dim = 0;
+    for (const l of lights) {
+      ctx.fillStyle = l.on > 0.5 ? '#fffef4' : '#cfcdc4';
+      ctx.fillRect(l.x - 88, 11, 176, CEILING_H - 22);
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+      for (let i = 1; i < 4; i++) ctx.fillRect(l.x - 88 + i * 44, 11, 1.5, CEILING_H - 22);
+      const glow = ctx.createRadialGradient(l.x, CEILING_H, 20, l.x, CEILING_H, 400);
+      glow.addColorStop(0, `rgba(255, 252, 232, ${0.3 * l.on})`);
+      glow.addColorStop(1, 'rgba(255, 252, 232, 0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(l.x - 400, CEILING_H, 800, 400);
+      dim += 1 - l.on;
+    }
+    if (dim > 0) {
+      ctx.fillStyle = `rgba(25, 25, 35, ${dim * 0.06})`;
+      ctx.fillRect(0, 0, W, H);
+    }
+  }
+
+  function drawBoard() {
+    const { x, y, w, h } = BOARD;
+    const k = game.boardT;
+    const pop = easeOutBack(clamp(k / 0.35, 0, 1));
+    ctx.save();
+    ctx.translate(x + w / 2, y + 104);
+    ctx.rotate(-0.04);
+    ctx.scale(pop, pop);
+    ctx.font = font(76);
+    ctx.textAlign = 'center';
+    ctx.fillStyle = game.boardRed ? '#c0392b' : '#1f4fa3';   // ıskadan sonra kırmızı kalemle sıfırlanır
+    ctx.fillText(String(game.streak), 0, 0);
+    ctx.restore();
+    ctx.font = font(20);
+    ctx.fillStyle = '#6b6f78';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Rekor: ${game.bestStreakEver}`, x + w / 2, y + h - 12);
+  }
+
+  function drawTrophyShelf() {
+    const n = Math.min(dundies.size, 6);
+    for (let i = 0; i < n; i++) drawSprite(ctx, images.trophy, CROP.trophy, 1102 + i * 27, 373, 40);
   }
 
   function drawParticles() {
@@ -1278,8 +1741,19 @@
         ctx.fillStyle = p.color;
         ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         ctx.restore();
+      } else if (p.kind === 'spark') {
+        const a = clamp(p.life * 2, 0, 1);
+        const r = p.size;
+        ctx.fillStyle = `rgba(255, 214, 90, ${a})`;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y - r);
+        ctx.quadraticCurveTo(p.x, p.y, p.x + r, p.y);
+        ctx.quadraticCurveTo(p.x, p.y, p.x, p.y + r);
+        ctx.quadraticCurveTo(p.x, p.y, p.x - r, p.y);
+        ctx.quadraticCurveTo(p.x, p.y, p.x, p.y - r);
+        ctx.fill();
       } else {
-        ctx.fillStyle = `rgba(240, 232, 220, ${clamp(p.life * 1.6, 0, 0.8)})`;
+        ctx.fillStyle = `rgba(200, 205, 212, ${clamp(p.life * 1.6, 0, 0.8)})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
@@ -1445,6 +1919,39 @@
     ctx.restore();
   }
 
+  function drawToast() {
+    if (!toasts.length) return;
+    const { id, t } = toasts[0];
+    const d = DUNDIES.find(x => x.id === id);
+    const inK = easeOutBack(clamp(t / 0.35, 0, 1));
+    const out = t > 2.4 ? (t - 2.4) / 0.4 : 0;
+    const w = 400;
+    const h = 72;
+    ctx.save();
+    ctx.globalAlpha = clamp(1 - out, 0, 1);
+    ctx.translate(W / 2, lerp(-90, 132, inK) - out * 60);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+    ctx.shadowBlur = 10 * renderScale;
+    ctx.shadowOffsetY = 4 * renderScale;
+    ctx.fillStyle = '#243352';
+    roundRect(ctx, -w / 2, -h / 2, w, h, 10);
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.strokeStyle = '#e8c46a';
+    ctx.lineWidth = 2;
+    roundRect(ctx, -w / 2 + 5, -h / 2 + 5, w - 10, h - 10, 7);
+    ctx.stroke();
+    drawSprite(ctx, images.trophy, CROP.trophy, -w / 2 + 40, h / 2 - 10, 54);
+    ctx.textAlign = 'left';
+    ctx.font = signFont(20);
+    ctx.fillStyle = '#e8c46a';
+    ctx.fillText('DUNDIE KAZANDIN!', -w / 2 + 76, -6);
+    ctx.font = font(30);
+    ctx.fillStyle = '#f3ead2';
+    fitText(ctx, d.name, -w / 2 + 76, 24, w - 96);
+    ctx.restore();
+  }
+
   function drawBanner() {
     if (!banner) return;
     const t = banner.t;
@@ -1482,11 +1989,16 @@
     if (shakeAmt > 0.2) ctx.translate(rand(-shakeAmt, shakeAmt), rand(-shakeAmt, shakeAmt));
     drawSky();
     ctx.drawImage(bg, 0, 0, W, H);
+    drawLights();
     drawClockHands();
+    drawBoard();
+    const ready = game.state !== 'loading';   // tüm görseller yüklendi
+    if (ready) drawTrophyShelf();
     drawStreaks();
 
-    if (images.ball) {
+    if (ready) {
       drawLitter();
+      drawBoxes();
       const g = binGeom();
       drawBinAndBall(g);
       drawAim();
@@ -1495,9 +2007,10 @@
     }
     ctx.restore();
 
-    if (images.ball && game.state !== 'loading') {
+    if (ready) {
       drawHUD();
       drawBanner();
+      drawToast();
     }
   }
 
@@ -1522,16 +2035,34 @@
 
   let last = performance.now();
   function frame(now) {
+    requestAnimationFrame(frame);   // bir karede hata olsa bile döngü sürsün
     const dt = Math.min((now - last) / 1000, 1 / 20);
     last = now;
     if (!game.paused) update(dt);
     render();
-    requestAnimationFrame(frame);
   }
 
   // ------------------------------------------------------------------
   // Yükleme
   // ------------------------------------------------------------------
+  // Top görselini altın renge boyar (Altın Bilet)
+  function makeGoldenSprite() {
+    const img = images.ball;
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const g = c.getContext('2d');
+    g.drawImage(img, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    const grad = g.createLinearGradient(0, 0, c.width, c.height);
+    grad.addColorStop(0, 'rgba(255, 228, 120, 0.72)');
+    grad.addColorStop(0.5, 'rgba(226, 164, 32, 0.68)');
+    grad.addColorStop(1, 'rgba(255, 214, 96, 0.72)');
+    g.fillStyle = grad;
+    g.fillRect(0, 0, c.width, c.height);
+    goldenSprite = c;
+  }
+
   function loadImage(key, url) {
     return new Promise((resolve, reject) => {
       const img = new Image();
@@ -1553,6 +2084,7 @@
       ...Object.entries(ASSETS.img).map(([key, url]) => loadImage(key, url)),
       ...ASSETS.sfx.map(name => audio.load(name)),
       document.fonts ? document.fonts.load(font(32)).then(() => {}, () => {}) : Promise.resolve(),
+      document.fonts ? document.fonts.load(signFont(32)).then(() => {}, () => {}) : Promise.resolve(),
     ];
     let done = 0;
     tasks.forEach(p => p.then(() => {
@@ -1571,6 +2103,8 @@
 
     const binImg = images.bin;
     binAspect = (binImg.naturalWidth * BIN_CROP_W) / binImg.naturalHeight;
+    makeGoldenSprite();
+    buildBackground();              // görseller ve fontlar artık hazır
     game.state = 'menu';
     resetBall(true);
     game.spawnT = 1;

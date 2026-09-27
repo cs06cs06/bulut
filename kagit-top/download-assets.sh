@@ -26,16 +26,28 @@ echo "Görseller (openclipart.org, CC0)…"
 fetch "https://openclipart.org/image/400px/58831"  "$ASSETS/img/paper-ball.png" # Ball of Paper — Degri
 fetch "https://openclipart.org/image/400px/178960" "$ASSETS/img/trash-bin.png"  # Papelera - Trash Bin — franklevel
 fetch "https://openclipart.org/image/400px/217053" "$ASSETS/img/fan.png"        # Desk Fan Speed Designed — timtjtim
+# Dunder Mifflin Scranton ofisinin eşyaları
+fetch "https://openclipart.org/image/400px/26436"  "$ASSETS/img/monitor.png"        # Old CRT Monitor — Anonymous
+fetch "https://openclipart.org/image/400px/19080"  "$ASSETS/img/stapler.png"        # Blue Stapler — jimmiet
+fetch "https://openclipart.org/image/400px/170859" "$ASSETS/img/trophy.png"         # trophy — hatalar205
+fetch "https://openclipart.org/image/400px/229792" "$ASSETS/img/beet.png"           # Beet (extra shadows) — doctormo
+fetch "https://openclipart.org/image/400px/210485" "$ASSETS/img/water-cooler.png"   # Misc Water Cooler — glitch
+fetch "https://openclipart.org/image/400px/229118" "$ASSETS/img/filing-cabinet.png" # Metallic Filing Cabinet — GDJ
+fetch "https://openclipart.org/image/400px/264098" "$ASSETS/img/plant.png"          # potted plant - coloured — frankes
 
-echo "Font (Google Fonts, SIL OFL 1.1)…"
-fetch "https://raw.githubusercontent.com/google/fonts/main/ofl/patrickhand/PatrickHand-Regular.ttf" "$ASSETS/fonts/PatrickHand-Regular.ttf"
-fetch "https://raw.githubusercontent.com/google/fonts/main/ofl/patrickhand/OFL.txt"                 "$ASSETS/fonts/OFL.txt"
+echo "Fontlar (Google Fonts, SIL OFL 1.1)…"
+GFONTS="https://raw.githubusercontent.com/google/fonts/main/ofl"
+fetch "$GFONTS/patrickhand/PatrickHand-Regular.ttf" "$ASSETS/fonts/PatrickHand-Regular.ttf"
+fetch "$GFONTS/patrickhand/OFL.txt"                 "$ASSETS/fonts/OFL-PatrickHand.txt"
+fetch "$GFONTS/bebasneue/BebasNeue-Regular.ttf"     "$ASSETS/fonts/BebasNeue-Regular.ttf"
+fetch "$GFONTS/bebasneue/OFL.txt"                   "$ASSETS/fonts/OFL-BebasNeue.txt"
 
 echo "Sesler (kenney.nl, CC0)…"
 KENNEY="https://kenney.nl/media/pages/assets"
 fetch "$KENNEY/impact-sounds/87b4ddecda-1677589768/kenney_impact-sounds.zip"       "$TMP/impact.zip"
 fetch "$KENNEY/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip" "$TMP/interface.zip"
 fetch "$KENNEY/casino-audio/2472606a04-1721639069/kenney_casino-audio.zip"         "$TMP/casino.zip"
+fetch "$KENNEY/rpg-audio/8e99002d76-1677590336/kenney_rpg-audio.zip"               "$TMP/rpg.zip"
 
 take() { # take <zip> <zip içindeki dosya> <hedef ad>
   unzip -p "$TMP/$1.zip" "Audio/$2" > "$ASSETS/sfx/$3"
@@ -56,6 +68,9 @@ take interface confirmation_002.ogg         levelup.ogg
 take interface error_006.ogg                miss.ogg
 take interface error_003.ogg                gameover.ogg
 take interface click_001.ogg                click.ogg
+take interface confirmation_004.ogg         award.ogg
+take impact    impactSoft_heavy_000.ogg     box.ogg
+take rpg       handleCoins.ogg              coins.ogg
 
 unzip -p "$TMP/impact.zip" License.txt > "$ASSETS/sfx/LICENSE-kenney.txt"
 
