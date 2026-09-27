@@ -1505,7 +1505,10 @@
   // Boyutlandırma ve döngü
   // ------------------------------------------------------------------
   function resize() {
-    const scale = Math.min(window.innerWidth / W, window.innerHeight / H);
+    // Gövde ölçülür: gömülü görünümlerde (ör. telefonun güvenli alan boşlukları) pencereden küçük olabilir
+    const vw = document.body.clientWidth || window.innerWidth;
+    const vh = document.body.clientHeight || window.innerHeight;
+    const scale = Math.min(vw / W, vh / H);
     const cssW = Math.floor(W * scale);
     const cssH = Math.floor(H * scale);
     stage.style.width = `${cssW}px`;
