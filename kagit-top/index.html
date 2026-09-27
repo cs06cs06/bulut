@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#2b2f3a">
+  <meta name="description" content="Kağıdı buruştur, top yap ve çöp kutusuna fırlat! Rüzgârı hesaba katmayı unutma.">
+  <title>Kağıt Top</title>
+  <link rel="icon" href="assets/img/paper-ball.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" aria-label="Kağıt Top oyun alanı" role="img"></canvas>
+
+    <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="overlay-title">
+      <div class="card">
+        <!-- Yükleniyor -->
+        <section data-screen="loading">
+          <h1 id="overlay-title">Kağıt Top</h1>
+          <p class="sub">Assetler yükleniyor…</p>
+          <div class="progress"><div class="bar" id="progress-bar"></div></div>
+          <p class="error" id="load-error" hidden></p>
+        </section>
+
+        <!-- Ana menü -->
+        <section data-screen="menu" hidden>
+          <h1>Kağıt Top</h1>
+          <p class="sub">Merhaba! Buruştur, fırlat, çöpe at.</p>
+          <ul class="rules">
+            <li><b>Geri çek, bırak:</b> fareyle ya da parmağınla sürükleyip bırakarak topu fırlat.</li>
+            <li><b>Rüzgâr:</b> sağ üstteki vantilatöre bak, atışını ona göre ayarla.</li>
+            <li><b>Tertemiz:</b> kutuya hiç değmeden sokarsan puan ikiye katlanır.</li>
+            <li><b>Seri:</b> üst üste 3 basket ×2, 6 basket ×3 puan.</li>
+            <li><b>3 hakkın var.</b> Her 3 basket seviye atlatır, iş zorlaşır.</li>
+          </ul>
+          <button class="btn" data-action="play">Oyna</button>
+          <p class="best">En iyi skor: <span data-best>0</span></p>
+          <p class="keys">Klavye: <kbd>↑</kbd><kbd>↓</kbd> açı · <kbd>←</kbd><kbd>→</kbd> güç ·<kbd>Boşluk</kbd> fırlat · <kbd>P</kbd> duraklat · <kbd>M</kbd> ses</p>
+        </section>
+
+        <!-- Duraklatıldı -->
+        <section data-screen="pause" hidden>
+          <h1>Duraklatıldı</h1>
+          <p class="sub">Biraz nefes al.</p>
+          <button class="btn" data-action="resume">Devam et</button>
+          <button class="btn ghost" data-action="menu">Ana menü</button>
+        </section>
+
+        <!-- Oyun bitti -->
+        <section data-screen="over" hidden>
+          <h1>Oyun Bitti!</h1>
+          <p class="record" data-record hidden>Yeni rekor!</p>
+          <p class="final"><span data-final>0</span> puan</p>
+          <dl class="stats">
+            <div><dt>Basket</dt><dd data-stat="baskets">0</dd></div>
+            <div><dt>Tertemiz</dt><dd data-stat="swishes">0</dd></div>
+            <div><dt>En uzun seri</dt><dd data-stat="streak">0</dd></div>
+            <div><dt>Seviye</dt><dd data-stat="level">1</dd></div>
+          </dl>
+          <button class="btn" data-action="play">Tekrar oyna</button>
+          <button class="btn ghost" data-action="menu">Ana menü</button>
+          <p class="best">En iyi skor: <span data-best>0</span></p>
+        </section>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button id="btn-pause" class="icon-btn" aria-label="Duraklat" title="Duraklat (P)">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+      <button id="btn-mute" class="icon-btn" aria-label="Sesi kapat" title="Ses (M)">
+        <svg class="on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <svg class="off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z"/><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <p id="rotate-hint">Daha rahat oynamak için telefonunu yan çevir ↻</p>
+
+  <script src="game.js"></script>
+</body>
+</html>
