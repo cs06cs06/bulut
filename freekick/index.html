@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Frikik Ustası</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="description" content="Parmağınla kaydır, falso ver, barajın üstünden ağları havalandır. Tarayıcıda çalışan 3D serbest vuruş oyunu.">
+<meta name="theme-color" content="#0b1521">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="app">
+  <canvas id="scene"></canvas>
+  <canvas id="swipe"></canvas>
+  <div id="touch" aria-label="Şut atmak için kaydır"></div>
+
+  <div id="hud" hidden>
+    <div class="scorebug" aria-live="polite">
+      <div class="sb-cell brand"><b>FK</b></div>
+      <div class="sb-cell"><span class="sb-k">Atış</span><span class="sb-v" id="hud-shot">1</span></div>
+      <div class="sb-cell"><span class="sb-k">Skor</span><span class="sb-v" id="hud-score">0</span></div>
+      <div class="sb-cell" id="hud-lives-cell"><span class="sb-k">Hak</span><span class="lives" id="hud-lives"></span></div>
+      <div class="sb-cell" id="hud-streak-cell" hidden><span class="sb-k">Seri</span><span class="sb-v streak" id="hud-streak">x2</span></div>
+    </div>
+    <div class="info">
+      <span id="hud-dist">24 m</span>
+      <span id="hud-wind"><i class="arrow" id="hud-wind-arrow">↑</i><b id="hud-wind-v">0</b>&nbsp;km/sa</span>
+      <span id="hud-wall">4'lü baraj</span>
+    </div>
+    <div class="hud-btns">
+      <button class="icon-btn" id="btn-sound" aria-label="Sesi aç/kapat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path id="snd-wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path id="snd-off" d="M17 9l5 6M22 9l-5 6" hidden/></svg>
+      </button>
+      <button class="icon-btn" id="btn-pause" aria-label="Duraklat">
+        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div id="toast" aria-live="assertive"><div class="big" id="toast-big"></div><div class="small" id="toast-small"></div><div class="bonus" id="toast-bonus"></div></div>
+
+  <div id="hint" hidden>
+    <svg viewBox="0 0 150 130" aria-hidden="true">
+      <path class="path" d="M30 120 C 20 70, 60 30, 118 12" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+      <g class="finger"><circle r="11" fill="#ffd23f" opacity="0.9"/><circle r="4" fill="#fff"/></g>
+    </svg>
+    <p id="hint-text">Kaydır ve vur</p>
+  </div>
+
+  <div id="replay-tag" hidden><span class="rec">TEKRAR</span><button id="btn-skip">Geç</button></div>
+
+  <div id="menu" hidden>
+    <div class="menu-inner">
+      <h1 class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Serbest vuruş · 9,15 m</small></h1>
+      <p class="tagline">Parmağını kaydır, eğri çizerek falso ver, barajın üstünden ağları havalandır.</p>
+      <div class="how">
+        <div><b>Yön</b>Topa doğru değil, kalede vurmak istediğin yere kaydır.</div>
+        <div><b>Falso</b>Kavisli çiz; top da o kavisle döner.</div>
+        <div><b>Güç</b>Hızlı kaydır sert, yavaş kaydır aşırtma.</div>
+      </div>
+      <div class="modes">
+        <button class="btn" id="btn-career">Kariyer <span class="sub">3 hak · her golde zorlaşır</span></button>
+        <button class="btn ghost" id="btn-practice">Antrenman <span class="sub">Sınırsız · yörünge önizleme</span></button>
+      </div>
+      <div class="menu-foot">
+        <span class="best">En iyi skor<b id="menu-best">0</b></span>
+        <span class="toggles">
+          <button class="chip" id="btn-menu-sound">Ses: Açık</button>
+          <button class="chip" id="btn-quality">Grafik: Otomatik</button>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div id="fade"></div>
+
+  <div id="pause" class="overlay" hidden>
+    <div class="sheet">
+      <h2>Mola</h2>
+      <button class="btn" id="btn-resume">Devam et</button>
+      <button class="btn ghost" id="btn-quit">Ana menü</button>
+    </div>
+  </div>
+
+  <div id="over" class="overlay" hidden>
+    <div class="sheet">
+      <h2>Maç <em>sonu</em></h2>
+      <dl class="stats">
+        <div><dt>Skor</dt><dd id="over-score">0</dd></div>
+        <div><dt>Gol</dt><dd id="over-goals">0</dd></div>
+        <div><dt>En uzun seri</dt><dd id="over-streak">0</dd></div>
+        <div><dt>En iyi skor</dt><dd id="over-best">0</dd></div>
+      </dl>
+      <p class="new-best" id="over-newbest" hidden>Yeni rekor!</p>
+      <button class="btn" id="btn-again">Tekrar oyna</button>
+      <button class="btn ghost" id="btn-menu">Ana menü</button>
+    </div>
+  </div>
+
+  <div id="loader">
+    <div class="load-box">
+      <div class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Stadyum hazırlanıyor</small></div>
+      <div class="bar"><i id="load-bar"></i></div>
+      <div class="load-label" id="load-label">0%</div>
+    </div>
+  </div>
+</div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
