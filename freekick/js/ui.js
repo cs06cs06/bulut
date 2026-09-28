@@ -16,11 +16,15 @@ export class UI {
     this.targetScore = 0;
   }
 
-  progress(f) {
+  progress(f, pending = []) {
     if (this.failed) return;
     const pct = Math.round(f * 100);
     this.el.loadBar.style.width = pct + '%';
-    this.el.loadLabel.textContent = pct + '%';
+    this.el.loadLabel.textContent = pending.length ? `${pct}% · ${pending.slice(0, 2).join(', ')}` : pct + '%';
+  }
+
+  stage(text) {
+    if (!this.failed) this.el.loadLabel.textContent = text;
   }
 
   loaded() {

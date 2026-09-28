@@ -8,6 +8,7 @@ import { Game, store } from './game.js';
 window.__fkBooted = true;
 const ui = new UI();
 const $ = (id) => document.getElementById(id);
+ui.stage('Başlatılıyor…');
 
 function webglOK() {
   try {
@@ -24,10 +25,20 @@ async function boot() {
   const savedQ = store.get('quality', 'auto');
   const quality = pickQuality(savedQ === 'auto' ? null : savedQ);
   const engine = new Engine($('scene'), quality);
+  $('scene').addEventListener('webglcontextlost', (e) => {
+    e.preventDefault();
+    ui.loadError('Grafik belleği yetmedi (WebGL bağlamı kayboldu). Menüden Grafik: Düşük seçip sayfayı yenileyin.');
+  });
+
+  // never spin forever: after a minute say what is still missing
+  let pendingNow = [];
+  const slow = setTimeout(() => {
+    if (!window.__fkReady) ui.loadError('Yükleme bitmedi. Bekleyen: ' + (pendingNow.join(', ') || 'sahne hazırlığı') + '. Bağlantınızı kontrol edip sayfayı yenileyin.');
+  }, 60000);
 
   let assets;
   try {
-    assets = await loadAssets((f) => ui.progress(f));
+    assets = await loadAssets((f, pending) => { pendingNow = pending; ui.progress(f, pending); }, { smallSky: quality.name !== 'high' });
   } catch (e) {
     console.error(e);
     ui.loadError('Oyun dosyaları yüklenemedi (' + (e?.message || e) + '). Sayfayı yenileyin; yerelde açıyorsanız bir web sunucusu kullanın (ör. npx serve).');
@@ -38,13 +49,18 @@ async function boot() {
   const audio = new Audio(assets.audio);
   audio.setMuted(store.get('muted', false));
   const input = new SwipeInput($('touch'), $('swipe'));
+  ui.stage('Oyuncular sahaya çıkıyor…');
+  await new Promise((r) => requestAnimationFrame(() => r()));
   const game = new Game(engine, assets, audio, ui, input);
   window.__game = game;
 
   // warm up shaders before revealing the stadium
+  ui.stage('Stadyum kuruluyor…');
+  await new Promise((r) => requestAnimationFrame(() => r()));
   engine.renderer.compile(engine.scene, engine.camera);
   game.update(1 / 60);
   window.__fkReady = true;
+  clearTimeout(slow);
   ui.loaded();
   ui.showMenu(game.best);
 

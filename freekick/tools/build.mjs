@@ -5,8 +5,11 @@
 //                      dist/artifact.html   same content without <html>/<head>/<body>
 //                      dist/assets/...      textures, sky, sounds, model (+ xbot.gltf.json
 //                                           for hosts that refuse .glb)
+//                      dist/single.html     everything (assets too) inside one HTML file
+//                      dist/single-artifact.html   the same as a body fragment
 //
-// dist/ is self-contained: upload the folder to any static host.
+// dist/ is self-contained: upload the folder to any static host. single.html needs
+// nothing else at all, which suits sandboxed viewers that block every other request.
 import { build } from 'esbuild';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -78,7 +81,19 @@ for (const dir of ['audio', 'textures', 'sky', 'models']) {
   fs.cpSync(path.join(root, 'assets', dir), path.join(out, 'assets', dir), { recursive: true });
 }
 
+// fully self-contained variant: assets as base64 blocks the loader reads directly
+const EMBED = [
+  'models/xbot.glb', 'sky/stadium_01_bg_2k.jpg',
+  'textures/grass_color.jpg', 'textures/grass_normal.jpg', 'textures/grass_rough.jpg',
+  ...fs.readdirSync(path.join(root, 'assets/audio')).filter((f) => f.endsWith('.mp3')).map((f) => 'audio/' + f),
+];
+const blocks = EMBED.map((p) => `<script type="text/x-asset" data-path="${p}">${fs.readFileSync(path.join(root, 'assets', p)).toString('base64')}</script>`).join('\n');
+const withAssets = (doc) => doc.replace('<div id="app"', () => `${blocks}\n<div id="app"`);
+fs.writeFileSync(path.join(out, 'single.html'), withAssets(html));
+fs.writeFileSync(path.join(out, 'single-artifact.html'), withAssets(fragment));
+
 const kb = (f) => (fs.statSync(path.join(out, f)).size / 1024).toFixed(0) + ' KB';
 console.log('dist/index.html', kb('index.html'));
 console.log('dist/artifact.html', kb('artifact.html'));
 console.log('dist/assets/models/xbot.gltf.json', kb('assets/models/xbot.gltf.json'));
+console.log('dist/single.html', kb('single.html'));

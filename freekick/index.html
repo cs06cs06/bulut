@@ -104,9 +104,9 @@
 
   <div id="loader">
     <div class="load-box">
-      <div class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Stadyum hazırlanıyor</small></div>
+      <div class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Stadyum hazırlanıyor · s3</small></div>
       <div class="bar"><i id="load-bar"></i></div>
-      <div class="load-label" id="load-label">0%</div>
+      <div class="load-label" id="load-label">Betik bekleniyor…</div>
     </div>
   </div>
 </div>
@@ -114,6 +114,7 @@
   // Loader watchdog: explain instead of spinning forever when scripts cannot run.
   (function () {
     var label = document.getElementById('load-label');
+    if (label) label.textContent = 'Hazırlanıyor…';
     function say(msg) {
       if (!label || document.getElementById('loader').hidden) return;
       label.innerHTML = '';

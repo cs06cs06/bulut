@@ -46,7 +46,9 @@ npm install
 npm run build      # dist/ klasörünü üretir
 ```
 
-`dist/` klasörü tek başına yayınlanabilir: `dist/index.html` + `dist/assets/`. `.glb` sunmayan barındırıcılar için model `dist/assets/models/xbot.gltf.json` olarak da üretilir ve oyun otomatik olarak ona geçer; `.hdr` yüklenemezse ışıklandırma JPG panoramadan yapılır.
+`dist/` klasörü tek başına yayınlanabilir: `dist/index.html` + `dist/assets/`. Ayrıca `dist/single.html` model, doku ve sesler dahil her şeyi tek bir dosyada taşır (~6,5 MB); başka hiçbir isteğe izin vermeyen gömülü görüntüleyicilerde bu dosya kullanılır.
+
+Yükleme ekranındaki yazı sorunun nerede olduğunu söyler: **Betik bekleniyor…** sayfada JavaScript hiç çalışmıyor demektir; **Hazırlanıyor… / Başlatılıyor…** betiğin başladığını, **% · …** ise hangi dosyanın beklendiğini gösterir. Bir dakika içinde bitmezse eksik olan dosya ekrana yazılır. `.glb` sunmayan barındırıcılar için model `dist/assets/models/xbot.gltf.json` olarak da üretilir ve oyun otomatik olarak ona geçer; `.hdr` yüklenemezse ışıklandırma JPG panoramadan yapılır.
 
 ## Klasör yapısı
 
