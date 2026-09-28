@@ -57,6 +57,7 @@ export function makeKitMaterial(kit, opts = {}) {
     uKeeper: { value: opts.keeper ? 1 : 0 },
     uLongSleeve: { value: opts.keeper ? 1 : 0 },
     uJoint: { value: opts.joint ? 1 : 0 },
+    uRim: { value: new THREE.Color(1.0, 0.86, 0.66) },
   };
   const mat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.7, metalness: 0 });
   mat.onBeforeCompile = (shader) => {
@@ -68,7 +69,7 @@ export function makeKitMaterial(kit, opts = {}) {
       .replace('#include <common>', `#include <common>
 varying vec3 vBind; varying vec3 vBindN;
 uniform vec3 uShirt, uTrim, uShorts, uSocks, uSkin, uHair, uBoot, uBootAccent, uGlove;
-uniform sampler2D uNumber; uniform float uKeeper; uniform float uLongSleeve; uniform float uJoint;
+uniform sampler2D uNumber; uniform float uKeeper; uniform float uLongSleeve; uniform float uJoint; uniform vec3 uRim;
 float gRough;
 vec3 kitColor(vec3 p, vec3 n) {
   float ax = abs(p.x);
@@ -145,10 +146,30 @@ vec3 kitColor(vec3 p, vec3 n) {
       .replace('#include <color_fragment>', `#include <color_fragment>
 diffuseColor.rgb *= kitColor(vBind, normalize(vBindN)) * mix(1.0, 0.58, uJoint);`)
       .replace('#include <roughnessmap_fragment>', `#include <roughnessmap_fragment>
-roughnessFactor = min(1.0, gRough + uJoint * 0.12);`);
+roughnessFactor = min(1.0, gRough + uJoint * 0.12);`)
+      // warm rim light keeps the players readable against the crowd
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+float rimF = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 3.0);
+totalEmissiveRadiance += uRim * rimF * (0.16 * diffuseColor.rgb + 0.04);`);
   };
   mat.userData.uniforms = uniforms;
   return mat;
+}
+
+let blobTexture = null;
+function contactTexture() {
+  if (blobTexture) return blobTexture;
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const g = c.getContext('2d');
+  const grd = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  grd.addColorStop(0, 'rgba(0,0,0,0.62)');
+  grd.addColorStop(0.45, 'rgba(0,0,0,0.3)');
+  grd.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = grd;
+  g.fillRect(0, 0, 128, 128);
+  blobTexture = new THREE.CanvasTexture(c);
+  return blobTexture;
 }
 
 export class Character {
@@ -193,6 +214,10 @@ export class Character {
     this.yaw = 0;
     const s = opts.scale ?? 1;
     this.root.scale.setScalar(s);
+    // soft ambient-occlusion blob on the grass, added to the scene by the owner
+    this.blob = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: contactTexture(), transparent: true, depthWrite: false }));
+    this.blob.rotation.x = -Math.PI / 2;
+    this.blob.renderOrder = 1;
   }
 
   setYaw(y) { this.yaw = y; this.root.rotation.y = y; }
@@ -380,6 +405,19 @@ export class Character {
     }
     this.colliders = out;
     return out;
+  }
+
+  /** Keeps the contact shadow under the body: wider when lying down, fading in the air. */
+  updateBlob() {
+    const h = this.worldPos('hips', _v5);
+    const lf = this.worldPos('lFoot', _v6);
+    const cx = (h.x * 2 + lf.x) / 3, cz = (h.z * 2 + lf.z) / 3;
+    const lift = Math.max(0, Math.min(lf.y, h.y - 0.25) - 0.1);
+    const lying = h.y < 0.5 ? 1 : 0;
+    this.blob.position.set(cx, 0.014, cz);
+    this.blob.scale.set(0.95 + lying * 0.9, 0.95 + lying * 0.6, 1);
+    this.blob.rotation.z = -this.yaw;
+    this.blob.material.opacity = Math.max(0, 1 - lift * 1.6) * (this.root.visible ? 1 : 0);
   }
 
   /** Snapshot of the full pose for the replay system. */

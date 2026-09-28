@@ -4,6 +4,7 @@ import { FIELD } from './config.js';
 const G = 9.81;
 const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const smoothstep = (x) => x * x * (3 - 2 * x);
 
 const COLLIDERS = [
   ['hips', 'spine2', 0.18, 'body'],
@@ -26,6 +27,9 @@ class WallPlayer {
     this.jumps = true;
     this.flinch = 0;
     this.nervous = Math.random() * 6;
+    this.turn = 0;
+    this.mood = null;
+    this.moodW = 0;
   }
   update(dt, ctx) {
     const c = this.c;
@@ -37,7 +41,7 @@ class WallPlayer {
         break;
       case 'squat':
         this.squat = Math.sin(clamp01(this.t / 0.13) * Math.PI * 0.5) * 0.13;
-        if (this.t >= 0.13) { this.state = 'air'; this.t = 0; this.vy = 3.2 + Math.random() * 0.4; }
+        if (this.t >= 0.13) { this.state = 'air'; this.t = 0; this.vy = (3.2 + Math.random() * 0.4) * Math.sqrt(this.jumpScale ?? 1); }
         break;
       case 'air':
         this.squat *= Math.exp(-dt * 20);
@@ -59,6 +63,15 @@ class WallPlayer {
     else this.flinch = Math.max(0, this.flinch - dt * 2);
 
     c.root.position.y = this.y;
+    // once the ball is past, spin round to watch it
+    if (ctx.ballLive && bp.z < c.root.position.z - 1) this.turn = Math.min(1, this.turn + dt * 2.6);
+    else if (!ctx.ballLive) this.turn = Math.max(0, this.turn - dt * 1.5);
+    if (this.turn > 0) {
+      const face = Math.atan2(bp.x - c.root.position.x, bp.z - c.root.position.z);
+      let d = face - this.baseYaw;
+      d = Math.atan2(Math.sin(d), Math.cos(d));
+      c.setYaw(this.baseYaw + d * smoothstep(this.turn));
+    }
     const tuck = this.state === 'air' ? clamp01(this.vy > 0 ? 0.6 : this.y * 2) : 0;
     c.offsetHips(0, -this.squat - 0.03, 0);
     c.bendSpine(0.12 + this.squat * 1.2 + this.flinch * 0.25, this.flinch * 0.4, 0);
@@ -80,8 +93,20 @@ class WallPlayer {
     const n = Math.sin(ctx.time * 1.7 + this.nervous) * 0.01;
     const lh = c.toWorld(0.05, 0.86 - this.squat * 0.7 + n, 0.2);
     const rh = c.toWorld(-0.05, 0.84 - this.squat * 0.7 - n, 0.23);
-    c.armIK('l', lh, 0.95, c.dirToWorld(0.8, -0.2, -0.4));
-    c.armIK('r', rh, 0.95, c.dirToWorld(-0.8, -0.2, -0.4));
+    this.moodW += ((this.mood ? 1 : 0) - this.moodW) * Math.min(1, dt * 3);
+    if (this.mood === 'goal') {
+      // hands on the head
+      const head = c.worldPos('head', _w);
+      lh.lerp(head.clone().add(c.dirToWorld(0.12, 0.13, 0.02)), this.moodW);
+      rh.lerp(head.clone().add(c.dirToWorld(-0.12, 0.13, 0.02)), this.moodW);
+    } else if (this.mood === 'save') {
+      const pump = Math.abs(Math.sin(ctx.time * 6 + this.nervous)) * 0.1;
+      lh.lerp(c.toWorld(0.3, 2.05 + pump, 0.15), this.moodW);
+      rh.lerp(c.toWorld(-0.3, 2.05 + pump, 0.15), this.moodW);
+    }
+    const out = this.moodW * (this.mood ? 1 : 0);
+    c.armIK('l', lh, 0.95, c.dirToWorld(0.8 + out * 0.4, -0.2 + out * 0.6, -0.4));
+    c.armIK('r', rh, 0.95, c.dirToWorld(-0.8 - out * 0.4, -0.2 + out * 0.6, -0.4));
     c.lookAt(bp, 0.8 * (1 - this.flinch));
     this.colliders = c.buildColliders(COLLIDERS, dt);
   }
@@ -99,8 +124,9 @@ export class DefensiveWall {
    * Lines the wall up 9.15 m from the ball, covering the near post (+ a margin);
    * returns the spray line endpoints and the x of the wall's outer edge on the goal line.
    */
-  setup(ballPos, count) {
+  setup(ballPos, count, jumpScale = 1) {
     this.count = count;
+    this.jumpScale = jumpScale;
     const toGoal = new THREE.Vector3(-ballPos.x, 0, -ballPos.z).normalize();
     // near post relative to the ball
     const nearX = Math.abs(ballPos.x) < 1.5 ? (Math.random() < 0.5 ? -1 : 1) * FIELD.goalHalfWidth : Math.sign(ballPos.x) * FIELD.goalHalfWidth;
@@ -121,8 +147,11 @@ export class DefensiveWall {
       if (!on) continue;
       const pos = start.clone().addScaledVector(perp, i * spacing);
       p.c.root.position.copy(pos);
-      p.c.setYaw(yaw + (Math.random() - 0.5) * 0.08);
+      p.baseYaw = yaw + (Math.random() - 0.5) * 0.08;
+      p.c.setYaw(p.baseYaw);
+      p.turn = 0; p.mood = null; p.moodW = 0;
       p.state = 'stand'; p.y = 0; p.vy = 0; p.squat = 0; p.flinch = 0; p.t = 0;
+      p.jumpScale = jumpScale;
       p.c.blendTo({ idle: 1 }, 30);
     }
     const first = start.clone().addScaledVector(perp, -0.3);
@@ -141,6 +170,11 @@ export class DefensiveWall {
       p.jumpDelay = Math.random() * 0.09;
       p.jumps = Math.random() < 0.9;
     }
+  }
+
+  react(outcome) {
+    const mood = outcome === 'goal' ? 'goal' : (outcome === 'caught' || outcome === 'parry' || outcome === 'wall') ? 'save' : null;
+    for (const p of this.players) if (p.active) p.mood = mood;
   }
 
   update(dt, ctx) {

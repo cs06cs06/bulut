@@ -368,6 +368,9 @@ class Crowd {
       uExcite: { value: 0 },
       uSun: { value: 1.0 },
       uWave: { value: -100 },
+      uFogColor: { value: new THREE.Color(0xc4cdd6) },
+      uFogNear: { value: 70 },
+      uFogFar: { value: 260 },
     };
     this.density = density;
     this.offsets = []; this.colors = []; this.meta = [];
@@ -407,7 +410,7 @@ class Crowd {
       vertexShader: `
         attribute vec3 iOffset; attribute vec3 iColor; attribute vec4 iMeta;
         uniform float uTime; uniform float uExcite; uniform float uWave;
-        varying vec2 vUv; varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHair; varying float vShade;
+        varying vec2 vUv; varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHair; varying float vShade; varying float vDepth;
         void main() {
           float phase = iMeta.x; float variant = iMeta.y; float r = iMeta.z; float sc = iMeta.w;
           // Mexican wave travels along x when the crowd is calm
@@ -427,16 +430,20 @@ class Crowd {
           vSkin = mix(vec3(0.93, 0.74, 0.6), vec3(0.42, 0.28, 0.19), sk * sk);
           vHair = mix(vec3(0.07, 0.06, 0.05), vec3(0.2, 0.2, 0.24), fract(r * 7.1));
           vShade = 0.72 + 0.28 * fract(r * 3.3);
-          gl_Position = projectionMatrix * viewMatrix * vec4(wp, 1.0);
+          vec4 mv = viewMatrix * vec4(wp, 1.0);
+          vDepth = -mv.z;
+          gl_Position = projectionMatrix * mv;
         }`,
       fragmentShader: `
-        uniform sampler2D uAtlas; uniform float uSun;
-        varying vec2 vUv; varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHair; varying float vShade;
+        uniform sampler2D uAtlas; uniform float uSun; uniform vec3 uFogColor; uniform float uFogNear; uniform float uFogFar;
+        varying vec2 vUv; varying vec3 vShirt; varying vec3 vSkin; varying vec3 vHair; varying float vShade; varying float vDepth;
         void main() {
           vec4 t = texture2D(uAtlas, vUv);
           if (t.a < 0.45) discard;
           vec3 c = (vShirt * t.r + vSkin * t.g + vHair * t.b) / max(t.r + t.g + t.b, 1e-3);
-          gl_FragColor = vec4(c * vShade * uSun, 1.0);
+          vec3 col = c * vShade * uSun;
+          col = mix(col, uFogColor, smoothstep(uFogNear, uFogFar, vDepth) * 0.55);
+          gl_FragColor = vec4(col, 1.0);
           #include <tonemapping_fragment>
           #include <colorspace_fragment>
         }`,
@@ -513,6 +520,58 @@ function makeFloodlight() {
   frame.position.set(0, 43, 0.1);
   g.add(frame, lamp);
   return g;
+}
+
+function makeBanner(text, bg, fg, stripe) {
+  const c = document.createElement('canvas');
+  c.width = 1024; c.height = 256;
+  const g = c.getContext('2d');
+  g.fillStyle = bg; g.fillRect(0, 0, 1024, 256);
+  if (stripe) {
+    g.fillStyle = stripe;
+    for (let i = -2; i < 12; i++) { g.beginPath(); g.moveTo(i * 110, 256); g.lineTo(i * 110 + 60, 256); g.lineTo(i * 110 + 200, 0); g.lineTo(i * 110 + 140, 0); g.fill(); }
+  }
+  g.fillStyle = fg;
+  g.font = '700 150px Teko, "Arial Narrow", sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText(text, 512, 142);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
+/** Supporters' banners hung over the front rail; they ripple in the breeze. */
+function makeBanners(group) {
+  const uniforms = { uTime: { value: 0 } };
+  const list = [
+    ['BULUT ULTRAS', '#d7263d', '#ffffff', 'rgba(255,255,255,0.12)'],
+    ['KIRMIZI BEYAZ', '#ffffff', '#d7263d', null],
+    ['9,15 M ŞEREF', '#10151f', '#ffd23f', 'rgba(255,210,63,0.1)'],
+    ['FRİKİK USTASI', '#d7263d', '#ffd23f', 'rgba(0,0,0,0.12)'],
+  ];
+  const out = [];
+  list.forEach(([t, bg, fg, st], i) => {
+    const geo = new THREE.PlaneGeometry(9, 2.2, 18, 4);
+    geo.translate(0, -1.1, 0);
+    const mat = new THREE.MeshStandardMaterial({ map: makeBanner(t, bg, fg, st), roughness: 0.9, side: THREE.DoubleSide });
+    mat.onBeforeCompile = (sh) => {
+      sh.uniforms.uTime = uniforms.uTime;
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uTime;')
+        .replace('#include <begin_vertex>', `#include <begin_vertex>
+          float hang = -position.y / 2.2;
+          transformed.z += sin(uTime * 1.7 + position.x * 0.8 + ${i}.0) * 0.08 * hang + hang * 0.12;`);
+    };
+    const m = new THREE.Mesh(geo, mat);
+    // draped over the seats of the lower tier, clear of the goal mouth
+    const xs = [-31, -17, 17, 31];
+    const row = 6 + (i % 2) * 2;
+    m.position.set(xs[i], 1.3 + row * 0.46 + 2.1, -9 - row * 0.85 - 0.35);
+    m.receiveShadow = true;
+    group.add(m);
+    out.push(m);
+  });
+  return uniforms;
 }
 
 function makeCornerFlag(x) {
@@ -609,6 +668,7 @@ export class Stadium {
       f.rotation.y = ry;
       this.group.add(f);
     }
+    this.bannerUniforms = makeBanners(this.group);
     this.flags = [makeCornerFlag(-34), makeCornerFlag(34)];
     for (const f of this.flags) this.group.add(f);
 
@@ -639,5 +699,6 @@ export class Stadium {
     this.crowd.update(dt, t, this.excite, this.flash, pxScale);
     this.boards.update(dt, t);
     for (const f of this.flags) f.userData.uniforms.uTime.value = t;
+    this.bannerUniforms.uTime.value = t;
   }
 }

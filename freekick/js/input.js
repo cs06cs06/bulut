@@ -33,6 +33,7 @@ export class SwipeInput {
     this.pointerId = e.pointerId;
     this.el.setPointerCapture?.(e.pointerId);
     this.points = [{ x: e.clientX, y: e.clientY, t: e.timeStamp || performance.now() }];
+    this.power = 0;
     this.onStart?.();
   }
   move(e) {
@@ -47,7 +48,7 @@ export class SwipeInput {
     if (!this.active || (e && e.pointerId !== this.pointerId)) return;
     this.active = false;
     const pts = this.points;
-    this.fade.push({ pts, life: 1 });
+    this.fade.push({ pts, life: 1, power: this.power || 0 });
     this.points = [];
     if (pts.length >= 2) this.onSwipe?.(pts);
   }
@@ -57,16 +58,18 @@ export class SwipeInput {
     this.fade.push({ pts: this.points, life: 1 });
     this.points = [];
   }
-  drawStroke(pts, alpha) {
+  drawStroke(pts, alpha, power = 0) {
     const g = this.ctx;
     if (pts.length < 2) return;
     const n = pts.length;
+    // glow runs from gold (soft) to red (full power)
+    const gr = 255, gg = Math.round(210 - power * 150), gb = Math.round(63 - power * 20);
     for (let pass = 0; pass < 2; pass++) {
       for (let i = 1; i < n; i++) {
         const f = i / (n - 1);
         const w = (pass === 0 ? 22 : 7) * (0.35 + 0.65 * f) * this.dpr;
         g.strokeStyle = pass === 0
-          ? `rgba(255, 210, 63, ${0.22 * alpha * f})`
+          ? `rgba(${gr}, ${gg}, ${gb}, ${0.26 * alpha * f})`
           : `rgba(255, 255, 255, ${0.92 * alpha * (0.3 + 0.7 * f)})`;
         g.lineWidth = w;
         g.beginPath();
@@ -79,8 +82,8 @@ export class SwipeInput {
     const r = 13 * this.dpr;
     const grd = g.createRadialGradient(last.x * this.dpr, last.y * this.dpr, 0, last.x * this.dpr, last.y * this.dpr, r * 2);
     grd.addColorStop(0, `rgba(255,255,255,${0.9 * alpha})`);
-    grd.addColorStop(0.4, `rgba(255,210,63,${0.35 * alpha})`);
-    grd.addColorStop(1, 'rgba(255,210,63,0)');
+    grd.addColorStop(0.4, `rgba(${gr},${gg},${gb},${0.4 * alpha})`);
+    grd.addColorStop(1, `rgba(${gr},${gg},${gb},0)`);
     g.fillStyle = grd;
     g.beginPath(); g.arc(last.x * this.dpr, last.y * this.dpr, r * 2, 0, Math.PI * 2); g.fill();
   }
@@ -91,7 +94,7 @@ export class SwipeInput {
     g.lineJoin = 'round';
     for (const f of this.fade) f.life -= dt * 2.2;
     this.fade = this.fade.filter((f) => f.life > 0);
-    for (const f of this.fade) this.drawStroke(f.pts, f.life * f.life);
-    if (this.active) this.drawStroke(this.points, 1);
+    for (const f of this.fade) this.drawStroke(f.pts, f.life * f.life, f.power);
+    if (this.active) this.drawStroke(this.points, 1, this.power || 0);
   }
 }

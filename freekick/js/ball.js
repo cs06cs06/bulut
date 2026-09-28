@@ -202,8 +202,11 @@ class BallTrail {
     this.material = new THREE.ShaderMaterial({
       uniforms: { uColor: { value: new THREE.Color(1, 1, 1) }, uOpacity: { value: 0 } },
       vertexShader: `attribute float aAlpha; attribute float aSide; varying float vA; varying float vSide;
-        void main(){ vA = aAlpha; vSide = aSide;
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
+        void main(){ vSide = aSide;
+        vec4 mv = modelViewMatrix * vec4(position,1.0);
+        // fade the ribbon when it passes right by the camera (replays, chase cam)
+        vA = aAlpha * smoothstep(1.5, 5.0, -mv.z);
+        gl_Position = projectionMatrix * mv; }`,
       fragmentShader: `uniform vec3 uColor; uniform float uOpacity; varying float vA; varying float vSide;
         void main(){ float edge = 1.0 - vSide * vSide; float a = vA * uOpacity * (0.35 + 0.65 * edge);
         gl_FragColor = vec4(uColor * (1.2 + edge), a); }`,

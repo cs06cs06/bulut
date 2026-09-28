@@ -7,7 +7,21 @@ Tarayıcıda çalışan, dokunmatik kaydırma (swipe) ile oynanan 3D serbest vur
 - **Yön:** Parmağını topun altından kaleye doğru kaydır. Kaydırmanın bittiği yön, topun kale çizgisini geçeceği noktayı belirler; uzun kaydırma yüksek, kısa kaydırma alçak şut demek.
 - **Falso:** Kaydırırken kavis çiz. Top da o kavisle döner (sağa bükülen çizgi topu önce sola açar, sonra içeri kıvırır). Barajın etrafından dolandırmak için kullan.
 - **Güç:** Hızlı kaydırma sert şut, yavaş kaydırma aşırtma. Çok sert şutlar biraz sapar; falsosuz ve çok sert vuruşlar "yaprak" gibi havada oynar.
+- **Nişan kılavuzu:** Parmak ekrandayken topun yolu noktalarla, kaledeki varış noktası bir halkayla gösterilir. Halka yeşilse top kaleye, turuncuysa direğe yakın, kırmızıysa dışarı gidiyor. Kaydırma izi şut sertleştikçe sarıdan kırmızıya döner.
 - Masaüstünde fare ile sürükleyerek oynanır. `Esc`/`P` duraklatır, tekrar sırasında `Boşluk` atlar.
+
+### Zorluk
+
+Menüdeki **Zorluk** düğmesiyle seçilir (varsayılan Kolay):
+
+| | Kolay | Normal | Zor |
+| --- | --- | --- | --- |
+| Nişan kılavuzu | tam yol + halka | yolun başı + halka | yok |
+| Direği az ıskalayan şut | kaleye çekilir | biraz çekilir | çekilmez |
+| Barajı aşmayan şut | otomatik düşen top (üstten dönüş) | otomatik düşen top | yok |
+| Kaleci | geç tepki, yavaş plonjon | biraz yumuşak | tam |
+| Baraj | en fazla 3 kişi, alçak sıçrar | en fazla 4 | en fazla 5 |
+| Rüzgâr | hafif | orta | tam |
 
 ### Modlar
 
@@ -20,9 +34,9 @@ Tarayıcıda çalışan, dokunmatik kaydırma (swipe) ile oynanan 3D serbest vur
 - **Nişan çözücü:** Kaydırma hareketi hız, dönüş ve hedef noktasına çevrilir; ardından topun, dönüşüyle birlikte, hedefe varacağı fırlatma açısı sayısal olarak bulunur.
 - **File:** Verlet kumaş simülasyonu. Top fileyi gerçekten esnetir, file topu sönümleyerek tutar; direğe çarpan top fileyi titretir.
 - **Kaleci yapay zekâsı:** Açıyı kapatacak şekilde konumlanır, vuruş anında "split-step" yapar, topun yolunu (zorluk seviyesine göre hatalı ve gecikmeli, falsoyu zamanla okuyarak) tahmin eder, yan adım atar, balistik bir yayda plonjona çıkar. Eldivenler iki kemikli IK ile canlı topa uzanır; top tutulur ya da çelinir.
-- **Animasyon:** Mixamo X Bot iskeleti üzerine prosedürel katmanlar — şutörün koşu klibinden IK ile anahtarlanmış vuruşa geçişi (destek ayağı topun yanına basar), barajın korunma pozu, çömelip sıçraması ve top yakından geçince irkilmesi; bakış takibi, gol/kaçan pozisyon tepkileri.
-- **Sahne:** Poly Haven HDRI ile aydınlatma, gölge takibi yapan güneş, prosedürel çim (biçme şeritleri, keskin analitik saha çizgileri, kalecinin önünde aşınma), hakem spreyi, LED reklam panoları (golde "GOOOL!" moduna geçer), 20 binden fazla animasyonlu seyirci (Meksika dalgası, golde zıplama ve flaşlar), köşe bayrakları, konfeti ve çim parçacıkları.
-- **Yayın hissi:** Omuz üstü nişan kamerası, şutla birlikte kaydırılan kamera, kritik anlarda ağır çekim, golde farklı açılardan tekrar gösterimi, kamera sarsıntısı, bloom ve renk düzenleme.
+- **Animasyon:** Mixamo X Bot iskeleti üzerine prosedürel katmanlar — şutörün koşu klibinden IK ile anahtarlanmış vuruşa geçişi (destek ayağı topun yanına basar), vuruş sonrası yavaşlayan adımlar ve gol sevinci; barajın korunma pozu, çömelip sıçraması, top yakından geçince irkilmesi, top geçince dönüp izlemesi ve gole/kurtarışa tepkisi; bakış takibi, ayak altı temas gölgeleri ve kenar ışığı.
+- **Sahne:** Poly Haven HDRI ile aydınlatma, gölge takibi yapan güneş, prosedürel çim (biçme şeritleri, keskin analitik saha çizgileri, kalecinin önünde aşınma), hakem spreyi, LED reklam panoları (golde "GOOOL!" moduna geçer), 20 binden fazla animasyonlu seyirci (Meksika dalgası, golde zıplama ve flaşlar), tribünde dalgalanan taraftar pankartları, uzak tribünlere derinlik veren hafif pus, köşe bayrakları, golde konfeti ve piroteknik kıvılcım fıskiyeleri, çim parçacıkları.
+- **Yayın hissi:** Omuz üstü nişan kamerası, şutla birlikte kaydırılan kamera, kritik anlarda ağır çekim, golcüyü "uçak" sevinciyle koşarken izleyen kutlama kamerası, vuruş anından başlayıp kaleye kesen iki açılı tekrar (ekrana dokununca atlanır), şut hızı göstergesi, kamera sarsıntısı, bloom ve renk düzenleme.
 - **Ses:** Kalabalık uğultusu top kaleye yaklaştıkça yükselir; gol, "ooh", hayal kırıklığı, alkış, düdük, vuruş, direk ve file sesleri.
 
 ## Çalıştırma

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BALL } from './config.js';
+import { BALL, FIELD } from './config.js';
 import { BallState, stepBall } from './physics.js';
 
 const R = BALL.radius;
@@ -54,9 +54,19 @@ export function analyzeSwipe(points, viewH) {
   };
 }
 
-export function speedFromSwipe(g) {
+export function speedFromSwipe(g, assist) {
   const v = 12 + 21.5 * (1 - Math.exp(-(g.speed - 0.3) / 1.55));
-  return THREE.MathUtils.clamp(v, 11, 33.5);
+  return THREE.MathUtils.clamp(v, assist?.minV ?? 11, assist?.maxV ?? 33.5);
+}
+
+/**
+ * Swipe bow -> side spin. A small dead zone keeps a naturally curved thumb stroke from
+ * adding accidental curl; past it the response ramps up quickly.
+ */
+export function spinFromSwipe(g, assist) {
+  const dead = 0.03;
+  const c = Math.sign(g.curve) * Math.max(0, Math.abs(g.curve) - dead);
+  return THREE.MathUtils.clamp(-c * 285 * (assist?.curveGain ?? 1), -72, 72);
 }
 
 const _ray = new THREE.Raycaster();
@@ -71,7 +81,7 @@ export function swipeTarget(g, camera, ballPos, viewW, viewH) {
   const top = new THREE.Vector3(0, 2.44, 0).project(camera);
   const tx = (top.x * 0.5 + 0.5) * viewW, ty = (-top.y * 0.5 + 0.5) * viewH;
   const distPx = Math.hypot(tx - bx, ty - by);
-  const S = distPx / (0.38 * viewH);
+  const S = distPx / (0.34 * viewH);
   const qx = bx + g.chord.x * viewH * S;
   const qy = by - g.chord.y * viewH * S;
   _ndc.set((qx / viewW) * 2 - 1, -(qy / viewH) * 2 + 1);
@@ -111,12 +121,12 @@ function flyToPlane(p0, v0, w, wind) {
  * crosses the goal plane at `target`. Spin still bends the flight on the way there, so
  * a curled swipe produces a curled path around the wall.
  */
-export function solveLaunch(ballPos, V, sideSpin, target, wind) {
+export function solveLaunch(ballPos, V, sideSpin, target, wind, extraTop = 0) {
   const dist = Math.hypot(target.x - ballPos.x, ballPos.z - target.z);
   let yaw = Math.atan2(target.x - ballPos.x, ballPos.z - target.z);
   let pitch = Math.atan2(target.y - ballPos.y, dist) + 0.02 + dist * 0.0022;
   const v0 = new THREE.Vector3(), w = new THREE.Vector3(), dirH = new THREE.Vector3();
-  const topSpin = 3.5 + Math.abs(sideSpin) * 0.16;
+  const topSpin = 3.5 + Math.abs(sideSpin) * 0.16 + extraTop;
   let best = null;
   for (let it = 0; it < 14; it++) {
     dirH.set(Math.sin(yaw), 0, -Math.cos(yaw));
@@ -139,19 +149,69 @@ export function solveLaunch(ballPos, V, sideSpin, target, wind) {
   dirH.set(Math.sin(yaw), 0, -Math.cos(yaw));
   v0.set(dirH.x * Math.cos(pitch), Math.sin(pitch), dirH.z * Math.cos(pitch)).multiplyScalar(V);
   w.copy(spinVector(dirH, sideSpin, topSpin));
-  return { v: v0, w, yaw, pitch, flightTime: best ? best.t : 1.2, err: best ? best.err : 99 };
+  return { v: v0, w, yaw, pitch, topSpin, flightTime: best ? best.t : 1.2, err: best ? best.err : 99 };
 }
 
-/** Full pipeline: gesture -> physical shot. */
-export function buildShot(g, camera, ballPos, viewW, viewH, wind, exact = false) {
-  const V = speedFromSwipe(g);
+/**
+ * Height of a trajectory where it crosses the wall line, or null when it passes
+ * beside the wall. `wall` = { a, b } spray-line endpoints on the ground.
+ */
+function heightAtWall(ballPos, v, w, wind, wall) {
+  _s.p.copy(ballPos); _s.v.copy(v); _s.w.copy(w); _s.knuckle = 0; _s.onGround = false;
+  const ax = wall.a.x, az = wall.a.z, bx = wall.b.x, bz = wall.b.z;
+  const nx = -(bz - az), nz = bx - ax;
+  const side = (x, z) => (x - ax) * nx + (z - az) * nz;
+  let prev = side(_s.p.x, _s.p.z);
+  for (let t = 0; t < 2; t += 1 / 240) {
+    stepBall(_s, 1 / 240, wind, t);
+    const cur = side(_s.p.x, _s.p.z);
+    if (Math.sign(cur) !== Math.sign(prev)) {
+      const len2 = (bx - ax) ** 2 + (bz - az) ** 2;
+      const u = ((_s.p.x - ax) * (bx - ax) + (_s.p.z - az) * (bz - az)) / len2;
+      return u > -0.08 && u < 1.08 ? _s.p.y : null;
+    }
+    prev = cur;
+  }
+  return null;
+}
+
+/**
+ * Full pipeline: gesture -> physical shot.
+ * opts.assist tunes precision, curl and help; opts.wall enables the dip assist that adds
+ * topspin until the ball clears a jumping wall.
+ */
+export function buildShot(g, camera, ballPos, viewW, viewH, wind, exact = false, opts = {}) {
+  const assist = opts.assist;
+  const V = speedFromSwipe(g, assist);
   const target = swipeTarget(g, camera, ballPos, viewW, viewH);
+  // near misses get pulled back inside the frame on the easier settings
+  const snap = assist?.snap ?? 0;
+  if (snap > 0) {
+    const HW = FIELD.goalHalfWidth, GH = FIELD.goalHeight;
+    const outX = Math.abs(target.x) - (HW - 0.28);
+    const outY = target.y - (GH - 0.22);
+    if (outX > 0 && outX < snap + 0.28 && target.y < GH + snap) target.x = Math.sign(target.x) * (HW - 0.28);
+    if (outY > 0 && outY < snap + 0.22 && Math.abs(target.x) < HW + snap) target.y = GH - 0.22;
+  }
   // harder strikes are a little less precise
-  const sloppy = exact ? 0 : Math.max(0, V - 22) * 0.034 + Math.min(1, Math.abs(g.curve) / 0.3) * 0.12;
+  const sloppy = exact ? 0 : (Math.max(0, V - 22) * 0.034 + Math.min(1, Math.abs(g.curve) / 0.3) * 0.12) * (assist?.sloppy ?? 1);
   target.x += (Math.random() - 0.5) * 2 * sloppy;
   target.y = Math.max(R, target.y + (Math.random() - 0.5) * 2 * sloppy * 0.7);
-  const side = THREE.MathUtils.clamp(-g.curve * 230, -72, 72);
-  const sol = solveLaunch(ballPos, V, side, target, wind);
+  const side = spinFromSwipe(g, assist);
+  let sol = solveLaunch(ballPos, V, side, target, wind);
+  let dipped = false;
+  if (assist?.dip && opts.wall) {
+    // a dipping shot: more topspin means a higher launch for the same target
+    const clear = opts.wall.clear ?? 2.5;
+    for (let extra = 8, i = 0; i < 5; i++, extra += 8) {
+      const h = heightAtWall(ballPos, sol.v, sol.w, wind, opts.wall);
+      if (h === null || h > clear || target.y < 0.6) break;
+      const next = solveLaunch(ballPos, V, side, target, wind, extra);
+      if (next.err > 0.3) break;
+      sol = next;
+      dipped = true;
+    }
+  }
   const knuckle = Math.abs(g.curve) < 0.035 && V > 26.5 ? Math.min(1, (V - 26.5) / 5) : 0;
-  return { ...sol, V, target, side, knuckle, curve: g.curve };
+  return { ...sol, V, target, side, knuckle, curve: g.curve, dipped };
 }

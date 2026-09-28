@@ -56,6 +56,8 @@ export class Engine {
     r.shadowMap.type = THREE.PCFShadowMap;
     this.dprScale = 1;
     this.scene = new THREE.Scene();
+    // light haze gives the far stands depth
+    this.scene.fog = new THREE.Fog(0xc4cdd6, 70, 260);
     this.camera = new THREE.PerspectiveCamera(50, 1, 0.1, 700);
     this.camera.position.set(0, 1.8, 30);
 
@@ -105,6 +107,13 @@ export class Engine {
     this.scene.background = bg;
     this.scene.backgroundRotation.set(0, ENV_ROTATION, 0);
     this.scene.backgroundIntensity = 1.0;
+  }
+
+  /** Replays get a slightly washed, vignetted broadcast-tape look. */
+  setReplayLook(on) {
+    if (!this.grade) return;
+    this.grade.uniforms.uSat.value = on ? 0.82 : 1.06;
+    this.grade.uniforms.uVignette.value = on ? 0.55 : 0.32;
   }
 
   /** Keeps the shadow frustum tight around the action. */

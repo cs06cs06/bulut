@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 // GPU-light particle system: a fixed pool of sprites simulated on the CPU.
 // Used for turf spray at the strike, chalk/paint chips off the woodwork and confetti.
-const MAX = 900;
+const MAX = 1600;
 
 function makeSpriteTexture() {
   const c = document.createElement('canvas');
@@ -95,6 +95,17 @@ export class Particles {
     for (const sx of [-1, 1]) {
       const o = new THREE.Vector3(center.x + sx * 9, 7.5, center.z - 10);
       this.emit(count / 2, o, { speed: 4.5, spread: 0.9, up: 1.4, dir: new THREE.Vector3(-sx * 0.3, 0.8, 0.9), palette, colorVar: 0.1, size: 0.07, life: 4.5, drag: 1.1, gravity: 2.2 });
+    }
+  }
+
+  /** Pyro fountains behind the goal: bright sparks that bloom. */
+  pyro(dt) {
+    const n = Math.max(1, Math.round(dt * 130));
+    for (const sx of [-13, -6.5, 6.5, 13]) {
+      this.emit(n, new THREE.Vector3(sx, 0.95, -6.2), {
+        speed: 6.5, spread: 0.12, up: 1, dir: new THREE.Vector3(0, 1.4, 0.15),
+        palette: [[5, 3.2, 1.1], [5, 4.2, 2.2], [4, 2, 0.6]], colorVar: 0.15, size: 0.13, life: 1.0, drag: 0.7, gravity: 6,
+      });
     }
   }
 

@@ -70,6 +70,14 @@ async function boot() {
     $('snd-wave').toggleAttribute('hidden', audio.muted);
     $('snd-off').toggleAttribute('hidden', !audio.muted);
   };
+  const assistLabel = () => { $('btn-assist').textContent = 'Zorluk: ' + game.assist.label; };
+  assistLabel();
+  $('btn-assist').addEventListener('click', () => {
+    const order = ['easy', 'normal', 'hard'];
+    game.setAssist(order[(order.indexOf(game.assistKey) + 1) % order.length]);
+    assistLabel();
+    click();
+  });
   const qNames = { auto: 'Otomatik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' };
   const qLabel = () => { $('btn-quality').textContent = 'Grafik: ' + qNames[store.get('quality', 'auto')]; };
   soundLabel(); qLabel();
@@ -101,6 +109,8 @@ async function boot() {
   $('btn-again').addEventListener('click', () => { click(); game.start(game.mode); });
   $('btn-menu').addEventListener('click', () => { click(); game.toMenu(); });
   $('btn-skip').addEventListener('click', () => { click(); game.stopReplay(); });
+  // a tap anywhere skips the replay
+  $('touch').addEventListener('pointerdown', () => { if (game.state === 'replay' && game.replaying) game.stopReplay(); });
   document.addEventListener('visibilitychange', () => { if (document.hidden) setPause(true); });
   addEventListener('keydown', (e) => {
     if (e.key === 'Escape' || e.key === 'p') setPause(!game.paused);

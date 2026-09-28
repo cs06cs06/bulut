@@ -31,6 +31,8 @@
       <span id="hud-dist">24 m</span>
       <span id="hud-wind"><i class="arrow" id="hud-wind-arrow">↑</i><b id="hud-wind-v">0</b>&nbsp;km/sa</span>
       <span id="hud-wall">4'lü baraj</span>
+      <span id="hud-assist">Kolay</span>
+      <span id="hud-speed" class="speed" hidden>0 km/sa</span>
     </div>
     <div class="hud-btns">
       <button class="icon-btn" id="btn-sound" aria-label="Sesi aç/kapat">
@@ -59,9 +61,9 @@
       <h1 class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Serbest vuruş · 9,15 m</small></h1>
       <p class="tagline">Parmağını kaydır, eğri çizerek falso ver, barajın üstünden ağları havalandır.</p>
       <div class="how">
-        <div><b>Yön</b>Topa doğru değil, kalede vurmak istediğin yere kaydır.</div>
-        <div><b>Falso</b>Kavisli çiz; top da o kavisle döner.</div>
-        <div><b>Güç</b>Hızlı kaydır sert, yavaş kaydır aşırtma.</div>
+        <div><b>Yön</b>Kalede vurmak istediğin yere doğru kaydır. Halka yeşilse gol yolunda.</div>
+        <div><b>Falso</b>Kavisli çiz; top da o kavisle döner, barajın yanından dolanır.</div>
+        <div><b>Güç</b>Hızlı kaydır sert, yavaş kaydır aşırtma. İz kızardıkça şut sertleşir.</div>
       </div>
       <div class="modes">
         <button class="btn" id="btn-career">Kariyer <span class="sub">3 hak · her golde zorlaşır</span></button>
@@ -70,6 +72,7 @@
       <div class="menu-foot">
         <span class="best">En iyi skor<b id="menu-best">0</b></span>
         <span class="toggles">
+          <button class="chip" id="btn-assist">Zorluk: Kolay</button>
           <button class="chip" id="btn-menu-sound">Ses: Açık</button>
           <button class="chip" id="btn-quality">Grafik: Otomatik</button>
         </span>
@@ -104,7 +107,7 @@
 
   <div id="loader">
     <div class="load-box">
-      <div class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Stadyum hazırlanıyor · s3</small></div>
+      <div class="logo"><span class="l1">Frikik</span><span class="l2">Ustası</span><small>Stadyum hazırlanıyor · s4</small></div>
       <div class="bar"><i id="load-bar"></i></div>
       <div class="load-label" id="load-label">Betik bekleniyor…</div>
     </div>

@@ -49,6 +49,29 @@ export const DIFFICULTY = [
   { reaction: 0.17, dive: 7.2, catchSpeed: 23, noise: 0.12, spinRead: 0.9, wall: 5, wind: 5.5 },
 ];
 
+// Player-facing difficulty: how much the game helps the shooter and how sharp the
+// defence is. Keeper values are offsets/multipliers on top of the DIFFICULTY ladder.
+export const ASSIST = {
+  easy: {
+    label: 'Kolay', guide: 'full', sloppy: 0.2, curveGain: 1.25, minV: 18, maxV: 31,
+    snap: 0.9, dip: true, windScale: 0.35, ring: 1.35,
+    keeperReaction: 0.14, keeperDive: 0.78, keeperNoise: 0.3, catchSpeed: -3, spinRead: -0.2,
+    wallMax: 3, wallJump: 0.55,
+  },
+  normal: {
+    label: 'Normal', guide: 'short', sloppy: 0.6, curveGain: 1.1, minV: 16, maxV: 33,
+    snap: 0.35, dip: true, windScale: 0.75, ring: 1.1,
+    keeperReaction: 0.05, keeperDive: 0.92, keeperNoise: 0.1, catchSpeed: -1, spinRead: -0.08,
+    wallMax: 4, wallJump: 0.85,
+  },
+  hard: {
+    label: 'Zor', guide: 'none', sloppy: 1, curveGain: 1, minV: 12, maxV: 33.5,
+    snap: 0, dip: false, windScale: 1, ring: 1,
+    keeperReaction: 0, keeperDive: 1, keeperNoise: 0, catchSpeed: 0, spinRead: 0,
+    wallMax: 5, wallJump: 1,
+  },
+};
+
 export const TEAM = {
   home: { shirt: 0xd7263d, shirt2: 0xffffff, shorts: 0xffffff, socks: 0xd7263d, number: 0xffffff },
   away: { shirt: 0x1f3c88, shirt2: 0x7fb2ff, shorts: 0x14244f, socks: 0x1f3c88, number: 0xffffff },

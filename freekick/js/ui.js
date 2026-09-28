@@ -5,7 +5,7 @@ export class UI {
     this.el = {
       hud: $('hud'), shot: $('hud-shot'), score: $('hud-score'), lives: $('hud-lives'), livesCell: $('hud-lives-cell'),
       streakCell: $('hud-streak-cell'), streak: $('hud-streak'), dist: $('hud-dist'), windArrow: $('hud-wind-arrow'),
-      windV: $('hud-wind-v'), wind: $('hud-wind'), wall: $('hud-wall'),
+      windV: $('hud-wind-v'), wind: $('hud-wind'), wall: $('hud-wall'), assist: $('hud-assist'), speed: $('hud-speed'),
       toast: $('toast'), big: $('toast-big'), small: $('toast-small'), bonus: $('toast-bonus'),
       hint: $('hint'), hintText: $('hint-text'), replay: $('replay-tag'), menu: $('menu'), best: $('menu-best'),
       pause: $('pause'), over: $('over'), loader: $('loader'), loadBar: $('load-bar'), loadLabel: $('load-label'),
@@ -75,7 +75,16 @@ export class UI {
     this.el.streak.textContent = 'x' + n;
   }
 
-  setShotInfo({ distance, wind, windAngle, wall }) {
+  setSpeed(ms) {
+    const el = this.el.speed;
+    if (!ms) { el.hidden = true; return; }
+    el.hidden = false;
+    el.textContent = `Şut ${Math.round(ms * 3.6)} km/sa`;
+  }
+
+  setShotInfo({ distance, wind, windAngle, wall, assist }) {
+    if (assist) this.el.assist.textContent = assist;
+    this.el.speed.hidden = true;
     this.el.dist.textContent = distance.toFixed(0) + ' m';
     const kmh = wind * 3.6;
     this.el.wind.hidden = kmh < 0.5;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FIELD, BALL, PHYS, DIFFICULTY, TEAM } from './config.js';
+import { FIELD, BALL, PHYS, DIFFICULTY, TEAM, ASSIST } from './config.js';
 import { stepBall, collideGoalFrame, collideBoards, collideCapsule, closestOnSegment, sampleTrajectory, BallState } from './physics.js';
 import { Ball } from './ball.js';
 import { Net } from './net.js';
@@ -39,16 +39,49 @@ function makeTargetRing() {
 }
 
 function makePreview() {
-  const n = 46;
+  const n = 54;
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(n * 3), 3));
-  const c = document.createElement('canvas'); c.width = c.height = 32;
-  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.beginPath(); x.arc(16, 16, 12, 0, 7); x.fill();
-  const mat = new THREE.PointsMaterial({ size: 7 * Math.min(2, devicePixelRatio || 1), sizeAttenuation: false, map: new THREE.CanvasTexture(c), transparent: true, opacity: 0.85, depthWrite: false, color: 0xfff2b0 });
+  const alpha = new Float32Array(n);
+  for (let i = 0; i < n; i++) alpha[i] = 1;
+  geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+  const mat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(0xfff2b0) }, uSize: { value: 11 * Math.min(2, devicePixelRatio || 1) } },
+    vertexShader: `attribute float aAlpha; uniform float uSize; varying float vA;
+      void main(){ vA = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = uSize * clamp(14.0 / -mv.z, 0.75, 1.7); gl_Position = projectionMatrix * mv; }`,
+    fragmentShader: `uniform vec3 uColor; varying float vA;
+      void main(){ vec2 d = gl_PointCoord - 0.5; float r = length(d);
+        float a = smoothstep(0.5, 0.32, r) * vA; if (a < 0.02) discard;
+        gl_FragColor = vec4(mix(vec3(1.0), uColor, smoothstep(0.1, 0.3, r)), a * 0.9); }`,
+    transparent: true, depthWrite: false,
+  });
   const p = new THREE.Points(geo, mat);
   p.frustumCulled = false;
   p.visible = false;
+  p.renderOrder = 7;
   return p;
+}
+
+/** Where the ball will cross the goal line while the finger is still on the glass. */
+function makeReticle() {
+  const g = new THREE.Group();
+  const mat = new THREE.MeshBasicMaterial({ color: 0x5dff8a, transparent: true, opacity: 0.95, depthWrite: false, depthTest: false, side: THREE.DoubleSide });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.2, 0.27, 40), mat);
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(0.05, 20), mat);
+  const ticks = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const t = new THREE.Mesh(new THREE.PlaneGeometry(0.05, 0.16), mat);
+    const a = (i / 4) * Math.PI * 2;
+    t.position.set(Math.cos(a) * 0.38, Math.sin(a) * 0.38, 0);
+    t.rotation.z = a + Math.PI / 2;
+    ticks.add(t);
+  }
+  g.add(ring, dot, ticks);
+  g.renderOrder = 8;
+  g.visible = false;
+  g.userData = { mat, ticks };
+  return g;
 }
 
 export class Game {
@@ -67,10 +100,14 @@ export class Game {
     scene.add(this.ring);
     this.preview = makePreview();
     scene.add(this.preview);
+    this.reticle = makeReticle();
+    scene.add(this.reticle);
+    this.setAssist(store.get('assist', 'easy'));
 
     const skins = [0x8d5a3b, 0xe8b894, 0xc98f6b, 0x5a3825, 0xd9a27e, 0xb07a55];
     const hair = [0x1d1510, 0x2b1d12, 0x0e0c0a, 0x5a3a1a, 0x1d1510, 0x7a5a30];
-    const add = (c) => { scene.add(c.root); return c; };
+    this.characters = [];
+    const add = (c) => { scene.add(c.root); scene.add(c.blob); this.characters.push(c); return c; };
     this.keeper = new Keeper(add(new Character(assets.xbot, { kit: TEAM.keeper, keeper: true, number: 1, skin: 0xe0ac86, hair: 0x3a2412, boot: 0x0b0b0b, glove: 0x39d353 })));
     const wallChars = [];
     for (let i = 0; i < 5; i++) {
@@ -103,6 +140,12 @@ export class Game {
     this.camera.setMode('menu');
   }
 
+  setAssist(key) {
+    this.assistKey = ASSIST[key] ? key : 'easy';
+    this.assist = ASSIST[this.assistKey];
+    store.set('assist', this.assistKey);
+  }
+
   demoSpot() { return { x: -4.5, z: 23, diff: DIFFICULTY[1], wall: 4, wind: 0 }; }
 
   // ------------------------------------------------------------------ flow
@@ -121,12 +164,15 @@ export class Game {
   toMenu() {
     this.state = 'menu';
     this.input.enabled = false;
+    this.replaying = false;
+    this.engine.setReplayLook(false);
     this.ui.replay(false);
     this.ui.clearToast();
     this.ui.hint(false);
     this.ui.hideOver();
     this.ui.pause(false);
     this.preview.visible = false;
+    this.reticle.visible = false;
     this.setupShot(this.demoSpot(), true);
     this.camera.setMode('menu');
     this.ui.showMenu(this.best);
@@ -146,15 +192,27 @@ export class Game {
 
   setupShot(spot, quiet) {
     this.spot = spot;
-    this.diff = spot.diff;
+    const a = this.assist;
+    const d = spot.diff;
+    // the ladder sets the base keeper, the chosen difficulty softens or sharpens it
+    this.diff = {
+      ...d,
+      reaction: d.reaction + a.keeperReaction,
+      dive: d.dive * a.keeperDive,
+      noise: d.noise + a.keeperNoise,
+      catchSpeed: d.catchSpeed + a.catchSpeed,
+      spinRead: THREE.MathUtils.clamp(d.spinRead + a.spinRead, 0.1, 1),
+    };
+    spot.wall = Math.min(spot.wall, a.wallMax);
+    spot.wind *= a.windScale;
     this.ball.place(spot.x, spot.z);
     this.ball.attached = null;
     this.ball.trail.reset();
     this.net.reset();
     const bp = this.ball.state.p;
-    const wallInfo = this.wall.setup(bp, spot.wall);
+    const wallInfo = this.wall.setup(bp, spot.wall, a.wallJump);
     this.wallInfo = wallInfo;
-    this.keeper.setup(bp, wallInfo.edgeX, spot.diff);
+    this.keeper.setup(bp, wallInfo.edgeX, this.diff);
     const toGoal = new THREE.Vector3(-bp.x * 0.8, 0, -bp.z).normalize();
     this.kicker.setup(bp, toGoal);
     this.stadium.setSpray(true, bp, wallInfo.a, wallInfo.b);
@@ -164,7 +222,10 @@ export class Game {
     const tx = (Math.random() < 0.5 ? -1 : 1) * (HW - 0.62);
     const ty = Math.random() < 0.72 ? GH - 0.58 : 0.62;
     this.ring.position.set(tx, ty, 0.03);
+    this.ring.scale.setScalar(a.ring);
+    this.ring.userData.base = a.ring;
     this.ring.visible = !quiet;
+    this.reticle.visible = false;
     this.flags = {};
     this.outcome = null;
     this.ctx.ballLive = false;
@@ -187,6 +248,7 @@ export class Game {
         wind: spot.wind,
         windAngle: Math.atan2(this.wind.x, -this.wind.z),
         wall: spot.wall,
+        assist: this.assist.label,
       });
       this.camera.setMode('aim', { snap: true, ball: bp });
       this.state = 'setup';
@@ -199,33 +261,70 @@ export class Game {
   }
 
   // ------------------------------------------------------------------ input
+  shotOptions() {
+    const w = this.wallInfo;
+    const clear = 1.95 + 0.6 * this.assist.wallJump + R;
+    return { assist: this.assist, wall: this.spot.wall > 0 && w ? { a: w.a, b: w.b, clear } : null };
+  }
+
+  /** Live aim guide: dotted flight path and a reticle where it meets the goal line. */
   onSwipeMove(pts) {
-    if (this.state !== 'aim' || this.mode !== 'practice') return;
+    if (this.state !== 'aim') return;
+    const guide = this.mode === 'practice' ? 'full' : this.assist.guide;
     const g = analyzeSwipe(pts, innerHeight);
-    if (!g || !g.valid) { this.preview.visible = false; return; }
-    const shot = buildShot(g, this.engine.camera, this.ball.state.p, innerWidth, innerHeight, this.wind, true);
+    if (!g || !g.valid) { this.preview.visible = false; this.reticle.visible = false; return; }
+    const shot = buildShot(g, this.engine.camera, this.ball.state.p, innerWidth, innerHeight, this.wind, true, this.shotOptions());
+    this.input.power = clamp01((shot.V - 14) / 18);
+    if (guide === 'none') return;
     const s = new BallState();
     s.p.copy(this.ball.state.p); s.v.copy(shot.v); s.w.copy(shot.w);
-    const pts3 = sampleTrajectory(s, this.wind, 2.2, 1 / 24);
-    const arr = this.preview.geometry.attributes.position.array;
-    const n = arr.length / 3;
+    const pts3 = sampleTrajectory(s, this.wind, 2.4, 1 / 30);
+    let cross = null;
+    let cut = pts3.length;
+    for (let i = 1; i < pts3.length; i++) {
+      if (pts3[i].z <= 0 && pts3[i - 1].z > 0) {
+        const f = pts3[i - 1].z / (pts3[i - 1].z - pts3[i].z);
+        cross = pts3[i - 1].clone().lerp(pts3[i], f);
+        cut = i;
+        break;
+      }
+    }
+    const shown = guide === 'full' ? cut : Math.max(4, Math.floor(cut * 0.42));
+    const pos = this.preview.geometry.attributes.position.array;
+    const alpha = this.preview.geometry.attributes.aAlpha.array;
+    const n = alpha.length;
     for (let i = 0; i < n; i++) {
-      const p = pts3[Math.min(i, pts3.length - 1)] || s.p;
-      arr[i * 3] = p.x; arr[i * 3 + 1] = p.y; arr[i * 3 + 2] = p.z;
+      const k = Math.min(Math.floor((i / (n - 1)) * shown), pts3.length - 1);
+      const p = pts3[Math.max(0, k)] || s.p;
+      pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z;
+      alpha[i] = guide === 'full' ? 1 : 1 - i / n;
     }
     this.preview.geometry.attributes.position.needsUpdate = true;
+    this.preview.geometry.attributes.aAlpha.needsUpdate = true;
     this.preview.visible = true;
+    // reticle colour tells at a glance whether the ball is going in
+    const target = cross || shot.target;
+    const inside = Math.abs(target.x) < HW - 0.12 && target.y < GH - 0.1;
+    const close = Math.abs(target.x) < HW + 0.6 && target.y < GH + 0.6;
+    const col = inside ? 0x5dff8a : close ? 0xffc23d : 0xff5a4f;
+    this.reticle.userData.mat.color.setHex(col);
+    this.preview.material.uniforms.uColor.value.setHex(col);
+    this.reticle.position.set(target.x, Math.max(0.12, target.y), 0.05);
+    // constant on-screen size, whatever the distance
+    this.reticle.scale.setScalar(THREE.MathUtils.clamp(this.engine.camera.position.distanceTo(this.reticle.position) * 0.055, 0.8, 2.2));
+    this.reticle.visible = true;
   }
 
   onSwipe(pts) {
     if (this.state !== 'aim') return;
     this.preview.visible = false;
+    this.reticle.visible = false;
     const g = analyzeSwipe(pts, innerHeight);
     if (!g || !g.valid) {
       this.ui.hint(true, 'Kaleye doğru daha uzun kaydır');
       return;
     }
-    this.shot = buildShot(g, this.engine.camera, this.ball.state.p, innerWidth, innerHeight, this.wind);
+    this.shot = buildShot(g, this.engine.camera, this.ball.state.p, innerWidth, innerHeight, this.wind, false, this.shotOptions());
     this.state = 'runup';
     this.stateT = 0;
     this.input.enabled = false;
@@ -255,6 +354,7 @@ export class Game {
     const power = clamp01((shot.V - 12) / 21);
     this.audio.play(power > 0.6 ? 'kick' : 'kick2', { vol: 0.55 + power * 0.45, rate: 1.1 - power * 0.2 });
     this.fx.turf(bs.p, shot.v.clone().normalize());
+    this.ui.setSpeed(shot.V);
     buzz(12 + Math.round(power * 18));
     this.camera.kick(0.35 + power * 0.4);
     this.camera.setMode('flight');
@@ -377,7 +477,7 @@ export class Game {
   // ------------------------------------------------------------------ outcomes
   onGoal() {
     const gx = this.flags.goalAt;
-    const hitRing = Math.hypot(gx.x - this.ring.position.x, gx.y - this.ring.position.y) < 0.6;
+    const hitRing = Math.hypot(gx.x - this.ring.position.x, gx.y - this.ring.position.y) < 0.6 * (this.ring.userData.base || 1);
     this.flags.ring = hitRing;
     this.stadium.cheer(1, 7);
     this.audio.crowd('goal', 1);
@@ -388,6 +488,7 @@ export class Game {
     this.camera.kick(0.5);
     buzz([40, 60, 80]);
     this.fx.confetti(new THREE.Vector3(0, 0, 0));
+    this.pyroT = 2.4;
     this.resolve('goal');
   }
 
@@ -445,6 +546,7 @@ export class Game {
       this.ui.toast(big, `+${points} · ${dist.toFixed(0)} metreden`, 'goal', bonuses, 2.4);
       this.kicker.setReaction('goal');
       this.keeper.react('goal');
+      this.wall.react('goal');
     } else {
       this.streak = 0;
       this.ui.setStreak(0);
@@ -461,6 +563,7 @@ export class Game {
       }[outcome];
       this.ui.toast(msg[0], msg[1], 'bad', [], 2.0);
       this.kicker.setReaction(close ? 'close' : 'miss');
+      this.wall.react(outcome);
       if (outcome === 'caught' || outcome === 'parry') {
         this.keeper.react('save');
         this.stadium.cheer(0.45, 3);
@@ -516,14 +619,18 @@ export class Game {
       if (this.state !== 'replay') return;
       this.ui.fade(false);
       this.ui.replay(true);
-      this.replayT = Math.max(this.recording[0].t, (this.launchTime ?? 0) - 0.4);
-      this.replayEnd = Math.min(this.recording[this.recording.length - 1].t, (this.outcomeTime ?? 0) + 1.3);
+      // start on the strike itself (the run-up is not replayed, so nobody walks back
+      // to the ball) and stop shortly after the ball settles
+      this.replayT = Math.max(this.recording[0].t, (this.launchTime ?? 0) - 0.12);
+      this.replayStart = this.replayT;
+      this.replayEnd = Math.min(this.recording[this.recording.length - 1].t, (this.outcomeTime ?? 0) + 0.9);
       this.replayProxy = new BallState();
       this.net.reset();
       this.ball.trail.reset();
-      const angles = ['behind', 'side', 'chase'];
-      const angle = this.outcome === 'goal' ? angles[Math.floor(Math.random() * 3)] : 'side';
-      this.camera.setMode('replay', { angle, sideSign: Math.sign(this.spot.x || 1) * -1 || 1, cut: true });
+      this.replayCut = false;
+      this.goalAngle = Math.random() < 0.5 ? 'behind' : 'goalside';
+      this.camera.setMode('replay', { angle: 'strike', ballStart: this.ballStart, shotDir: this.ctx.shotDir, sideSign: this.spot.x > 0 ? -1 : 1, cut: true });
+      this.engine.setReplayLook(true);
       this.replaying = true;
     }, 380);
   }
@@ -532,12 +639,13 @@ export class Game {
     if (this.state !== 'replay') return;
     this.replaying = false;
     this.ui.replay(false);
+    this.engine.setReplayLook(false);
     this.advance();
   }
 
   playReplay(dt) {
     if (!this.replaying) return;
-    this.replayT += dt * 0.5;
+    this.replayT += dt * 0.45;
     const rec = this.recording;
     if (this.replayT >= this.replayEnd) { this.stopReplay(); return; }
     let i = 0;
@@ -557,6 +665,14 @@ export class Game {
     px.v.subVectors(b.p, a.p).multiplyScalar(1 / Math.max(1e-3, b.t - a.t));
     px.p.copy(bs.p);
     this.net.interactBall(px, dt * 0.5);
+    // second camera: cut to the goal once the ball has cleared the wall
+    if (!this.replayCut) {
+      const travelled = this.ballStart ? this.ball.state.p.distanceTo(this.ballStart) : 0;
+      if (travelled > 10.5 || this.replayT > this.replayStart + (this.replayEnd - this.replayStart) * 0.45) {
+        this.replayCut = true;
+        this.camera.setMode('replay', { angle: this.goalAngle, sideSign: this.spot.x > 0 ? 1 : -1, cut: true });
+      }
+    }
   }
 
   // ------------------------------------------------------------------ frame
@@ -598,7 +714,9 @@ export class Game {
         break;
       }
       case 'result':
-        if (this.stateT > (this.outcome === 'goal' ? 2.6 : 2.1)) { this.state = 'post'; this.afterResult(); }
+        // after the ball hits the net, cut to the scorer wheeling away
+        if (this.outcome === 'goal' && this.stateT > 1.15 && this.camera.mode === 'result') this.camera.setMode('celebrate', { cut: true });
+        if (this.stateT > (this.outcome === 'goal' ? 3.5 : 2.1)) { this.state = 'post'; this.afterResult(); }
         break;
       default: break;
     }
@@ -610,6 +728,7 @@ export class Game {
       // characters first (they read the ball), then the ball against their new pose
       this.keeper.update(dt, this.ctx);
       this.wall.update(dt, this.ctx);
+      this.ctx.camera = this.engine.camera.position;
       this.kicker.update(dt, this.ctx);
       if (this.state === 'flight' || this.state === 'result' || this.state === 'post' || this.state === 'over') {
         if (this.ball.state.v.lengthSq() > 0 || this.ball.attached) this.physics(dt);
@@ -620,13 +739,15 @@ export class Game {
       if (this.ball.state.onGround) this.ball.trail.active = false;
     }
     this.ball.sync();
+    for (const c of this.characters) c.updateBlob();
+    if (this.pyroT > 0 && !replaying) { this.pyroT -= dtClamped; this.fx.pyro(dtClamped); }
     this.net.update(dt, this.ball.state.p);
     this.ball.trail.update(this.ball.state.p, this.engine.camera, dtClamped);
     if (this.state !== 'flight' && !replaying) this.ball.trail.active = false;
 
     // pulse the bonus ring
     if (this.ring.visible) {
-      const s = 1 + Math.sin(this.time * 4) * 0.05;
+      const s = (this.ring.userData.base || 1) * (1 + Math.sin(this.time * 4) * 0.05);
       this.ring.scale.setScalar(s);
       this.ring.userData.mat.opacity = 0.6 + Math.sin(this.time * 4) * 0.25;
     }
@@ -638,7 +759,8 @@ export class Game {
     const pxScale = e.renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(e.camera.fov) / 2));
     this.stadium.update(dt, this.time, pxScale);
     this.fx.update(dt, pxScale);
-    this.camera.update(dtReal * (this.state === 'replay' ? 0.8 : 1), { ball: this.ball, focus: this.focusPoint(), aimBall: this.ball.state.p, shotDir: this.ctx.shotDir, ballStart: this.ballStart, wallDist: 9.15 });
+    this.camera.update(dtReal * (this.state === 'replay' ? 0.8 : 1), { ball: this.ball, focus: this.focusPoint(), aimBall: this.ball.state.p, shotDir: this.ctx.shotDir, ballStart: this.ballStart, wallDist: 9.15,
+      hero: this.camera.mode === 'celebrate' ? this.kicker.c.worldPos('hips', new THREE.Vector3()) : null, heroDir: this.kicker.celebDir });
     this.audio.update(dtReal);
     this.input.render(dtReal);
     this.ui.update(dtReal);

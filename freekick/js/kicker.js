@@ -67,7 +67,9 @@ export class Kicker {
     this.react = null;
     this.reactW = 0;
     this.contactDone = false;
+    this.stopped = false;
     this.c.blendTo({ idle: 1 }, 30);
+    for (const a of Object.values(this.c.actions)) a.timeScale = 1;
   }
 
   /** Starts the run-up; onContact fires when the boot meets the ball. */
@@ -84,7 +86,28 @@ export class Kicker {
     this.stepCount = 0;
   }
 
-  setReaction(kind) { this.react = kind; }
+  setReaction(kind) {
+    this.react = kind;
+    if (kind === 'goal' && this.state === 'after') { this.state = 'celebrate'; this.t = 0; this.c.blendTo({ run: 1 }, 5); }
+    if (kind === 'goal') {
+      // wheel away toward the nearer touchline, then slow down with the fists up
+      const side = Math.sign(this.ball.x || 1) || 1;
+      this.celebFrom = this.c.root.position.clone();
+      this.celebDir = new THREE.Vector3(side * 0.85, 0, 0.5).normalize();
+    }
+  }
+
+  /** Airplane run away from goal, slowing into a fist-pumping stop. */
+  celebrate(dt) {
+    const c = this.c;
+    const u = clamp01(this.t / 2.6);
+    const speed = 5.2 * (1 - smooth(clamp01((u - 0.55) / 0.45)));
+    c.root.position.addScaledVector(this.celebDir, speed * dt);
+    const yaw = Math.atan2(this.celebDir.x, this.celebDir.z);
+    c.setYaw(c.yaw + (yaw - c.yaw) * Math.min(1, dt * 5));
+    c.actions.run.timeScale = 0.6 + speed / 5.2 * 0.6;
+    if (u > 0.8 && !this.stopped) { this.stopped = true; c.blendTo({ idle: 1 }, 4); }
+  }
 
   update(dt, ctx) {
     const c = this.c;
@@ -111,7 +134,20 @@ export class Kicker {
         r.copy(this.plantRoot).addScaledVector(this.dir, f * 0.55);
       } else r.copy(this.plantRoot);
       c.setYaw(this.kickYaw + THREE.MathUtils.lerp(0.3, -0.05, smooth(k)));
-      if (k >= 1) { this.state = 'after'; this.t = 0; c.blendTo({ idle: 1 }, 3); }
+      if (k >= 1) {
+        // carry the momentum: a few decelerating steps instead of freezing on the spot
+        this.state = 'follow'; this.t = 0;
+        c.blendTo({ walk: 1 }, 8);
+        c.actions.walk.time = 0.3;
+        c.actions.walk.timeScale = 1.35;
+      }
+    } else if (this.state === 'follow') {
+      const u = clamp01(this.t / 0.75);
+      r.addScaledVector(this.dir, 2.1 * (1 - u) * dt);
+      c.actions.walk.timeScale = 1.35 * (1 - u * 0.7);
+      if (u >= 1) { this.state = this.react === 'goal' ? 'celebrate' : 'after'; this.t = 0; c.blendTo(this.react === 'goal' ? { run: 1 } : { idle: 1 }, 4); }
+    } else if (this.state === 'celebrate') {
+      this.celebrate(dt);
     }
     c.updateMixer(dt);
 
@@ -157,10 +193,17 @@ export class Kicker {
     }
 
     // reactions once the shot is decided
-    this.reactW += ((this.react && this.state === 'after' ? 1 : 0) - this.reactW) * Math.min(1, dt * 3);
-    if (this.reactW > 0.01 && this.state === 'after') {
+    const reacting = this.react && (this.state === 'after' || this.state === 'celebrate');
+    this.reactW += ((reacting ? 1 : 0) - this.reactW) * Math.min(1, dt * 3);
+    if (this.reactW > 0.01 && reacting) {
       const RW = this.reactW;
-      if (this.react === 'goal') {
+      if (this.react === 'goal' && this.state === 'celebrate' && !this.stopped) {
+        // arms out like wings, leaning into the turn
+        const flap = Math.sin(ctx.time * 3) * 0.06;
+        c.armIK('l', c.toWorld(0.95, 1.38 + flap, -0.12), RW, c.dirToWorld(0, -1, -0.4));
+        c.armIK('r', c.toWorld(-0.95, 1.38 - flap, -0.12), RW, c.dirToWorld(0, -1, -0.4));
+        c.bendSpine(-0.12, 0, -Math.sign(this.celebDir.x) * 0.18, RW);
+      } else if (this.react === 'goal') {
         const bounce = Math.abs(Math.sin(ctx.time * 7));
         c.root.position.y = bounce * 0.18 * RW;
         c.armIK('l', c.toWorld(0.32, 2.2 + bounce * 0.05, 0.12), RW, c.dirToWorld(1, 0, -0.3));
@@ -179,7 +222,8 @@ export class Kicker {
     } else {
       c.root.position.y = 0;
     }
-    if (this.state !== 'kick') c.lookAt(ctx.ball.state.p, 0.7);
+    if (this.state === 'celebrate') c.lookAt(ctx.camera || ctx.ball.state.p, 0.35);
+    else if (this.state !== 'kick') c.lookAt(ctx.ball.state.p, 0.7);
     else c.lookAt(ctx.ball.state.p, k < CONTACT_T ? 0.9 : 0.5);
   }
 }

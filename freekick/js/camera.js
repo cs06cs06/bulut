@@ -116,25 +116,52 @@ export class CameraDirector {
         k = 2;
         break;
       }
+      case 'celebrate': {
+        // broadcast close-up: running backwards in front of the scorer
+        const hero = ctx.hero || ball;
+        const dir = _w.copy(ctx.heroDir || _v.set(1, 0, 0)).setY(0).normalize();
+        const side = new THREE.Vector3(-dir.z, 0, dir.x);
+        tPos = hero.clone().addScaledVector(dir, 4.6).addScaledVector(side, 1.4);
+        tPos.y = 1.55;
+        tLook = hero.clone();
+        tLook.y = 1.1;
+        tFov = this.cam.aspect < 0.8 ? 52 : 34;
+        k = this.t < 0.05 ? 50 : 3.2;
+        break;
+      }
       case 'replay': {
         const shot = this.opts.angle || 'behind';
-        if (shot === 'behind') {
-          tPos = _v.set(ball.x * 0.25, 1.35, -7.2);
+        const narrow = this.cam.aspect < 0.8;
+        if (shot === 'strike') {
+          // low, side-on beside the ball: the strike and the first part of the flight
+          const dir = _w.copy(this.opts.shotDir || _v.set(0, 0, -1)).setY(0).normalize();
+          const start = this.opts.ballStart || ball;
+          const side = new THREE.Vector3(-dir.z, 0, dir.x).multiplyScalar(this.opts.sideSign || 1);
+          tPos = start.clone().addScaledVector(side, 3.4).addScaledVector(dir, 1.2);
+          tPos.y = 0.75;
           tLook = ball.clone();
-          tFov = this.cam.aspect < 0.8 ? 46 : 30;
+          tLook.y = Math.max(0.35, tLook.y);
+          tFov = narrow ? 58 : 38;
+          k = 8;
+        } else if (shot === 'behind') {
+          // between the net and the advertising boards, looking out at the shot
+          tPos = _v.set(ball.x * 0.3, 1.55, -4.3);
+          tLook = ball.clone();
+          tFov = narrow ? 52 : 34;
           k = 5;
-        } else if (shot === 'side') {
+        } else if (shot === 'goalside') {
+          // on the goal-line extension: the ball arriving and the keeper's dive
+          const s = this.opts.sideSign || 1;
+          tPos = _v.set(s * 9.5, 1.25, 1.2);
+          tLook = ball.clone().lerp(new THREE.Vector3(0, 1.2, 0), 0.25);
+          tFov = narrow ? 56 : 36;
+          k = 4;
+        } else {
           const s = this.opts.sideSign || 1;
           tPos = _v.set(s * 17, 1.4, Math.max(3, ball.z * 0.55 + 1));
           tLook = ball.clone();
-          tFov = this.cam.aspect < 0.8 ? 50 : 34;
+          tFov = narrow ? 50 : 34;
           k = 3;
-        } else {
-          tPos = _v.set(ball.x + 2.2, ball.y + 0.9, ball.z + 4.2);
-          if (tPos.z < 4) tPos.z = 4;
-          tLook = ball.clone();
-          tFov = 52;
-          k = 6;
         }
         break;
       }
