@@ -114,7 +114,7 @@
   // Loader watchdog: explain instead of spinning forever when scripts cannot run.
   (function () {
     var label = document.getElementById('load-label');
-    if (label) label.textContent = 'Hazırlanıyor…';
+    if (label) label.textContent = 'İndiriliyor…';
     function say(msg) {
       if (!label || document.getElementById('loader').hidden) return;
       label.innerHTML = '';
@@ -129,9 +129,12 @@
     }
     addEventListener('error', function (e) { if (!window.__fkReady) say('Hata: ' + (e.message || 'betik yüklenemedi')); });
     addEventListener('unhandledrejection', function (e) { if (!window.__fkReady) say('Hata: ' + ((e.reason && e.reason.message) || e.reason)); });
-    setTimeout(function () {
-      if (!window.__fkBooted) say('Oyun betikleri yüklenemedi. Sayfayı yenileyin ya da güncel bir tarayıcı deneyin.');
-    }, 8000);
+    // judge only once the whole document has arrived (single-file builds are large)
+    document.addEventListener('DOMContentLoaded', function () {
+      setTimeout(function () {
+        if (!window.__fkBooted) say('Oyun betikleri çalışmadı. Sayfayı yenileyin ya da güncel bir tarayıcı deneyin.');
+      }, 4000);
+    });
   })();
 </script>
 <script type="module" src="js/main.js"></script>

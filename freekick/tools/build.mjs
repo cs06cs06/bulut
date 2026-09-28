@@ -50,8 +50,9 @@ css = css.replace(/url\(\.\.\/assets\/fonts\/([^)]+)\)/g, (_, f) => {
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 html = html.replace('<link rel="stylesheet" href="css/style.css">', () => `<style>\n${css}\n</style>`);
 html = html.replace(/<script type="importmap">[\s\S]*?<\/script>\s*/, '');
-html = html.replace('<script type="module" src="js/main.js"></script>', () => `<script>\n${js}\n</script>`);
-fs.writeFileSync(path.join(out, 'index.html'), html);
+html = html.replace('<script type="module" src="js/main.js"></script>', () => `<!--ASSETS--><script>\n${js}\n</script>`);
+const withoutAssets = (doc) => doc.replace('<!--ASSETS-->', '');
+fs.writeFileSync(path.join(out, 'index.html'), withoutAssets(html));
 
 // fragment for hosts that wrap the page in their own document skeleton
 const fragment = html
@@ -61,7 +62,7 @@ const fragment = html
   .replace(/<\/?body>\s*/gi, '')
   .replace(/<meta charset="utf-8">\s*/i, '')
   .replace(/<meta name="viewport"[^>]*>\s*/i, '');
-fs.writeFileSync(path.join(out, 'artifact.html'), fragment);
+fs.writeFileSync(path.join(out, 'artifact.html'), withoutAssets(fragment));
 
 // .glb -> glTF JSON with the binary buffer embedded
 const glb = fs.readFileSync(path.join(root, 'assets/models/xbot.glb'));
@@ -81,14 +82,15 @@ for (const dir of ['audio', 'textures', 'sky', 'models']) {
   fs.cpSync(path.join(root, 'assets', dir), path.join(out, 'assets', dir), { recursive: true });
 }
 
-// fully self-contained variant: assets as base64 blocks the loader reads directly
+// fully self-contained variant: assets as base64 blocks the loader reads directly.
+// They sit after the loading screen markup so it shows while the file streams in.
 const EMBED = [
   'models/xbot.glb', 'sky/stadium_01_bg_2k.jpg',
   'textures/grass_color.jpg', 'textures/grass_normal.jpg', 'textures/grass_rough.jpg',
   ...fs.readdirSync(path.join(root, 'assets/audio')).filter((f) => f.endsWith('.mp3')).map((f) => 'audio/' + f),
 ];
 const blocks = EMBED.map((p) => `<script type="text/x-asset" data-path="${p}">${fs.readFileSync(path.join(root, 'assets', p)).toString('base64')}</script>`).join('\n');
-const withAssets = (doc) => doc.replace('<div id="app"', () => `${blocks}\n<div id="app"`);
+const withAssets = (doc) => doc.replace('<!--ASSETS-->', () => `${blocks}\n`);
 fs.writeFileSync(path.join(out, 'single.html'), withAssets(html));
 fs.writeFileSync(path.join(out, 'single-artifact.html'), withAssets(fragment));
 
