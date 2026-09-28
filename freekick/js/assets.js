@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
 
-const BASE = new URL('../assets/', import.meta.url).href;
+// resolved against the page so the same code works as ES modules or as one inline bundle
+const BASE = new URL('assets/', document.baseURI).href;
 
 export const SOUND_FILES = {
   ambience: 'audio/crowd_ambience.mp3',
@@ -48,7 +49,7 @@ export async function loadAssets(onProgress) {
     (e) => e.total && report('model', e.loaded / e.total), rej));
   const model = loadModel('models/xbot.glb').catch(() => loadModel('models/xbot.gltf.json'));
 
-  const tex = (p) => new Promise((res, rej) => texLoader.load(BASE + p, res, undefined, rej));
+  const tex = (p) => new Promise((res, rej) => texLoader.load(BASE + p, res, undefined, () => rej(new Error(p + ' yüklenemedi'))));
   const bg = tex('sky/stadium_01_bg.jpg').then((t) => { report('bg', 1); return t; });
   const grass = Promise.all([tex('textures/grass_color.jpg'), tex('textures/grass_normal.jpg'), tex('textures/grass_rough.jpg')])
     .then(([color, normal, rough]) => { report('grass', 1); return { color, normal, rough }; });
@@ -57,6 +58,9 @@ export async function loadAssets(onProgress) {
     new HDRLoader(manager).load(BASE + 'sky/stadium_01_1k.hdr', (t) => { report('hdr', 1); res(t); },
       (e) => e.total && report('hdr', e.loaded / e.total), () => { report('hdr', 1); res(null); });
   });
+
+  // optional pieces never block the game: give up on them after a while
+  const within = (promise, ms, fallback) => Promise.race([promise, new Promise((res) => setTimeout(() => res(fallback), ms))]);
 
   let audioDone = 0;
   const names = Object.keys(SOUND_FILES);
@@ -70,7 +74,9 @@ export async function loadAssets(onProgress) {
     document.fonts.load('700 40px Teko'), document.fonts.load('600 40px Teko'), document.fonts.load('500 20px "Barlow Condensed"'), document.fonts.load('700 20px "Barlow Condensed"'),
   ]).catch(() => null) : Promise.resolve()).then(() => report('fonts', 1));
 
-  const [xbot, bgTex, grassTex, hdrTex, audioBufs] = await Promise.all([model, bg, grass, hdr, audio, fonts]);
+  const [xbot, bgTex, grassTex, hdrTex, audioBufs] = await Promise.all([
+    model, bg, grass, within(hdr, 20000, null), within(audio, 25000, {}), within(fonts, 5000, null),
+  ]);
   bgTex.colorSpace = THREE.SRGBColorSpace;
   bgTex.mapping = THREE.EquirectangularReflectionMapping;
   if (hdrTex) hdrTex.mapping = THREE.EquirectangularReflectionMapping;

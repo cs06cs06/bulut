@@ -5,6 +5,7 @@ import { UI } from './ui.js';
 import { SwipeInput } from './input.js';
 import { Game, store } from './game.js';
 
+window.__fkBooted = true;
 const ui = new UI();
 const $ = (id) => document.getElementById(id);
 
@@ -29,7 +30,7 @@ async function boot() {
     assets = await loadAssets((f) => ui.progress(f));
   } catch (e) {
     console.error(e);
-    ui.loadError('Dosyalar yüklenemedi. Oyunu bir web sunucusu üzerinden açtığınızdan emin olun (ör. npx serve).');
+    ui.loadError('Oyun dosyaları yüklenemedi (' + (e?.message || e) + '). Sayfayı yenileyin; yerelde açıyorsanız bir web sunucusu kullanın (ör. npx serve).');
     return;
   }
   engine.setEnvironment(assets.hdr, assets.bg);
@@ -43,6 +44,7 @@ async function boot() {
   // warm up shaders before revealing the stadium
   engine.renderer.compile(engine.scene, engine.camera);
   game.update(1 / 60);
+  window.__fkReady = true;
   ui.loaded();
   ui.showMenu(game.best);
 
@@ -106,4 +108,7 @@ async function boot() {
   requestAnimationFrame(loop);
 }
 
-boot();
+boot().catch((e) => {
+  console.error(e);
+  ui.loadError('Oyun başlatılamadı: ' + (e?.message || e));
+});

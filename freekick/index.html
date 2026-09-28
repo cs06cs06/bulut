@@ -14,7 +14,7 @@
 </script>
 </head>
 <body>
-<div id="app">
+<div id="app" lang="tr">
   <canvas id="scene"></canvas>
   <canvas id="swipe"></canvas>
   <div id="touch" aria-label="Şut atmak için kaydır"></div>
@@ -110,6 +110,29 @@
     </div>
   </div>
 </div>
+<script>
+  // Loader watchdog: explain instead of spinning forever when scripts cannot run.
+  (function () {
+    var label = document.getElementById('load-label');
+    function say(msg) {
+      if (!label || document.getElementById('loader').hidden) return;
+      label.innerHTML = '';
+      var p = document.createElement('p');
+      p.className = 'load-error';
+      p.textContent = msg;
+      label.appendChild(p);
+    }
+    if (location.protocol === 'file:') {
+      say('Oyun dosyadan doğrudan açılamaz. Klasörde "npx serve ." çalıştırıp tarayıcıda verilen adresi açın.');
+      return;
+    }
+    addEventListener('error', function (e) { if (!window.__fkReady) say('Hata: ' + (e.message || 'betik yüklenemedi')); });
+    addEventListener('unhandledrejection', function (e) { if (!window.__fkReady) say('Hata: ' + ((e.reason && e.reason.message) || e.reason)); });
+    setTimeout(function () {
+      if (!window.__fkBooted) say('Oyun betikleri yüklenemedi. Sayfayı yenileyin ya da güncel bir tarayıcı deneyin.');
+    }, 8000);
+  })();
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

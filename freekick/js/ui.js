@@ -17,6 +17,7 @@ export class UI {
   }
 
   progress(f) {
+    if (this.failed) return;
     const pct = Math.round(f * 100);
     this.el.loadBar.style.width = pct + '%';
     this.el.loadLabel.textContent = pct + '%';
@@ -28,6 +29,7 @@ export class UI {
   }
 
   loadError(msg) {
+    this.failed = true;
     this.el.loadLabel.innerHTML = '';
     const p = document.createElement('p');
     p.className = 'load-error';

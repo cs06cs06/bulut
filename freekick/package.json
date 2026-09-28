@@ -1,0 +1,14 @@
+{
+  "name": "frikik-ustasi",
+  "private": true,
+  "version": "1.0.0",
+  "description": "3D swipe free-kick game (three.js)",
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "serve": "npx serve ."
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.12"
+  }
+}

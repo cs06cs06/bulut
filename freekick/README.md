@@ -36,6 +36,18 @@ npx serve .        # ya da: python3 -m http.server 8080
 
 Ardından tarayıcıda `http://localhost:3000` (veya 8080) adresini açın. Telefondan denemek için aynı ağdaki bilgisayarın IP adresini kullanabilirsiniz. Grafik kalitesi menüdeki **Grafik** düğmesinden (Otomatik / Yüksek / Orta / Düşük) değiştirilebilir; yavaş cihazlarda çözünürlük kendiliğinden düşürülür.
 
+### Tek sayfalık sürüm (katı CSP / sanal barındırma)
+
+Bazı ortamlar (sıkı Content-Security-Policy uygulayan barındırıcılar, gömülü görüntüleyiciler) sayfanın kendi `.js` modüllerini çalıştırmaz; oyun o zaman yükleme ekranında kalır. Bunun için tüm JS'i, CSS'i ve fontları tek bir HTML'e gömen bir derleme var:
+
+```bash
+cd freekick
+npm install
+npm run build      # dist/ klasörünü üretir
+```
+
+`dist/` klasörü tek başına yayınlanabilir: `dist/index.html` + `dist/assets/`. `.glb` sunmayan barındırıcılar için model `dist/assets/models/xbot.gltf.json` olarak da üretilir ve oyun otomatik olarak ona geçer; `.hdr` yüklenemezse ışıklandırma JPG panoramadan yapılır.
+
 ## Klasör yapısı
 
 ```
@@ -60,6 +72,7 @@ freekick/
 │   ├── input.js        kaydırma yakalama ve iz çizimi
 │   ├── engine.js       renderer, ışık, post-process, kalite
 │   └── assets.js       varlık yükleyici
+├── tools/build.mjs     tek sayfalık derleme (esbuild)
 ├── assets/             indirilen model, doku, HDRI, ses ve fontlar
 └── vendor/three/       three.js r186
 ```
