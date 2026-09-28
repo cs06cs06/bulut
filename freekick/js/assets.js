@@ -43,8 +43,10 @@ export async function loadAssets(onProgress) {
   const gltfLoader = new GLTFLoader(manager);
   const texLoader = new THREE.TextureLoader(manager);
 
-  const model = new Promise((res, rej) => gltfLoader.load(BASE + 'models/xbot.glb', (g) => { report('model', 1); res(g); },
+  // some static hosts refuse .glb; the same model as embedded glTF JSON is the fallback
+  const loadModel = (file) => new Promise((res, rej) => gltfLoader.load(BASE + file, (g) => { report('model', 1); res(g); },
     (e) => e.total && report('model', e.loaded / e.total), rej));
+  const model = loadModel('models/xbot.glb').catch(() => loadModel('models/xbot.gltf.json'));
 
   const tex = (p) => new Promise((res, rej) => texLoader.load(BASE + p, res, undefined, rej));
   const bg = tex('sky/stadium_01_bg.jpg').then((t) => { report('bg', 1); return t; });
