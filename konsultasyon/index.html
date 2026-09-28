@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Konsültasyon Defteri</title>
+<meta name="description" content="Enfeksiyon Hastalıkları konsültasyon notları için dokunmatik, çevrimdışı çalışan cep telefonu uygulaması.">
+<meta name="theme-color" content="#4A36A3">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Konsültasyon">
+<meta name="referrer" content="no-referrer">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<!--BODY-->
+<div id="app"><div class="empty-st">Yükleniyor…</div></div>
+<div id="sheet-wrap" class="sheet-wrap" hidden><div class="backdrop" data-act="sheet-close"></div><div class="sheet" role="dialog" aria-modal="true"><div class="sheet-grab"></div><div id="sheet-body"></div></div></div>
+<div id="lock" hidden></div>
+<div id="toast" role="status" hidden></div>
+<noscript>Bu uygulama JavaScript gerektirir.</noscript>
+<!--/BODY-->
+<script src="catalog.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
