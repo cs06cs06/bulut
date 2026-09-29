@@ -1,0 +1,44 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>dev char</title>
+<style>html,body{margin:0;background:#222;overflow:hidden}canvas{display:block}</style>
+<link rel="stylesheet" href="css/fonts.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { loadCharacterBase, createCharacter } from './js/character.js';
+
+const q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a2030);
+scene.add(new THREE.HemisphereLight(0xbfd6ff, 0x203020, 0.6));
+const dl = new THREE.DirectionalLight(0xffffff, 2.6); dl.position.set(2, 4, 3); dl.castShadow = true; scene.add(dl);
+const rim = new THREE.DirectionalLight(0x99bbff, 1.5); rim.position.set(-3, 3, -3); scene.add(rim);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), new THREE.MeshStandardMaterial({ color: 0x2c5a2c, roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+
+await document.fonts.load('800 100px "Barlow Condensed"');
+await loadCharacterBase();
+const kits = (q.get('kits') || 'home,away,gkHome,gkAway').split(',');
+const chars = kits.map((k, i) => {
+  const c = createCharacter(k, { beard: i % 2 === 0 });
+  c.position.x = (i - (kits.length - 1) / 2) * 1.0;
+  scene.add(c);
+  return c;
+});
+console.log('MORPHS ' + JSON.stringify(Object.keys(chars[0].userData.head.morphTargetDictionary || {})));
+const view = q.get('view') || 'front';
+const cam = new THREE.PerspectiveCamera(28, innerWidth / innerHeight, 0.05, 50);
+const n = kits.length;
+const d = 4.2 + n * 0.5;
+const cy = view === 'close' ? 1.5 : 0.95;
+const pos = { front: [0, 1.1, d], back: [0, 1.1, -d], side: [d, 1.1, 0], three: [d * .6, 1.4, d * .8], close: [0.4, 1.55, 1.5] }[view];
+cam.position.set(...pos); cam.lookAt(0, cy, 0);
+renderer.render(scene, cam);
+window.__ready = true;
+</script></body></html>

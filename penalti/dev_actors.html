@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>dev actors</title>
+<style>html,body{margin:0;background:#222;overflow:hidden}canvas{display:block}</style>
+<link rel="stylesheet" href="css/fonts.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import { loadCharacterBase } from './js/character.js';
+import { KickerActor, KeeperActor } from './js/actors.js';
+
+const q = new URLSearchParams(location.search);
+const W = innerWidth, H = innerHeight;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.setScissorTest(true);
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a2030);
+scene.add(new THREE.HemisphereLight(0xbfd6ff, 0x203020, 0.8));
+const dl = new THREE.DirectionalLight(0xffffff, 2.6); dl.position.set(4, 8, 12); dl.castShadow = true;
+dl.shadow.camera.left = -6; dl.shadow.camera.right = 6; dl.shadow.camera.top = 6; dl.shadow.camera.bottom = -6; dl.shadow.camera.far = 40;
+scene.add(dl);
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), new THREE.MeshStandardMaterial({ color: 0x2c5a2c, roughness: 0.9 }));
+floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(0.11, 24, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 }));
+ballMesh.castShadow = true; scene.add(ballMesh);
+// goal frame
+const goalMat = new THREE.MeshStandardMaterial({ color: 0xffffff });
+for (const x of [-3.66, 3.66]) { const p = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.44), goalMat); p.position.set(x, 1.22, 0); scene.add(p); }
+const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 7.32), goalMat); bar.rotation.z = Math.PI / 2; bar.position.set(0, 2.44, 0); scene.add(bar);
+
+await document.fonts.load('800 100px "Barlow Condensed"');
+const B = await loadCharacterBase();
+const mode = q.get('mode') || 'kick';
+const cols = +(q.get('cols') || 6), rows = +(q.get('rows') || 2);
+const times = (q.get('times') || '0.2,0.5,0.8,0.95,1.05,1.12,1.2,1.3,1.45,1.6,1.8,2.0').split(',').map(Number);
+const dt = 1 / 120;
+
+function cell(i, cam) {
+  const cw = W / cols, ch = H / rows;
+  const cx = (i % cols) * cw, cy = H - (Math.floor(i / cols) + 1) * ch;
+  renderer.setViewport(cx, cy, cw, ch); renderer.setScissor(cx, cy, cw, ch);
+  cam.aspect = cw / ch; cam.updateProjectionMatrix();
+  renderer.render(scene, cam);
+}
+
+if (mode === 'kick') {
+  const ball = new THREE.Vector3(0, 0.11, 11);
+  ballMesh.position.copy(ball);
+  const k = new KickerActor('home', B, { beard: true });
+  scene.add(k.root);
+  k.setup({ ball, aimPoint: new THREE.Vector3(1.5, 1.0, 0) });
+  const cam = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
+  const side = q.get('cam') || 'side';
+  k.update(0); k.go();
+  let t = 0;
+  times.forEach((tm, i) => {
+    while (t < tm) { k.update(dt); t += dt; }
+    if (side === 'side') { cam.position.set(4.8, 1.1, ball.z + 0.2); cam.lookAt(0, 0.85, ball.z + 0.4); }
+    else if (side === 'back') { cam.position.set(0, 1.5, ball.z + 5); cam.lookAt(0, 0.9, ball.z - 0.5); }
+    else { cam.position.set(-3, 1.3, ball.z + 3); cam.lookAt(0, 0.8, ball.z); }
+    scene.updateMatrixWorld(true);
+    cell(i, cam);
+  });
+} else {
+  const k = new KeeperActor('gkHome', B, { beard: false });
+  scene.add(k.root);
+  k.setup(new THREE.Vector3(0, 0, 0.35));
+  const targets = { L: new THREE.Vector3(3.2, 0.5, 0), R: new THREE.Vector3(-2.8, 2.0, 0), C: new THREE.Vector3(0.2, 2.2, 0) };
+  const tg = targets[q.get('dir') || 'L'];
+  const cam = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
+  k.update(0); k.update(0.2);
+  k.startDive(tg, 0.6);
+  let t = 0;
+  times.forEach((tm, i) => {
+    while (t < tm) { k.update(dt); t += dt; }
+    cam.position.set(0, 1.4, 11); cam.lookAt(0, 1.0, 0);
+    scene.updateMatrixWorld(true);
+    cell(i, cam);
+  });
+}
+window.__ready = true;
+</script></body></html>
