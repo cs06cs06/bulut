@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#050912">
+<title>PENALTI — Seri Atışlar</title>
+<link rel="stylesheet" href="css/fonts.css">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/build/three.module.min.js", "three/addons/": "./vendor/three/examples/jsm/" } }
+</script>
+</head>
+<body>
+<canvas id="game" tabindex="0"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="letterTop" class="letter"></div><div id="letterBottom" class="letter"></div>
+
+  <div id="scoreboard">
+    <div class="sb-team sb-home"><span class="sb-crest home"></span><span class="sb-name">BUL</span></div>
+    <div class="sb-score"><span id="scoreH">0</span><i>–</i><span id="scoreA">0</span></div>
+    <div class="sb-team sb-away"><span class="sb-name">RKP</span><span class="sb-crest away"></span></div>
+    <div class="sb-dots"><div id="dotsH" class="dots"></div><div class="sb-round" id="roundLabel">1. ATIŞ</div><div id="dotsA" class="dots"></div></div>
+  </div>
+
+  <div id="turnTag"><b id="turnTitle">SENİN SIRAN</b><span id="turnSub">Nişan al ve şutu çek</span></div>
+
+  <div id="reticle"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="30"/><circle cx="50" cy="50" r="3" class="dot"/><path d="M50 8v18M50 74v18M8 50h18M74 50h18"/></svg></div>
+  <div id="curveArrow"></div>
+
+  <div id="powerWrap" class="hidden">
+    <div id="powerBar"><div id="powerSweet"></div><div id="powerFill"></div><div id="powerCursor"></div></div>
+    <div id="powerLabel">GÜÇ</div>
+  </div>
+  <div id="curveWrap" class="hidden">
+    <div id="curveTrack"><div id="curveKnob"></div></div>
+    <div id="curveLabel">FALSO <small>Q / E</small></div>
+  </div>
+
+  <div id="banner"><div id="bannerText">GOOOL!</div><div id="bannerSub"></div></div>
+  <div id="replayTag" class="hidden"><i></i>TEKRAR</div>
+  <div id="toast"></div>
+  <div id="hint"></div>
+
+  <div id="touchUI" class="hidden">
+    <button id="btnShoot" class="tbtn big">ŞUT</button>
+    <button id="btnCurveL" class="tbtn">◀ FALSO</button>
+    <button id="btnCurveR" class="tbtn">FALSO ▶</button>
+  </div>
+  <button id="btnPause" aria-label="Duraklat">❚❚</button>
+  <div id="fps" class="hidden"></div>
+</div>
+
+<!-- ============ MENU ============ -->
+<div id="menu" class="screen hidden">
+  <div class="menu-inner">
+    <div class="menu-kicker">BULUT ARENA • GECE MAÇI</div>
+    <h1 class="title"><span>PENALTI</span><em>SERİ ATIŞLAR</em></h1>
+    <div class="menu-buttons">
+      <button id="btnPlay" class="btn primary">MAÇA BAŞLA</button>
+      <button id="btnDiff" class="btn">ZORLUK: <b>NORMAL</b></button>
+      <button id="btnQuality" class="btn">GRAFİK: <b>YÜKSEK</b></button>
+      <button id="btnSound" class="btn">SES: <b>AÇIK</b></button>
+      <button id="btnHow" class="btn ghost">NASIL OYNANIR?</button>
+    </div>
+    <div class="menu-foot">Unreal-tarzı sinematik render • Three.js • Poly Haven / ambientCG / Freesound CC0 varlıkları</div>
+  </div>
+</div>
+
+<div id="how" class="screen hidden">
+  <div class="card">
+    <h2>NASIL OYNANIR?</h2>
+    <div class="grid">
+      <div><b>NİŞAN</b><p>Fareyi kale üzerinde gezdir (dokunmatikte sürükle). Halka topun gideceği noktayı gösterir; gerilim arttıkça hafifçe titrer.</p></div>
+      <div><b>GÜÇ</b><p>Fare tuşunu ya da <kbd>BOŞLUK</kbd>'u basılı tut, sarı bölgede bırak. Çok sert vurursan top üstten/yandan gider.</p></div>
+      <div><b>FALSO</b><p><kbd>Q</kbd> / <kbd>E</kbd> ya da fare tekerleği ile topa falso ver; kaleciyi yanıltır.</p></div>
+      <div><b>KALECİLİK</b><p>Rakip şut çekerken kale içinde bir noktaya tıkla / dokun: kalecin oraya uçar. Vuruş anına yakın tıkla!</p></div>
+    </div>
+    <p class="tiny"><kbd>P</kbd>/<kbd>ESC</kbd> duraklat • <kbd>F</kbd> tam ekran • <kbd>M</kbd> ses</p>
+    <button id="btnHowClose" class="btn primary">TAMAM</button>
+  </div>
+</div>
+
+<div id="end" class="screen hidden">
+  <div class="card">
+    <div id="endKicker">MAÇ SONU</div>
+    <h2 id="endTitle">KAZANDIN!</h2>
+    <div id="endScore">3 – 2</div>
+    <div id="endStats"></div>
+    <div class="row"><button id="btnAgain" class="btn primary">TEKRAR OYNA</button><button id="btnMenu" class="btn">ANA MENÜ</button></div>
+  </div>
+</div>
+
+<div id="pause" class="screen hidden">
+  <div class="card small">
+    <h2>DURAKLATILDI</h2>
+    <div class="col"><button id="btnResume" class="btn primary">DEVAM</button><button id="btnPauseMenu" class="btn">ANA MENÜ</button></div>
+  </div>
+</div>
+
+<!-- ============ LOADING ============ -->
+<div id="loading" class="screen">
+  <div class="load-inner">
+    <div class="load-logo">PENALTI</div>
+    <div class="load-bar"><div id="loadFill"></div></div>
+    <div id="loadText">Stadyum hazırlanıyor…</div>
+    <div id="loadTip"></div>
+  </div>
+</div>
+<div id="fatal" class="screen hidden"><div class="card"><h2>Bir sorun oluştu</h2><p id="fatalText"></p></div></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -82,6 +82,32 @@ export class Actor {
     if (axis.lengthSq() < 1e-6) return;
     r.rotate(side + 'ForeArm', qAxis(axis.normalize(), deg), w);
   }
+  // ---- state snapshots (fixed-step interpolation and replay)
+  packState() {
+    const r = this.rig, n = r.TQ.length;
+    const a = new Float32Array(10 + n * 4);
+    const dr = this.diveRoot;
+    a[0] = this.root.position.x; a[1] = this.root.position.y; a[2] = this.root.position.z; a[3] = this.root.rotation.y;
+    a[4] = dr ? dr.position.y : 0; a[5] = dr ? dr.rotation.z : 0;
+    a[6] = r.HP.x; a[7] = r.HP.y; a[8] = r.HP.z; a[9] = this.faceState.smile * 0 + 0;
+    for (let i = 0; i < n; i++) { const q = r.TQ[i]; a[10 + i * 4] = q.x; a[11 + i * 4] = q.y; a[12 + i * 4] = q.z; a[13 + i * 4] = q.w; }
+    return a;
+  }
+  applyLerp(a, b, t) {
+    const r = this.rig, n = r.TQ.length;
+    const L = (i) => a[i] + (b[i] - a[i]) * t;
+    this.root.position.set(L(0), L(1), L(2));
+    let dy = b[3] - a[3]; if (dy > Math.PI) dy -= Math.PI * 2; if (dy < -Math.PI) dy += Math.PI * 2;
+    this.root.rotation.y = a[3] + dy * t;
+    if (this.diveRoot) { this.diveRoot.position.y = L(4); this.diveRoot.rotation.z = L(5); }
+    r.HP.set(L(6), L(7), L(8));
+    const qa = this._qa || (this._qa = new THREE.Quaternion()), qb = this._qb || (this._qb = new THREE.Quaternion());
+    for (let i = 0; i < n; i++) {
+      qa.set(a[10 + i * 4], a[11 + i * 4], a[12 + i * 4], a[13 + i * 4]); qb.set(b[10 + i * 4], b[11 + i * 4], b[12 + i * 4], b[13 + i * 4]);
+      r.TQ[i].copy(qa).slerp(qb, t);
+    }
+    r.commit();
+  }
   finalize() { this.rig.commit(); }
 }
 
@@ -97,7 +123,7 @@ export class KickerActor extends Actor {
     this.rightFooted = opts?.rightFooted !== false;
     this.celebrate = null;
   }
-  setup({ ball, aimPoint, approach = 1 }) {
+  setup({ ball, aimPoint, approach = 1, start = null }) {
     // kick frame
     this.ball = ball.clone();
     const f = V(aimPoint.x - ball.x, 0, aimPoint.z - ball.z).normalize();
@@ -111,7 +137,8 @@ export class KickerActor extends Actor {
     const ang = 26 * DEG * (this.rightFooted ? 1 : -1) * approach;
     const back = f.clone().multiplyScalar(-1);
     const dirBack = back.clone().applyAxisAngle(Y, ang);
-    this.S = this.R.clone().addScaledVector(dirBack, 3.7); this.S.y = 0;
+    this.S = start ? start.clone() : this.R.clone().addScaledVector(dirBack, 3.7); this.S.y = 0;
+    this.nominalStart = this.R.clone().addScaledVector(dirBack, 3.7);
     this.runYaw = Math.atan2(this.R.x - this.S.x, this.R.z - this.S.z);
     // distance table with speed profile
     const N = 240; this.dist = new Float32Array(N + 1);
@@ -278,7 +305,7 @@ export class KeeperActor extends Actor {
   // Start a dive toward the world point T=(x,y) on the goal plane; `arrive` = seconds until hands should be there
   startDive(T, arrive) {
     const x0 = this.root.position.x;
-    const L = 1.30;
+    const L = 0.98;
     const dxT = T.x - x0;
     const sgn = Math.sign(dxT) || 1;
     const hi = clamp((T.y - 0.55) / 1.9, 0, 1);
@@ -294,12 +321,14 @@ export class KeeperActor extends Actor {
     const r = this.rig;
     this.t += dt;
     if (this.mode === 'celebrate') { this.rtDance.update(dt); this.rig.commit(); this.updateColliders(); return; }
-    this.readyPose();
+    let st = 0;
+    if (this.mode === 'dive' && this.dive) { this.dive.t += dt; const dd = this.dive; st = sstep(0, 0.4, clamp(dd.t / dd.arrive, 0, 1)); }
+    this.readyPose(1 - st);
     if (this.mode === 'dive' && this.dive) this.divePose(dt);
     r.commit();
     this.updateColliders();
   }
-  readyPose() {
+  readyPose(aw = 1) {
     const r = this.rig;
     const T = this.t + this.shuffle;
     r.resetTargets();
@@ -310,9 +339,9 @@ export class KeeperActor extends Actor {
     r.rotate('Spine1', RX(10)); r.rotate('Spine2', RX(6));
     for (const s of ['Left', 'Right']) {
       const sg = s === 'Left' ? 1 : -1;
-      r.rotate(s + 'Arm', RX(-28).multiply(RZ(sg * 18)));
-      this.bend(s, 85, V(-sg * 0.25, 0.55, 0.8));
-      r.rotate(s + 'Hand', RX(-10));
+      r.rotate(s + 'Arm', RX(-28 * aw).multiply(RZ(sg * 18 * aw)));
+      if (aw > 0.01) this.bend(s, 85 * aw, V(-sg * 0.25, 0.55, 0.8));
+      r.rotate(s + 'Hand', RX(-10 * aw));
     }
     this.legIK('Left', V(0.31, 0.126, 0.02), V(0.2, 0, 1), r.restModelQ[r.index.LeftFoot].clone(), 1);
     this.legIK('Right', V(-0.31, 0.126, 0.02), V(-0.2, 0, 1), r.restModelQ[r.index.RightFoot].clone(), 1);
@@ -320,7 +349,6 @@ export class KeeperActor extends Actor {
   }
   divePose(dt) {
     const d = this.dive, r = this.rig;
-    d.t += dt;
     const s = clamp(d.t / d.arrive, 0, 1);
     const sEase = s * s * (3 - 2 * s);
     const travel = lerp(sEase, s, 0.4);
