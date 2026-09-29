@@ -87,7 +87,7 @@ function ribbon(points, width, closed = false, y = 0.004) {
     pos.push(p[0] + nx, y, p[1] + nz, p[0] - nx, y, p[1] - nz);
   }
   const segs = closed ? n : n - 1;
-  for (let i = 0; i < segs; i++) { const j = (i + 1) % n; idx.push(i * 2, i * 2 + 1, j * 2, i * 2 + 1, j * 2 + 1, j * 2); }
+  for (let i = 0; i < segs; i++) { const j = (i + 1) % n; idx.push(i * 2, j * 2, i * 2 + 1, i * 2 + 1, j * 2, j * 2 + 1); }
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   g.setAttribute('normal', new THREE.Float32BufferAttribute(new Array(pos.length).fill(0).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));

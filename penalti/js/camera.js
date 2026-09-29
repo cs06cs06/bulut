@@ -163,6 +163,8 @@ export class CameraDirector {
     cam.lookAt(this.look);
     cam.rotateX(sy); cam.rotateY(sx);
     cam.rotateZ(this.rollDeg * Math.PI / 180);
-    if (Math.abs(cam.fov - this.fov) > 0.01) { cam.fov = this.fov; cam.updateProjectionMatrix(); }
+    let fovOut = this.fov;
+    if (cam.aspect < 1.7) fovOut = 2 * Math.atan(Math.tan(this.fov * Math.PI / 360) * Math.pow(1.7 / cam.aspect, 0.85)) * 180 / Math.PI;
+    if (Math.abs(cam.fov - fovOut) > 0.01) { cam.fov = Math.min(fovOut, 100); cam.updateProjectionMatrix(); }
   }
 }

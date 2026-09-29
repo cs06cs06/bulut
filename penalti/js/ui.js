@@ -5,7 +5,7 @@ export class UI {
   constructor() {
     this.el = {};
     for (const id of ['hud', 'scoreH', 'scoreA', 'dotsH', 'dotsA', 'roundLabel', 'turnTag', 'turnTitle', 'turnSub', 'reticle', 'curveArrow', 'powerWrap', 'powerFill', 'powerCursor', 'powerSweet', 'curveWrap', 'curveKnob',
-      'banner', 'bannerText', 'bannerSub', 'replayTag', 'toast', 'hint', 'touchUI', 'menu', 'how', 'end', 'endTitle', 'endScore', 'endStats', 'endKicker', 'pause', 'loading', 'loadFill', 'loadText', 'loadTip', 'fatal', 'fatalText', 'fps', 'btnPlay', 'btnDiff', 'btnQuality', 'btnSound', 'btnHow', 'btnHowClose', 'btnAgain', 'btnMenu', 'btnResume', 'btnPauseMenu', 'btnPause', 'btnShoot', 'btnCurveL', 'btnCurveR'])
+      'banner', 'bannerText', 'bannerSub', 'replayTag', 'toast', 'hint', 'touchUI', 'menu', 'how', 'end', 'endTitle', 'endScore', 'endStats', 'endKicker', 'pause', 'loading', 'loadFill', 'loadText', 'loadTip', 'fatal', 'fatalText', 'fps', 'btnPlay', 'btnDiff', 'btnQuality', 'btnSound', 'btnReplay', 'btnHow', 'btnHowClose', 'btnAgain', 'btnMenu', 'btnResume', 'btnPauseMenu', 'btnPause', 'btnShoot', 'btnCurveL', 'btnCurveR'])
       this.el[id] = $(id);
     this._toastT = 0;
   }

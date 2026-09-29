@@ -339,7 +339,7 @@ export class Stadium {
     this.crowdMat = new THREE.ShaderMaterial({
       uniforms: {
         uAtlas: { value: atlas.color }, uMask: { value: atlas.mask }, uTime: { value: 0 }, uExcite: { value: 0.3 }, uWave: { value: 0 },
-        uLight: { value: 0.62 }, uFogColor: { value: new THREE.Color(0x0a1020) }, uFogDensity: { value: 0.0030 }, uBloomBoost: { value: 1.0 },
+        uLight: { value: 0.5 }, uFogColor: { value: new THREE.Color(0x0a1020) }, uFogDensity: { value: 0.0030 }, uBloomBoost: { value: 1.0 },
         uCells: { value: new THREE.Vector2(atlas.cols, atlas.rows) },
       },
       vertexShader: /* glsl */`
@@ -360,7 +360,7 @@ export class Stadium {
           vec2 cellXY = vec2(mod(cell, uCells.x), floor(cell / uCells.x));
           vUv = (cellXY + uv) / uCells;
           vTint = iTint;
-          vLight = 0.55 + 0.45 * (1.0 - rowN * 0.6);
+          vLight = 0.5 + 0.5 * (1.0 - rowN * 0.85);
           vDepth = -mv.z;
         }`,
       fragmentShader: /* glsl */`

@@ -61,7 +61,7 @@ export class Game {
 
   bindInput() {
     const c = this.canvas;
-    const onMove = (e) => { this.pointer.x = e.clientX; this.pointer.y = e.clientY; this.pointer.has = true; };
+    const onMove = (e) => { this.pointer.x = e.clientX; this.pointer.y = e.clientY; this.pointer.has = true; this.pointer.touch = e.pointerType === 'touch'; };
     c.addEventListener('pointermove', onMove);
     c.addEventListener('pointerdown', (e) => {
       onMove(e); c.focus(); this.audio.unlock();
@@ -91,7 +91,7 @@ export class Game {
       case 'KeyE': this.setCurve(this.curve + 0.25); break;
       case 'KeyP': case 'Escape': this.togglePause(); break;
       case 'KeyM': this.settings.setSound(!this.audio.enabled); break;
-      case 'KeyF': if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.(); break;
+      case 'KeyF': try { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen?.()?.catch?.(() => { }); } catch (_) { } break;
       case 'KeyH': this.ui.el.fps.classList.toggle('hidden'); break;
       case 'Enter': if (this.phase === 'replay') this.skipReplay(); break;
     }
@@ -187,7 +187,7 @@ export class Game {
     this.audio.setTension(0.15, 0.6);
     this.exciteTarget = 0.2;
     this.ui.show('powerWrap'); this.ui.show('curveWrap');
-    if ('ontouchstart' in window || matchMedia('(pointer:coarse)').matches) this.ui.show('touchUI');
+    if ('ontouchstart' in window || matchMedia('(pointer:coarse)').matches) { this.ui.show('touchUI'); document.body.classList.add('touch'); }
   }
 
   /* ============================================================= player input */
@@ -451,7 +451,7 @@ export class Game {
     this.audio.setTension(0.9, 0.3);
     // next
     const wantReplay = this.settings.replay && (kind === 'goal' || kind === 'save' || kind === 'post') && this.rec.length > 40;
-    this.recEndIndex = this.rec.length;
+    this.recEndIndex = this.rec.length; this.recording = false;
     if (wantReplay) this.later(2.6, () => this.startReplay(kind));
     else this.later(3.4, () => this.nextTurn());
     void goodForPlayer;
@@ -506,7 +506,7 @@ export class Game {
     let iImp = rec.findIndex(f => Math.abs(f.b[2] - this.spot.z) > 0.05);
     if (iImp < 0) iImp = 40;
     const start = Math.max(0, iImp - 50);
-    const end = rec.length - 1;
+    const end = Math.min(rec.length - 1, (this.recEndIndex || rec.length) + 36);
     const goalSide = this.shot.target.x >= 0 ? 1 : -1;
     let cams;
     if (this.shot.by === 'cpu') cams = kind === 'save' ? ['side', 'net'] : ['net', 'side'];
@@ -598,7 +598,8 @@ export class Game {
   aimRay() {
     const c = this.camera;
     const w = this.canvas.clientWidth, h = this.canvas.clientHeight;
-    this.mouseNDC.set(this.pointer.x / w * 2 - 1, -(this.pointer.y / h) * 2 + 1);
+    const py = this.pointer.y - (this.pointer.touch ? Math.min(90, h * 0.12) : 0);
+    this.mouseNDC.set(this.pointer.x / w * 2 - 1, -(py / h) * 2 + 1);
     this.raycaster.setFromCamera(this.mouseNDC, c);
     const hit = this.raycaster.ray.intersectPlane(this.planeZ0, this.tmp);
     return hit;

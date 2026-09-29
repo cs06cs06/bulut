@@ -88,8 +88,8 @@ export function createBodyMaterial(kit, { decalTex, clothNormal, skinColor }) {
         vBind = position;
         {
           float j,a,s,so,b; kitMasks(position, 0.02, j,a,s,so,b);
-          float infl = j * (0.011 + 0.006 * (1.0 - smoothstep(0.985, 1.16, position.y)))
-                     + s * (0.016 + 0.014 * (1.0 - smoothstep(0.665, 0.80, position.y)))
+          float infl = j * (0.0065 + 0.006 * (1.0 - smoothstep(0.985, 1.16, position.y)))
+                     + s * (0.008 + 0.012 * (1.0 - smoothstep(0.665, 0.80, position.y)))
                      + so * 0.004 + b * 0.006;
           transformed += normalize(normal) * infl;
         }`);

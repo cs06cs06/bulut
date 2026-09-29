@@ -62,7 +62,7 @@ export class World {
 
   buildLights(q) {
     const scene = this.scene;
-    this.hemi = new THREE.HemisphereLight(0x5f78b8, 0x14301a, 0.28);
+    this.hemi = new THREE.HemisphereLight(0x5f78b8, 0x14301a, 0.18);
     scene.add(this.hemi);
     const pos = [[-40, 33, -9], [40, 33, -9], [-40, 33, 74], [40, 33, 74]];
     const target = new THREE.Object3D(); target.position.set(0, 0, 14); scene.add(target);
@@ -79,7 +79,7 @@ export class World {
       scene.add(s); this.spots.push(s);
     });
     // wide fill so that the rest of the pitch and the stands read as lit
-    const fill = new THREE.SpotLight(0xdfe8ff, 1800, 0, THREE.MathUtils.degToRad(62), 0.9, 2);
+    const fill = new THREE.SpotLight(0xdfe8ff, 1000, 0, THREE.MathUtils.degToRad(62), 0.9, 2);
     fill.position.set(0, 40, 90); fill.target.position.set(0, 0, 40); scene.add(fill); scene.add(fill.target);
     this.fill = fill;
     // stand wash (no shadows): broad lights aimed at each stand
@@ -127,7 +127,7 @@ export class World {
     const pm = new THREE.PMREMGenerator(r);
     const rt = pm.fromScene(env, 0.02, 0.1, 400);
     this.scene.environment = rt.texture;
-    this.scene.environmentIntensity = 0.55;
+    this.scene.environmentIntensity = 0.45;
     pm.dispose();
     env.traverse(o => { if (o.geometry) o.geometry.dispose(); });
   }

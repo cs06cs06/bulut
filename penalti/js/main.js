@@ -17,12 +17,23 @@ const TIPS = [
 const LS = 'penalti.settings.v1';
 const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && matchMedia('(pointer:coarse)').matches);
 
+function detectQuality(renderer) {
+  try {
+    const gl = renderer.getContext(); const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = ext ? String(gl.getParameter(ext.UNMASKED_RENDERER_WEBGL)) : '';
+    if (/SwiftShader|llvmpipe|Software/i.test(name)) return 'low';
+    if (isMobile) return /Apple|Adreno 7|Adreno 8|Mali-G7|Mali-G8|Immortalis/i.test(name) ? 'medium' : 'low';
+    if (/Intel/i.test(name) && !/Arc/i.test(name)) return 'medium';
+    if (/RTX (30|40|50)|RX (6|7|9)|Apple M[2-9]|Radeon Pro/i.test(name)) return 'ultra' === 'x' ? 'ultra' : 'high';
+  } catch (e) { }
+  return isMobile ? 'medium' : 'high';
+}
 function loadSettings() {
   let s = {};
   try { s = JSON.parse(localStorage.getItem(LS) || '{}'); } catch (e) { }
   return {
     difficulty: s.difficulty || 'normal',
-    quality: s.quality || (isMobile ? 'medium' : 'high'),
+    quality: s.quality || null,
     sound: s.sound !== false,
     replay: s.replay !== false,
     autoScale: true, renderScale: 1, maxScale: 1,
@@ -43,6 +54,7 @@ async function boot() {
   renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.NoToneMapping;
   renderer.setClearColor(0x02040a, 1);
+  if (!settings.quality) settings.quality = detectQuality(renderer);
   const q = QUALITY[settings.quality];
   settings.maxScale = q.scale; settings.renderScale = Math.min(q.scale, isMobile ? 0.8 : q.scale);
 
@@ -93,6 +105,7 @@ async function boot() {
     ui.el.btnDiff.innerHTML = `ZORLUK: <b>${DIFFICULTY[settings.difficulty].name}</b>`;
     ui.el.btnQuality.innerHTML = `GRAFİK: <b>${{ low: 'DÜŞÜK', medium: 'ORTA', high: 'YÜKSEK', ultra: 'ULTRA' }[settings.quality]}</b>`;
     ui.el.btnSound.innerHTML = `SES: <b>${settings.sound ? 'AÇIK' : 'KAPALI'}</b>`;
+    ui.el.btnReplay.innerHTML = `TEKRAR: <b>${settings.replay ? 'AÇIK' : 'KAPALI'}</b>`;
   };
   refreshMenu();
   audio.setEnabled(settings.sound);
@@ -101,6 +114,7 @@ async function boot() {
   ui.el.btnDiff.onclick = () => { const k = Object.keys(DIFFICULTY); settings.difficulty = k[(k.indexOf(settings.difficulty) + 1) % k.length]; refreshMenu(); saveSettings(settings); audio.tick(); };
   ui.el.btnQuality.onclick = () => { const k = ['low', 'medium', 'high', 'ultra']; applyQuality(k[(k.indexOf(settings.quality) + 1) % k.length]); audio.tick(); };
   ui.el.btnSound.onclick = () => { audio.unlock(); setSound(!settings.sound); };
+  ui.el.btnReplay.onclick = () => { settings.replay = !settings.replay; refreshMenu(); saveSettings(settings); audio.tick(); };
   ui.el.btnHow.onclick = () => { ui.show('how'); };
   ui.el.btnHowClose.onclick = () => ui.hide('how');
   ui.el.btnAgain.onclick = () => { ui.hide('end'); game.startMatch(); };

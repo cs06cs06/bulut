@@ -46,7 +46,7 @@ export function makeBodySDF(J) {
 
   const hips = P('Hips'), spine = P('Spine'), spine1 = P('Spine1'), spine2 = P('Spine2'), neck = P('Neck'), head = P('Head');
   // ---- torso (stacked elliptical sections -> athletic V taper)
-  ell(add(hips, [0, -0.035, -0.004]), [0.172, 0.105, 0.108], 'core');            // pelvis
+  ell(add(hips, [0, -0.035, -0.004]), [0.160, 0.105, 0.100], 'core');            // pelvis
   ell(add(hips, [0, 0.105, 0.0]), [0.150, 0.085, 0.092], 'core');                 // waist
   ell(add(spine1, [0, -0.005, 0.004]), [0.158, 0.10, 0.098], 'core');             // upper abdomen
   ell(add(spine2, [0, 0.005, 0.004]), [0.190, 0.125, 0.117], 'core');             // chest
@@ -56,8 +56,8 @@ export function makeBodySDF(J) {
   ell(add(spine1, [0.115, 0.03, -0.028]), [0.055, 0.14, 0.075], 'core');          // lat L
   ell(add(spine1, [-0.115, 0.03, -0.028]), [0.055, 0.14, 0.075], 'core');         // lat R
   ell(add(spine2, [0, 0.10, -0.045]), [0.118, 0.05, 0.055], 'core');              // traps
-  ell(add(hips, [0.088, -0.075, -0.078]), [0.092, 0.092, 0.082], 'core');         // glute L
-  ell(add(hips, [-0.088, -0.075, -0.078]), [0.092, 0.092, 0.082], 'core');        // glute R
+  ell(add(hips, [0.084, -0.075, -0.072]), [0.086, 0.088, 0.072], 'core');         // glute L
+  ell(add(hips, [-0.084, -0.075, -0.072]), [0.086, 0.088, 0.072], 'core');        // glute R
   // ---- neck
   cone(add(neck, [0, -0.02, 0.0]), add(head, [0, 0.0, 0.0]), 0.056, 0.050, 'neck');
   ell(add(neck, [0, -0.005, -0.01]), [0.082, 0.038, 0.055], 'neck');
