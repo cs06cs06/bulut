@@ -23,7 +23,9 @@ const settings = Object.assign({ sfx: true, music: true, film: false, haptic: tr
 const saveSettings = () => store.set('settings', settings);
 
 const isMobile = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
-const resolveQuality = () => settings.quality !== 'auto' ? settings.quality : isMobile ? 'medium' : 'high';
+// zayıf telefonlar (az bellek / az çekirdek) otomatik olarak düşük kaliteyle açılır
+const weakDevice = (navigator.deviceMemory && navigator.deviceMemory <= 3) || (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4);
+const resolveQuality = () => settings.quality !== 'auto' ? settings.quality : isMobile ? (weakDevice ? 'low' : 'medium') : 'high';
 const quality = resolveQuality();
 
 // ---------- Görüntüleyici ----------
@@ -109,7 +111,7 @@ async function boot() {
   world = new World(scene, quality);
   fx = new Particles(scene, quality === 'low' ? 500 : 1000);
   heroRacers = HEROES.map((d, i) => new Racer(d, 0, { num: i + 1 }));
-  rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4 }));
+  rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4, lod: quality === 'low' ? 'mid' : false }));
   racers = [...heroRacers, ...rivalRacers];
   for (const r of racers) { scene.add(r.model.root); hookRacer(r); }
   tags = racers.map((r) => makeTag(r));
@@ -742,5 +744,9 @@ let autoBot = false;
 window.__game = {
   get state() { return state; }, get player() { return player; }, racers: () => racers, press, startIntro, skipIntro, scene,
   set bot(v) { autoBot = v; },
+  shot(px, py, pz, lx, ly, lz, fov = 40) {
+    camera.clearViewOffset(); camera.fov = fov; camera.position.set(px, py, pz); camera.lookAt(lx, ly, lz); camera.updateProjectionMatrix();
+    renderer.render(scene, camera); return renderer.info.render;
+  },
   advance(sec, step = 1 / 30, draw = true) { for (let t = 0; t < sec; t += step) tick(step); if (draw) renderer.render(scene, camera); return renderer.info.render; },
 };

@@ -1,20 +1,20 @@
 // Yarışmacı: zıplama fiziği, ritim değerlendirmesi, denge, düşme ve yapay zekâ.
 import * as THREE from 'three';
 import { HOP, TRACK, derive } from './config.js';
-import { buildRacer } from './people.js';
+import { buildRacer } from './racerModel.js';
 import { HALF } from './world.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export class Racer {
-  constructor(def, lane, { isPlayer = false, sweet = 0.17, skill = 0.75, num = 1 } = {}) {
+  constructor(def, lane, { isPlayer = false, sweet = 0.17, skill = 0.75, num = 1, lod = false } = {}) {
     this.def = def;
     this.lane = lane;
     this.isPlayer = isPlayer;
     this.p = derive(def.stats, sweet);
     this.skill = skill;
     this.baseSkill = skill;
-    this.model = buildRacer(def, num);
+    this.model = buildRacer(def, num, lod);
     this.x = -HALF + TRACK.laneWidth * (lane + 0.5);
     this.model.root.position.set(this.x, 0, 0);
     this.listeners = {};
@@ -215,62 +215,34 @@ export class Racer {
     const m = this.model;
     // esneme-büzülme yaya
     this.squash += (0 - this.squash) * Math.min(1, dt * 14);
-    const sq = this.state === 'air' ? -0.12 * Math.sin(Math.min(1, this.t / this.airTime) * Math.PI) : this.squash;
-    const sy = 1 - sq * 0.5, sxz = 1 + sq * 0.28;
+    const sq = this.state === 'air' ? -0.1 * Math.sin(Math.min(1, this.t / this.airTime) * Math.PI) : this.squash;
+    const sy = 1 - sq * 0.4, sxz = 1 + sq * 0.2;
     m.hop.scale.set(sxz, sy, sxz);
-    m.sack.scale.set(1, (1 + (this.state === 'air' ? 0.04 : -this.squash * 0.15)) * this.sackRise, 1);
+    m.sack.scale.set(1, (1 + (this.state === 'air' ? 0.04 : -this.squash * 0.15)) * 1.06 * this.sackRise, 1);
 
     // denge kaybı: yana sallanma
     this.wobbleDir = Math.sin(t * 2.3 + this.lane) > 0 ? 1 : -1;
     const wob = this.wobble;
-    const sway = Math.sin(t * (6 + wob * 6) + this.lane * 1.7) * wob * 0.32;
-    this.lean += ((this.state === 'air' ? 0.12 + this.combo * 0.02 : 0.04) - this.lean) * Math.min(1, dt * 8);
+    const sway = Math.sin(t * (6 + wob * 6) + this.lane * 1.7) * wob * 0.3;
+    this.lean += ((this.state === 'air' ? 0.1 + this.combo * 0.018 : 0.03) - this.lean) * Math.min(1, dt * 8);
 
     if (this.state === 'fallen') {
       const k = this.t / this.p.recover;
       const down = k < 0.18 ? (k / 0.18) : k < 0.72 ? 1 : 1 - (k - 0.72) / 0.28;
       const e = down * down * (3 - 2 * down);
-      m.tilt.rotation.z = this.fallSide * e * 1.45;
-      m.tilt.rotation.x = -e * 0.25;
+      m.tilt.rotation.z = this.fallSide * e * 1.42;
+      m.tilt.rotation.x = -e * 0.2;
       m.hop.position.y = Math.max(0, Math.sin(Math.min(1, k / 0.18) * Math.PI) * 0.2) * (k < 0.18 ? 1 : 0);
-      m.root.position.x = this.x + this.fallSide * e * 0.45;
-      // yerde çırpınma
-      m.arms[0].rotation.z = -0.4 - Math.sin(t * 18) * 0.5 * e;
-      m.arms[1].rotation.z = 0.4 + Math.sin(t * 18 + 1) * 0.5 * e;
-      m.arms[0].rotation.x = m.arms[1].rotation.x = -e * 1.2;
+      m.root.position.x = this.x + this.fallSide * e * 0.5;
     } else {
       m.tilt.rotation.z = sway;
-      m.tilt.rotation.x = -this.lean;
+      m.tilt.rotation.x = -this.lean * 0.6;
       m.root.position.x = this.x;
-      // kollar çuvalı yukarı çeker
-      this.pullUp = Math.max(0, this.pullUp - dt * 3.2);
-      const pu = this.state === 'air' ? Math.sin(Math.min(1, this.t / this.airTime) * Math.PI) : 0;
-      for (const [i, a] of m.arms.entries()) {
-        const s = i === 0 ? -1 : 1;
-        a.rotation.z = s * (0.0 + wob * 0.5 * Math.abs(Math.sin(t * 7)));
-        a.rotation.x = -pu * 0.25;
-        a.position.y = 0.42 + pu * 0.04;
-      }
-      if (this.state === 'finished') {
-        // sevinç: kollar havada, yerinde zıplama
-        const ph = this.t * 9;
-        m.hop.position.y = Math.abs(Math.sin(ph)) * 0.18;
-        m.arms[0].rotation.z = -2.5 + Math.sin(ph) * 0.3;
-        m.arms[1].rotation.z = 2.5 - Math.sin(ph) * 0.3;
-        m.arms[0].rotation.x = m.arms[1].rotation.x = 0;
-      }
-    }
-    m.head.rotation.z = -m.tilt.rotation.z * 0.5;
-    m.head.rotation.x = this.state === 'air' ? -0.08 : 0.04 + Math.sin(t * 3 + this.lane) * 0.02;
-    m.upper.rotation.y = Math.sin(t * 1.4 + this.lane) * 0.05;
-
-    // yüz ifadesi
-    if (this.state !== 'fallen' && this.state !== 'finished' && this.started) {
-      const want = this.wobble > 0.55 ? 'shock' : this.combo >= 4 || this.hucum > 0 ? 'strain' : 'smile';
-      if (want !== this._face) { this._face = want; m.setFace(want); }
+      if (this.state === 'finished') m.hop.position.y = 0;
     }
     m.root.position.z = -this.z;
     m.root.position.y = 0;
+    m.pose(this, dt);
     const lift = m.hop.position.y;
     m.blob.scale.setScalar(Math.max(0.45, 1 - lift * 1.1));
     m.blob.position.x = m.tilt.rotation.z * -0.4;

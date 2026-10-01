@@ -2,7 +2,94 @@
 import * as THREE from 'three';
 import { assets } from './assets.js';
 import { TRACK } from './config.js';
-import { MAT, paint, merge, manParts, womanParts, personMesh } from './people.js';
+import { MAT, paint, merge, personMesh } from './people.js';
+import { createCharacter, bakePose, solveArmIK } from './characters.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// Model setinden adıyla bir nesnenin kopyası
+export function propClone(set, name) {
+  const src = assets.models[set]?.getObjectByName(name);
+  if (!src) return null;
+  const o = src.clone(true);
+  o.position.set(0, 0, 0); o.rotation.set(0, 0, 0); o.scale.set(1, 1, 1);
+  o.traverse((m) => { if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+  return o;
+}
+
+// Yaprak ve çimen için rüzgâr salınımı (örnek konumuna göre faz kayar)
+const _windCache = new Map();
+function windMaterial(mat, amp, U) {
+  const key = mat.uuid + amp;
+  if (_windCache.has(key)) return _windCache.get(key);
+  const m = mat.clone();
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = U.uTime;
+    sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>', `#include <begin_vertex>
+      #ifdef USE_INSTANCING
+        vec3 wp = (instanceMatrix * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+      #else
+        vec3 wp = vec3(0.0);
+      #endif
+      float hgt = max(position.y, 0.0);
+      float sw = sin(uTime * 1.6 + wp.x * 0.3 + wp.z * 0.2 + position.y * 0.6) * 0.6 + sin(uTime * 3.1 + wp.z * 0.7 + position.x) * 0.25;
+      transformed.x += sw * ${(0.035).toFixed(3)} * ${amp.toFixed(2)} * hgt;
+      transformed.z += cos(uTime * 1.2 + wp.x * 0.2) * ${(0.02).toFixed(3)} * ${amp.toFixed(2)} * hgt;`);
+  };
+  m.customProgramCacheKey = () => 'wind' + amp;
+  _windCache.set(key, m);
+  return m;
+}
+
+// Statik birleştirme: bir gruptaki hareketsiz meshleri malzemeye göre tek mesh'e toplar (çizim çağrısını azaltır)
+function staticBatch(group) {
+  group.updateMatrixWorld(true);
+  const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
+  const buckets = new Map(), victims = [];
+  const visit = (o) => {
+    if (o.userData.dynamic) return;
+    if (o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && !Array.isArray(o.material)) {
+      const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
+      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
+      const keep = ['position', 'normal', 'uv'];
+      if (o.material.vertexColors) keep.push('color');
+      for (const k of Object.keys(g.attributes)) if (!keep.includes(k)) g.deleteAttribute(k);
+      if (!g.attributes.normal) g.computeVertexNormals();
+      if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+      const g2 = g.index ? g : g.toNonIndexed();
+      if (!g2.index) { const n = g2.attributes.position.count, idx = new Uint32Array(n); for (let i = 0; i < n; i++) idx[i] = i; g2.setIndex(new THREE.BufferAttribute(idx, 1)); }
+      const key = o.material.uuid;
+      if (!buckets.has(key)) buckets.set(key, { mat: o.material, geos: [], shadow: false });
+      const b = buckets.get(key); b.geos.push(g2); b.shadow ||= o.castShadow;
+      victims.push(o);
+    }
+    for (const c of o.children) visit(c);
+  };
+  visit(group);
+  for (const o of victims) o.parent.remove(o);
+  for (const { mat, geos, shadow } of buckets.values()) {
+    const merged = mergeGeometries(geos, false);
+    if (!merged) continue;
+    const m = new THREE.Mesh(merged, mat);
+    m.castShadow = shadow; m.receiveShadow = true;
+    group.add(m);
+  }
+}
+
+// Sahte Tosun Paşa'nın altın apoletleri ve madalyaları
+function addEpaulettes(c) {
+  const gold = new THREE.MeshStandardMaterial({ color: 0xe0b44a, metalness: 0.85, roughness: 0.3 });
+  const parts = [new THREE.CylinderGeometry(0.075, 0.075, 0.02, 18)];
+  for (let k = 0; k < 10; k++) {
+    const a = (k / 10) * Math.PI * 2;
+    parts.push(new THREE.CylinderGeometry(0.006, 0.006, 0.07, 4).translate(Math.cos(a) * 0.07, -0.035, Math.sin(a) * 0.07));
+  }
+  const geo = mergeGeometries(parts);
+  for (const n of ['upperarm_l', 'upperarm_r']) {
+    const m = new THREE.Mesh(geo, gold);
+    m.position.set(0, 0.03, 0);
+    c.bones[n].add(m);
+  }
+}
 
 const L = TRACK.length;
 export const HALF = (TRACK.lanes * TRACK.laneWidth) / 2;
@@ -25,6 +112,7 @@ export class World {
     this.scene = scene;
     this.quality = quality;
     this.updaters = [];
+    this.animated = [];
     this.crowd = [];
     this.excite = 0.2;
     this.time = 0;
@@ -36,6 +124,7 @@ export class World {
     this.sky();
     this.ground();
     this.chalk();
+    this.ropeFence();
     this.finishLine();
     this.kosk();
     this.crowdBuild();
@@ -172,6 +261,38 @@ export class World {
     m.receiveShadow = true;
     m.renderOrder = 1;
     this.scene.add(m);
+  }
+
+  // ---------- Seyircileri pistten ayıran kazık ve ip çit ----------
+  ropeFence() {
+    const posts = [], ropes = [];
+    const fx = HALF + 1.25, step = 2.6;
+    for (const side of [-1, 1]) {
+      const pts = [];
+      for (let z = 6; z > -L - 6; z -= step) {
+        if (side === -1 && z > -2.6 && z < 3.6) { if (pts.length > 1) ropes.push(pts.splice(0)); else pts.length = 0; continue; }
+        posts.push(Mx(side * fx, 0.45, z, 0, rand() * 3, (rand() - 0.5) * 0.06));
+        pts.push(new THREE.Vector3(side * fx, 0.86, z));
+      }
+      if (pts.length > 1) ropes.push(pts);
+    }
+    const postGeo = new THREE.CylinderGeometry(0.035, 0.045, 0.9, 7);
+    const wood = new THREE.MeshStandardMaterial({ color: 0x6b4a2b, roughness: 0.85, normalMap: assets.tex.hessianNor, normalScale: new THREE.Vector2(0.4, 0.4) });
+    const im = new THREE.InstancedMesh(postGeo, wood, posts.length);
+    posts.forEach((m, i) => im.setMatrixAt(i, m));
+    im.castShadow = true; im.receiveShadow = true;
+    this.scene.add(im);
+    // kazıklar arasında hafifçe sarkan kenevir ip
+    const geos = [];
+    for (const pts of ropes) {
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1], mid = a.clone().lerp(b, 0.5); mid.y -= 0.07;
+        geos.push(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(a, mid, b), 8, 0.012, 5));
+      }
+    }
+    const rope = new THREE.Mesh(mergeGeometries(geos), new THREE.MeshStandardMaterial({ color: 0xc8b48a, roughness: 0.95 }));
+    rope.castShadow = true;
+    this.scene.add(rope);
   }
 
   // ---------- Bitiş: direkler, bayraklı ip, kırmızı kurdele ----------
@@ -314,219 +435,201 @@ export class World {
       swag.push(paint(new THREE.ConeGeometry(0.03, 0.2, 7), 0xb3202a, Mx(tx - tw / 2 - 0.06, th - 0.17, z0, Math.PI, 0, 0)));
       swag.push(paint(new THREE.SphereGeometry(0.035, 8, 6), 0xd9a441, Mx(tx - tw / 2 - 0.06, th - 0.05, z0)));
     }
-    // yemiş tabakları, bardaklar
-    for (let i = 0; i < 6; i++) {
-      const z = -tl / 2 + 0.6 + i * (tl - 1.2) / 5;
-      T.push(paint(new THREE.CylinderGeometry(0.2, 0.14, 0.04, 18), 0xd9c9a3, Mx(tx - 0.05, th + 0.04, z)));
-      for (let k = 0; k < 5; k++) T.push(paint(new THREE.SphereGeometry(0.055, 10, 8), k % 2 ? 0xf08a24 : 0xe6b422, Mx(tx - 0.05 + Math.cos(k * 1.3) * 0.09, th + 0.1 + (k === 4 ? 0.06 : 0), z + Math.sin(k * 1.3) * 0.09)));
-      T.push(paint(new THREE.CylinderGeometry(0.035, 0.03, 0.11, 10), 0xe9f2f5, Mx(tx - 0.3, th + 0.075, z + 0.35)));
-    }
     const table = personMesh(T, MAT.vcSoft); table.receiveShadow = true; g.add(table);
     g.add(personMesh(swag, MAT.vc));
+    // masa üstü: Poly Haven çay takımı, nar, elma, oymalı tabak, pirinç fener
+    const onTable = (name, x, z, s = 1, ry = 0) => { const o = propClone('polyhaven', name); if (!o) return; o.position.set(tx + x, th + 0.02, z); o.scale.setScalar(s); o.rotation.y = ry; g.add(o); return o; };
+    for (let i = 0; i < 5; i++) {
+      const z = -tl / 2 + 0.7 + i * (tl - 1.4) / 4;
+      onTable('carved_wooden_plate', -0.05, z, 1.1, i);
+      for (let k = 0; k < 3; k++) onTable(k % 2 ? 'food_apple_01' : 'food_pomegranate_01', -0.05 + Math.cos(k * 2.1) * 0.06, z + Math.sin(k * 2.1) * 0.06, 1, k);
+      if (i % 2 === 0) onTable('tea_set_01', -0.12, z + 0.45, 0.8, i * 1.3 + 0.4);
+    }
+    onTable('brass_diya_lantern', 0.1, -tl / 2 + 0.25, 1.2);
+    onTable('brass_diya_lantern', 0.1, tl / 2 - 0.25, 1.2);
+    onTable('wooden_bowl_01', 0.05, 0.05, 1.2);
+    const basket = propClone('polyhaven', 'wicker_basket_01');
+    if (basket) { basket.position.set(-W / 2 - 0.35, 0, D / 2 + 0.2); g.add(basket); }
+    const barrel = propClone('props', 'Barrel_Apples');
+    if (barrel) { barrel.position.set(-W / 2 - 0.3, 0, -D / 2 - 0.5); barrel.scale.setScalar(0.85); g.add(barrel); }
 
-    // ileri gelenler: masanın arkasında oturur, piste bakar (-X)
-    const seatX = 0.35, seatY = 0.56;
+    // ileri gelenler: iskeletli karakterler masanın arkasında oturur, piste bakar (-X)
+    const seatX = 0.32;
     const vip = [
-      { z: -3.0, kind: 'man', o: { suit: 0x4a4a52, shirt: 0xf3efe5, tie: 0x2e5e2e, fez: 0x8f1717, mustacheColor: 0xd8d8d0, skin: 0xd9a585 } },              // Akil, Tellioğulları reisi
-      { z: -1.9, kind: 'man', o: { suit: 0x5a3b26, shirt: 0xf3efe5, tie: 0x6b1d1d, fez: 0x9b1b1b, skin: 0xd8a07a } },                                    // Tellioğlu Lütfü
-      { z: -0.75, kind: 'pasa', o: { suit: 0x121218, shirt: 0xf3efe5, tie: 0x121218, fez: 0xa01c1c, trim: 0xe0b44a, skin: 0xe0ad86, mustache: false } }, // sahte Tosun Paşa (Şaban)
-      { z: 0.45, kind: 'leyla' },                                                                                                                           // Leyla
-      { z: 1.6, kind: 'man', o: { suit: 0x1a2340, shirt: 0xf3efe5, tie: 0x8f1d21, fez: 0x8f1717, trim: 0xd9a441, skin: 0xd9a07a } },                    // Daver Bey
-      { z: 2.8, kind: 'man', o: { suit: 0x26442f, shirt: 0xf3efe5, tie: 0x14301f, fez: 0x8f1717, skin: 0xcf9873, belly: 1.15 } },                       // Seferoğlu Sıtkı
+      { z: -3.0, sex: 'm', main: 0x5f5f66, trim: 0x8a7a50, beard: true, hairColor: 0xd8d6cf, clip: 'Sitting_Idle_Loop' },           // Akil, Tellioğulları reisi
+      { z: -1.9, sex: 'm', main: 0x6b4a2e, trim: 0xb08d3c, beard: true, clip: 'Sitting_Talking_Loop' },                            // Tellioğlu Lütfü
+      { z: -0.75, sex: 'm', main: 0x14182c, trim: 0xe0b44a, pasa: true, clip: 'Sitting_Idle_Loop' },                               // sahte Tosun Paşa (Şaban)
+      { z: 0.45, sex: 'f', main: 0xc0232e, trim: 0xe0b44a, scarf: 0xc8202b, clip: 'Sitting_Idle_Loop' },                           // Leyla
+      { z: 1.6, sex: 'm', main: 0x1a2340, trim: 0xd9a441, beard: true, clip: 'Sitting_Talking_Loop' },                             // Daver Bey
+      { z: 2.8, sex: 'm', main: 0x26442f, trim: 0x9a8a50, beard: true, clip: 'Sitting_Idle_Loop' },                                // Seferoğlu Sıtkı
     ];
     this.vips = [];
     for (const v of vip) {
-      let built;
-      if (v.kind === 'leyla') built = womanParts({ pose: 'sit', dress: 0xc0232e, scarf: 0xd8262f, sash: 0xe0b44a, skin: 0xf2c8a8 });
-      else built = manParts({ ...v.o, pose: 'sit' });
-      const parts = built.parts;
-      if (v.kind === 'pasa') {
-        // apolet + madalyalar
-        for (const s of [-1, 1]) {
-          parts.push(paint(new THREE.CylinderGeometry(0.1, 0.1, 0.035, 14), 0xe0b44a, Mx(s * 0.22, built.shoulderY + 0.04, 0, 0, 0, s * 0.25)));
-          for (let k = 0; k < 9; k++) {
-            const a = (k / 8) * Math.PI - Math.PI / 2;
-            parts.push(paint(new THREE.CylinderGeometry(0.007, 0.007, 0.08, 4), 0xe0b44a, Mx(s * (0.22 + Math.cos(a) * 0.0) + s * 0.08, built.shoulderY - 0.01, Math.sin(a) * 0.09)));
-          }
-        }
-        for (let k = 0; k < 4; k++) parts.push(paint(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 10), k % 2 ? 0xd0d4dc : 0xe0b44a, Mx(-0.1 + k * 0.03, built.bodyY + 0.35, -0.2, Math.PI / 2, 0, 0)));
-        parts.push(paint(new THREE.BoxGeometry(0.04, 0.4, 0.02), 0xa01c1c, Mx(0.0, built.bodyY + 0.3, -0.2, 0, 0, 0.6)));
-      }
-      const m = personMesh(parts);
-      const holder = new THREE.Group();
-      holder.add(m);
-      holder.position.set(seatX, seatY, v.z);
-      holder.rotation.y = Math.PI / 2;
-      g.add(holder);
-      this.vips.push({ holder, base: seatY, phase: rand() * 6 });
-      // sandalye
-      const ch = personMesh([
-        paint(new THREE.BoxGeometry(0.46, 0.06, 0.46), 0x5a3a22, Mx(0, 0.42, 0)),
-        paint(new THREE.BoxGeometry(0.46, 0.7, 0.05), 0x5a3a22, Mx(0, 0.78, 0.22)),
-        ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([a, b]) => paint(new THREE.BoxGeometry(0.05, 0.42, 0.05), 0x3e2716, Mx(a * 0.2, 0.21, b * 0.2))),
-      ]);
-      ch.position.set(seatX + 0.05, 0, v.z); ch.rotation.y = Math.PI / 2; g.add(ch);
+      const c = createCharacter({ sex: v.sex, lod: this.quality === 'low' ? true : 'mid', hideLegs: true, main: v.main, trim: v.trim, scarf: v.scarf, beard: v.beard, fez: v.sex === 'm', hairColor: v.hairColor });
+      c.root.position.set(seatX, 0, v.z);
+      c.root.rotation.y = -Math.PI / 2;
+      c.play(v.clip).time = rand() * 3;
+      if (v.pasa) addEpaulettes(c);
+      c.root.userData.dynamic = true;
+      c.root.traverse((m) => { if (m.isMesh) m.castShadow = false; });
+      g.add(c.root);
+      this.vips.push(c);
+      const chair = propClone('props', 'Chair_1');
+      if (chair) { chair.position.set(seatX + 0.06, 0, v.z); chair.rotation.y = -Math.PI / 2; g.add(chair); }
     }
-    this.updaters.push((dt, t) => {
-      for (const v of this.vips) {
-        const e = this.excite;
-        v.holder.position.y = v.base + Math.max(0, Math.sin(t * (5 + e * 6) + v.phase)) * 0.04 * (0.3 + e);
-        v.holder.rotation.z = Math.sin(t * 2 + v.phase) * 0.03 * e;
-      }
-    });
+    this.animated.push(...this.vips);
+    staticBatch(g);
   }
 
-  // ---------- Seyirciler (örneklenmiş) ----------
+  // ---------- Seyirciler: iskeletli karakterlerin pozları statik geometriye pişirilip örneklenir ----------
   crowdBuild() {
-    const variants = [];
-    const suits = [0x2c2c34, 0x3b3328, 0x23324a, 0x4a3a2a, 0x2e3a2c, 0x50463a];
-    const dresses = [0x2f6f8f, 0x8e3b46, 0x6b8e4e, 0xc49a3c, 0x5b4a8a, 0xb5651d, 0x3a7d7c];
-    const scarves = [0xf2ead7, 0xe9d8b4, 0xffffff, 0xd8c6a8, 0xc94f4f, 0x8fb3c9];
-    for (let i = 0; i < 4; i++) variants.push({ geo: merge(manParts({ suit: suits[i], pants: suits[(i + 2) % 6], pose: i % 2 ? 'raise' : 'clap', lod: true, belly: 1 + (i % 3) * 0.08, tie: [0x5a1414, 0x1d3557, 0x2b2b2b, 0x6b4f1d][i] }).parts), n: 0 });
-    for (let i = 0; i < 2; i++) variants.push({ geo: merge(manParts({ suit: 0x6e5a40, sleeve: 0xf1ece0, pants: 0x3a3226, pose: i ? 'mixed' : 'clap', lod: true, tie: 0xc0392b, fez: 0xaf2020 }).parts), n: 0 }); // köylü: cepken
-    for (let i = 0; i < 4; i++) variants.push({ geo: merge(womanParts({ dress: dresses[i], scarf: scarves[i], pose: i % 2 ? 'raise' : 'clap', lod: true, skirt: dresses[(i + 3) % 7] }).parts), n: 0 });
-
+    const POSES = [
+      { sex: 'f', clip: 'Yes', time: 0.35 }, { sex: 'f', clip: 'Idle_Talking_Loop', time: 1.1 },
+      { sex: 'f', clip: 'Dance_Loop', time: 0.6 }, { sex: 'f', clip: 'Idle_FoldArms_Loop', time: 0.4 },
+      { sex: 'm', clip: 'Idle_Rail_Call', time: 0.9, fez: true }, { sex: 'm', clip: 'Yes', time: 0.6, fez: true, beard: true },
+      { sex: 'm', clip: 'Idle_FoldArms_Loop', time: 0.5, fez: true, beard: true }, { sex: 'm', clip: 'Idle_Talking_Loop', time: 1.4, fez: true },
+    ];
+    const budget = { low: 60, medium: 100, high: 170 }[this.quality];
     const spots = [];
-    const zMin = -L - 9, zMax = 6;
+    const zMin = -L - 8, zMax = 5;
     for (const side of [-1, 1]) {
-      for (let row = 0; row < 3; row++) {
-        const x0 = HALF + 1.6 + row * 0.85;
-        for (let z = zMax; z > zMin; z -= rr(0.62, 0.95)) {
-          if (side === 1 && z < this.koskPos.z + 5 && z > this.koskPos.z - 5) continue; // köşkün önü boş
-          if (side === -1 && z > -2.6 && z < 3.6 && row < 2) continue;                    // davulcu ve çığırtkan alanı
-          if (rand() < 0.12) continue;
-          spots.push({ x: side * (x0 + rr(-0.15, 0.25)), z: z + rr(-0.1, 0.1), side, row });
+      for (let row = 0; row < 2; row++) {
+        const x0 = HALF + 1.7 + row * 0.95;
+        for (let z = zMax; z > zMin; z -= rr(0.75, 1.15)) {
+          if (side === 1 && z < this.koskPos.z + 5 && z > this.koskPos.z - 5) continue;
+          if (side === -1 && z > -2.8 && z < 3.8) continue;
+          spots.push({ x: side * (x0 + rr(-0.15, 0.25)), z: z + rr(-0.12, 0.12), side, row });
         }
       }
     }
-    // köşkün iki yanında ayaktaki kalabalık
-    for (let i = 0; i < 22; i++) spots.push({ x: HALF + 3.5 + rr(0, 2.5), z: this.koskPos.z + (rand() < 0.5 ? -1 : 1) * rr(4.6, 6.5), side: 1, row: 3 });
-    const CH = 3, chunkLen = (zMax - zMin) / CH;
-    for (const s of spots) { s.v = Math.floor(rand() * variants.length); s.c = Math.min(CH - 1, Math.max(0, Math.floor((zMax - s.z) / chunkLen))); }
-
+    for (let i = 0; i < 16; i++) spots.push({ x: HALF + 3.6 + rr(0, 2.4), z: this.koskPos.z + (rand() < 0.5 ? -1 : 1) * rr(4.6, 6.4), side: 1, row: 3 });
+    // bütçeye göre seyrelt (kameraya yakın ön sıra öncelikli)
+    spots.sort((p, q) => p.row - q.row + (rand() - 0.5) * 0.8);
+    spots.length = Math.min(spots.length, budget);
+    const scarves = [0xf2ead7, 0xe9d8b4, 0xc94f4f, 0x8fb3c9, 0x6a8f5a, 0xd9a441, 0x7d4e8a];
+    const shirts = [0xe8e2d0, 0x3c5a8a, 0x8a3c3c, 0x5a7a4a, 0x6b5a3a, 0xc9b88a, 0x2c3e50];
     this.crowdInst = [];
     const dummy = new THREE.Object3D();
-    for (let vi = 0; vi < variants.length * CH; vi++) {
-      const v = variants[vi % variants.length], ch = Math.floor(vi / variants.length);
-      const mine = spots.filter((s) => s.v === vi % variants.length && s.c === ch);
-      if (!mine.length) continue;
-      const im = new THREE.InstancedMesh(v.geo, MAT.vc, mine.length);
+    POSES.forEach((pose, pi) => {
+      const mine = spots.filter((_, i) => i % POSES.length === pi);
+      if (!mine.length) return;
+      const baked = bakePose(pose);
+      const im = new THREE.InstancedMesh(baked.geometry, baked.materials, mine.length);
       im.castShadow = this.quality === 'high';
-      im.receiveShadow = false;
       const list = [];
-      let k = 0;
-      for (const s of mine) {
-        const sc = rr(0.92, 1.08);
+      mine.forEach((s, k) => {
         const rot = s.side * Math.PI / 2 + rr(-0.35, 0.35) + (s.row === 3 ? 0.5 * Math.sign(this.koskPos.z - s.z) : 0);
-        const tint = new THREE.Color().setHSL(rr(0, 1), rr(0, 0.15), rr(0.78, 1.0));
-        im.setColorAt(k, tint);
-        const item = { k, x: s.x, z: s.z, y: groundHeight(s.x, s.z), rot, sc, ph: rand() * 10, sp: rr(0.8, 1.3) };
-        dummy.position.set(item.x, item.y, item.z); dummy.rotation.set(0, rot, 0); dummy.scale.setScalar(sc); dummy.updateMatrix();
-        im.setMatrixAt(k, dummy.matrix);
-        list.push(item);
-        k++;
-      }
+        const pal = pose.sex === 'f' ? scarves : shirts;
+        im.setColorAt(k, new THREE.Color(pal[Math.floor(rand() * pal.length)]).multiplyScalar(rr(0.85, 1.1)));
+        list.push({ k, x: s.x, z: s.z, y: groundHeight(s.x, s.z), rot, sc: rr(0.93, 1.06), ph: rand() * 10, sp: rr(0.8, 1.3) });
+      });
       im.instanceColor.needsUpdate = true;
-      im.computeBoundingSphere();
       this.scene.add(im);
       this.crowdInst.push({ im, list });
-    }
-    this.updaters.push((dt, t) => {
-      const e = this.excite;
+    });
+    const upd = () => {
       for (const { im, list } of this.crowdInst) {
         for (const it of list) {
-          const jump = Math.max(0, Math.sin(t * (6 + e * 5) * it.sp + it.ph));
-          dummy.position.set(it.x, it.y + jump * jump * (0.02 + e * 0.14), it.z);
-          dummy.rotation.set(0, it.rot + Math.sin(t * 1.3 + it.ph) * 0.12, Math.sin(t * 3 * it.sp + it.ph) * 0.04 * e);
+          const e = this.excite, t = this.time;
+          const jump = Math.max(0, Math.sin(t * (5 + e * 5) * it.sp + it.ph));
+          dummy.position.set(it.x, it.y + jump * jump * (0.01 + e * 0.12), it.z);
+          dummy.rotation.set(0, it.rot + Math.sin(t * 1.3 + it.ph) * 0.12, Math.sin(t * 3 * it.sp + it.ph) * 0.035 * e);
           dummy.scale.setScalar(it.sc);
           dummy.updateMatrix();
           im.setMatrixAt(it.k, dummy.matrix);
         }
         im.instanceMatrix.needsUpdate = true;
+        im.computeBoundingSphere();
       }
-    });
+    };
+    upd();
+    this.updaters.push(upd);
   }
 
-  // ---------- Davulcu ve çığırtkan ----------
+  // ---------- Davulcu ve çığırtkan (iskeletli, IK ile davul çalar) ----------
   musicians() {
-    // davulcu
-    const dg = new THREE.Group(); dg.position.set(-HALF - 1.4, 0, 1.8); dg.rotation.y = -Math.PI / 2 - 0.35; this.scene.add(dg);
-    const body = manParts({ suit: 0x7a2e1e, sleeve: 0xefe6d2, pants: 0x2b2b33, fez: 0xa61e1e, noArms: true, belly: 1.12, tie: 0xd9a441 });
-    dg.add(personMesh(body.parts));
-    // davul: gövde + iki deri yüz + ip örgüsü dokusu
+    const dr = createCharacter({ sex: 'm', lod: 'mid', main: 0x8a2e1e, trim: 0xd9a441, fez: true, beard: true });
+    dr.root.position.set(-HALF - 1.4, 0, 1.8);
+    dr.root.rotation.y = Math.PI / 2 - 0.35;
+    dr.play('Idle_Loop');
+    this.scene.add(dr.root);
+    // davul: ahşap gövde + gergin deri + ip örgüsü
     const cv = document.createElement('canvas'); cv.width = 512; cv.height = 128;
     const x = cv.getContext('2d');
-    const gr = x.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#7b4a25'); gr.addColorStop(0.5, '#a8692f'); gr.addColorStop(1, '#6a3d1d');
+    const gr = x.createLinearGradient(0, 0, 0, 128); gr.addColorStop(0, '#6b3e1d'); gr.addColorStop(0.5, '#a8692f'); gr.addColorStop(1, '#5a3218');
     x.fillStyle = gr; x.fillRect(0, 0, 512, 128);
-    x.strokeStyle = '#f0e2c0'; x.lineWidth = 5;
-    x.beginPath(); for (let i = 0; i <= 16; i++) { x.lineTo(i * 32, i % 2 ? 118 : 10); } x.stroke();
-    x.fillStyle = '#c0392b'; x.fillRect(0, 0, 512, 10); x.fillRect(0, 118, 512, 10);
+    for (let i = 0; i < 400; i++) { x.fillStyle = `rgba(40,20,5,${Math.random() * 0.25})`; x.fillRect(Math.random() * 512, Math.random() * 128, 30 + Math.random() * 60, 1); }
+    x.strokeStyle = '#efe0bb'; x.lineWidth = 5;
+    x.beginPath(); for (let i = 0; i <= 16; i++) x.lineTo(i * 32, i % 2 ? 116 : 12); x.stroke();
+    x.fillStyle = '#9b1b1b'; x.fillRect(0, 0, 512, 12); x.fillRect(0, 116, 512, 12);
     const dt = new THREE.CanvasTexture(cv); dt.colorSpace = THREE.SRGBColorSpace; dt.wrapS = THREE.RepeatWrapping;
-    const drum = new THREE.Group(); drum.position.set(0, 1.08, -0.38); dg.add(drum);
-    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.3, 28, 1, true), new THREE.MeshStandardMaterial({ map: dt, roughness: 0.7, side: THREE.DoubleSide }));
+    const drum = new THREE.Group();
+    const shell = new THREE.Mesh(new THREE.CylinderGeometry(0.33, 0.33, 0.3, 32, 1, true), new THREE.MeshStandardMaterial({ map: dt, roughness: 0.6, side: THREE.DoubleSide }));
     shell.rotation.z = Math.PI / 2; shell.castShadow = true; drum.add(shell);
-    for (const s of [-1, 1]) {
-      const skin = new THREE.Mesh(new THREE.CircleGeometry(0.34, 28), new THREE.MeshStandardMaterial({ color: 0xe9dcc0, roughness: 0.9, side: THREE.DoubleSide }));
-      skin.position.x = s * 0.15; skin.rotation.y = s * Math.PI / 2; drum.add(skin);
-    }
-    const strap = new THREE.Mesh(new THREE.TorusGeometry(0.33, 0.015, 5, 20, Math.PI), new THREE.MeshStandardMaterial({ color: 0x3b2a1e }));
-    strap.position.set(0, 0.0, 0.2); strap.rotation.set(0, 0, 0); drum.add(strap);
-    const armDef = (s, tool) => {
-      const piv = new THREE.Group(); piv.position.set(s * 0.23, body.shoulderY, 0); dg.add(piv);
-      const p = [
-        paint(new THREE.CapsuleGeometry(0.06, 0.24, 3, 6), 0xefe6d2, Mx(0, -0.15, -0.06, 0.4, 0, 0)),
-        paint(new THREE.CapsuleGeometry(0.052, 0.22, 3, 6), 0xefe6d2, Mx(0, -0.3, -0.26, 1.3, 0, 0)),
-        paint(new THREE.SphereGeometry(0.045, 8, 6), 0xd9a07a, Mx(0, -0.33, -0.42)),
-      ];
-      if (tool === 'tokmak') {
-        p.push(paint(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 6), 0x5a3a22, Mx(s * 0.12, -0.3, -0.45, 0, 0, Math.PI / 2 - 0.3)));
-        p.push(paint(new THREE.SphereGeometry(0.06, 10, 8), 0x3b2a1e, Mx(s * 0.31, -0.24, -0.45)));
-      } else {
-        p.push(paint(new THREE.CylinderGeometry(0.006, 0.006, 0.45, 4), 0x8a6a3a, Mx(s * 0.15, -0.28, -0.45, 0, 0, Math.PI / 2 - 0.4)));
-      }
-      const m = personMesh(p); piv.add(m);
-      return piv;
+    const hide = new THREE.MeshStandardMaterial({ color: 0xe8dcc0, roughness: 0.85, normalMap: assets.tex.hessianNor, normalScale: new THREE.Vector2(0.15, 0.15) });
+    for (const s of [-1, 1]) { const sk = new THREE.Mesh(new THREE.CircleGeometry(0.34, 32), hide); sk.position.x = s * 0.151; sk.rotation.y = s * Math.PI / 2; drum.add(sk); }
+    drum.position.set(0, 1.0, 0.36);
+    dr.root.add(drum);
+    const stick = (len, r, ball) => {
+      const gg = new THREE.Group();
+      const st = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 6), new THREE.MeshStandardMaterial({ color: 0x5a3a22, roughness: 0.7 }));
+      st.position.y = len / 2; gg.add(st);
+      if (ball) { const bl = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), new THREE.MeshStandardMaterial({ color: 0x3b2a1e, roughness: 0.9 })); bl.position.y = len; gg.add(bl); }
+      return gg;
     };
-    const armR = armDef(1, 'tokmak'), armL = armDef(-1, 'cubuk');
-    this.drummer = { g: dg, armR, armL, hitR: 0, hitL: 0, drum };
+    const tokmak = stick(0.36, 0.014, true), cubuk = stick(0.42, 0.006, false);
+    dr.bones.hand_r.add(tokmak); dr.bones.hand_l.add(cubuk);
+    this.drummer = { ch: dr, drum, hitR: 0, hitL: 0, tokmak, cubuk };
 
-    // çığırtkan: mendil sallayan adam
-    const cg = new THREE.Group(); cg.position.set(-HALF - 0.9, 0, -0.9); cg.rotation.y = -Math.PI / 2 + 0.5; this.scene.add(cg);
-    const cb = manParts({ suit: 0x1f3a5a, pants: 0x1a1a22, fez: 0x9b1b1b, noArms: true, tie: 0xd9a441, trim: 0xd9a441 });
-    cg.add(personMesh(cb.parts));
-    const mkArm = (s, raise) => {
-      const piv = new THREE.Group(); piv.position.set(s * 0.23, cb.shoulderY, 0); cg.add(piv);
-      const p = [
-        paint(new THREE.CapsuleGeometry(0.06, 0.4, 3, 6), 0x1f3a5a, Mx(0, -0.25, 0)),
-        paint(new THREE.SphereGeometry(0.045, 8, 6), 0xd9a07a, Mx(0, -0.52, 0)),
-      ];
-      if (raise) {
-        const cloth = new THREE.PlaneGeometry(0.32, 0.32, 3, 3);
-        p.push(paint(cloth, 0xfaf7ef, Mx(0.05, -0.68, 0, 0, Math.PI / 2, 0.2)));
-      }
-      const m = personMesh(p); piv.add(m);
-      if (raise) m.material = MAT.vc;
-      return piv;
-    };
-    const cR = mkArm(1, true), cL = mkArm(-1, false);
-    cL.rotation.z = -0.15; cL.rotation.x = -0.2;
-    this.crier = { g: cg, arm: cR, raise: 0, target: 0.2 };
+    const cr = createCharacter({ sex: 'm', lod: 'mid', main: 0x1f3a5a, trim: 0xd9a441, fez: true });
+    cr.root.position.set(-HALF - 0.9, 0, -0.9);
+    cr.root.rotation.y = Math.PI / 2 + 0.5;
+    cr.play('Idle_Talking_Loop');
+    this.scene.add(cr.root);
+    const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.2, 3, 3), new THREE.MeshStandardMaterial({ color: 0xfaf7ef, roughness: 0.9, side: THREE.DoubleSide }));
+    cloth.position.set(0, 0.12, 0.05);
+    cr.bones.hand_r.add(cloth);
+    this.crier = { ch: cr, target: 0, raise: 0, cloth };
+    this.animated.push(dr, cr);
 
-    this.updaters.push((dt, t) => {
+    const ikT = new THREE.Vector3(), pole = new THREE.Vector3();
+    this.updaters.push((dtt, t) => {
       const d = this.drummer;
-      d.hitR = Math.max(0, d.hitR - dt * 7); d.hitL = Math.max(0, d.hitL - dt * 9);
-      d.armR.rotation.x = -0.25 + Math.sin(d.hitR * Math.PI) * 0.0 - d.hitR * 0.9;
-      d.armR.rotation.z = 0.2 + d.hitR * 0.5;
-      d.armL.rotation.x = -0.2 - d.hitL * 0.5;
-      d.armL.rotation.z = -0.25 - d.hitL * 0.4;
-      d.g.position.y = Math.abs(Math.sin(t * 4.5)) * 0.03;
-      d.drum.rotation.z = Math.sin(t * 4.5) * 0.04;
+      d.hitR = Math.max(0, d.hitR - dtt * 7); d.hitL = Math.max(0, d.hitL - dtt * 9);
+      d.drum.rotation.z = Math.sin(t * 4.5) * 0.03;
+      d.ch.root.updateMatrixWorld(true);
+      // sağ el tokmakla sağ deriye, sol el çubukla sol deriye vurur
+      for (const [side, hit, up, lo, ha] of [[1, d.hitR, 'upperarm_r', 'lowerarm_r', 'hand_r'], [-1, d.hitL, 'upperarm_l', 'lowerarm_l', 'hand_l']]) {
+        const B = d.ch.bones;
+        B[ha].getWorldPosition(ikT); d.ch.root.worldToLocal(ikT);
+        const s = Math.sign(ikT.x) || side;
+        ikT.set(s * (0.42 + (1 - hit) * 0.12), 1.06 + (1 - hit) * 0.16, 0.3);
+        d.ch.root.localToWorld(ikT);
+        pole.set(s * 0.8, 0.9, -0.3); d.ch.root.localToWorld(pole);
+        solveArmIK(B[up], B[lo], B[ha], ikT, pole);
+      }
       const c = this.crier;
-      c.raise += (c.target - c.raise) * Math.min(1, dt * 8);
-      c.arm.rotation.z = c.raise * 2.7 + Math.sin(t * 9) * 0.12 * c.raise;
-      c.arm.rotation.x = -0.1;
+      c.raise += (Math.max(0, c.target) - c.raise) * Math.min(1, dtt * 6);
+      const wantClip = c.target < 0 ? 'Yes' : 'Idle_Talking_Loop';
+      if (c.mode !== wantClip) { c.mode = wantClip; c.ch.play(wantClip, { fade: 0.4 }); }
+      if (c.raise > 0.02) {
+        // anons ederken sağ el mendille havaya kalkar
+        const B = c.ch.bones;
+        c.ch.root.updateMatrixWorld(true);
+        B.hand_r.getWorldPosition(ikT); c.ch.root.worldToLocal(ikT);
+        const s = Math.sign(ikT.x) || 1;
+        const up = new THREE.Vector3(s * 0.32, 1.95 + Math.sin(t * 7) * 0.05, 0.12);
+        ikT.lerp(up, c.raise);
+        c.ch.root.localToWorld(ikT);
+        pole.set(s * 0.9, 1.2, -0.4); c.ch.root.localToWorld(pole);
+        solveArmIK(B.upperarm_r, B.lowerarm_r, B.hand_r, ikT, pole);
+      }
+      c.cloth.rotation.z = Math.sin(t * 9) * 0.35;
     });
   }
+
+  // davulcu ve çığırtkanın durduğu alan (giriş çekimi kamerası da burada)
+  inMusic(x, z) { return x < -HALF + 0.2 && x > -HALF - 4 && z > -6 && z < 5; }
 
   inKosk(x, z, pad = 0) {
     const k = this.koskPos;
@@ -537,67 +640,80 @@ export class World {
     if (type === 'D') this.drummer.hitR = 1; else this.drummer.hitL = 1;
   }
 
-  // ---------- Ağaçlar, çalılar (Kenney Nature Kit, örneklenmiş) ----------
-  instModel(name, placements, opts = {}) {
-    const src = assets.models[name]; if (!src) return;
+  // ---------- Doğa: Quaternius Stylized Nature MegaKit (örneklenmiş, yapraklar rüzgârda salınır) ----------
+  instNode(set, name, placements, { shadow = false, wind = 0 } = {}) {
+    const src = assets.models[set]?.getObjectByName(name);
+    if (!src || !placements.length) return;
     src.updateMatrixWorld(true);
-    // Kenney paketinin turkuaz tonlarını yaz sonu çayır renklerine çevir
-    const palette = { leafsGreen: 0x5e9431, leafsDark: 0x3c6e26, grass: 0x6b9e38, woodBark: 0x6e4c34, woodBarkDark: 0x4b3526, _defaultMat: 0x6e4c34 };
+    const inv = new THREE.Matrix4().copy(src.matrixWorld).invert();
     src.traverse((o) => {
       if (!o.isMesh) return;
-      const mat = o.material.clone();
-      if (palette[mat.name] !== undefined) mat.color.set(palette[mat.name]);
-      mat.roughness = 0.88; mat.metalness = 0;
-      const leafy = /leafs|grass/.test(mat.name);
+      const local = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
+      let mat = o.material;
+      const leafy = /Leaves|Leaf|Grass|Flowers/i.test(mat.name);
+      if (wind && leafy) mat = windMaterial(mat, wind, this.windU);
       const im = new THREE.InstancedMesh(o.geometry, mat, placements.length);
-      placements.forEach((m, i) => {
-        im.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(m, o.matrixWorld));
-        const r = mulberry(i * 31 + name.length)();
-        im.setColorAt(i, new THREE.Color().setHSL(leafy ? 0.08 + r * 0.1 : 0, leafy ? 0.35 : 0, leafy ? 0.72 + r * 0.32 : 0.85 + r * 0.2));
-      });
-      im.castShadow = opts.shadow ?? false;
-      im.receiveShadow = opts.receive ?? false;
+      placements.forEach((m, i) => im.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(m, local)));
+      im.castShadow = shadow; im.receiveShadow = true;
+      im.computeBoundingSphere();
       this.scene.add(im);
     });
   }
 
   trees() {
-    const treeNames = ['tree_oak', 'tree_detailed', 'tree_fat', 'tree_default', 'tree_oak_dark', 'tree_detailed_dark'];
-    const buckets = Object.fromEntries(treeNames.map((n) => [n, []]));
-    const place = (x, z, s) => {
-      const n = treeNames[Math.floor(rand() * treeNames.length)];
-      buckets[n].push(Mx(x, groundHeight(x, z) - 0.1, z, 0, rand() * 6.28, 0, s, s * rr(0.9, 1.2), s));
+    this.windU = { uTime: { value: 0 } };
+    this.updaters.push((dt, t) => { this.windU.uTime.value = t; });
+    const treeNames = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5'];
+    const nTrees = { low: 32, medium: 48, high: 80 }[this.quality];
+    const buckets = Object.fromEntries([...treeNames, 'Pine_1', 'Pine_3'].map((n) => [n, []]));
+    const place = (x, z, s, pine = false) => {
+      const n = pine ? (rand() < 0.5 ? 'Pine_1' : 'Pine_3') : treeNames[Math.floor(rand() * treeNames.length)];
+      buckets[n].push(Mx(x, groundHeight(x, z) - 0.05, z, 0, rand() * 6.28, 0, s, s * rr(0.9, 1.15), s));
     };
-    // pistin iki yanında, seyircilerin arkasında koru
-    for (let i = 0; i < (this.quality === 'low' ? 70 : 120); i++) {
+    for (let i = 0; i < nTrees; i++) {
       const side = rand() < 0.5 ? -1 : 1;
-      const x = side * rr(HALF + 6, 60), z = rr(-120, 40);
+      const x = side * rr(HALF + 5.5, 45), z = rr(-110, 35);
       if (side === 1 && Math.abs(z - this.koskPos.z) < 6 && Math.abs(x) < HALF + 10) continue;
-      place(x, z, rr(5.5, 9.5) * (1 + Math.abs(x) / 80));
+      place(x, z, rr(1.0, 1.6) * (1 + Math.abs(x) / 90), Math.abs(x) > 30 && rand() < 0.4);
     }
-    // bitişin ötesi ve başlangıcın gerisi
-    for (let i = 0; i < 45; i++) place(rr(-40, 40), rr(-L - 25, -L - 90), rr(6, 10));
-    for (let i = 0; i < 30; i++) place(rr(-40, 40), rr(18, 60), rr(6, 10));
-    for (const n of treeNames) if (buckets[n].length) this.instModel(n, buckets[n], { shadow: false });
+    for (let i = 0; i < nTrees * 0.35; i++) place(rr(-38, 38), rr(-L - 22, -L - 80), rr(1.1, 1.7), rand() < 0.3);
+    for (let i = 0; i < nTrees * 0.2; i++) place(rr(-38, 38), rr(16, 55), rr(1.1, 1.7), rand() < 0.3);
+    for (const [n, list] of Object.entries(buckets)) this.instNode('nature', n, list, { shadow: false, wind: 1 });
 
-    // çalılar ve çiçekler
-    const deco = { plant_bushLarge: [], plant_bushDetailed: [], flower_redA: [], flower_yellowA: [], flower_purpleA: [], flower_redB: [], stump_round: [], log: [] };
+    // çalılar, eğrelti, çiçekler, taşlar
+    const deco = { Bush_Common: [], Bush_Common_Flowers: [], Fern_1: [], Flower_3_Group: [], Flower_4_Group: [], Plant_1_Big: [], Rock_Medium_1: [], Rock_Medium_2: [] };
     const keys = Object.keys(deco);
-    for (let i = 0; i < 260; i++) {
+    const nDeco = { low: 70, medium: 120, high: 200 }[this.quality];
+    for (let i = 0; i < nDeco; i++) {
       const side = rand() < 0.5 ? -1 : 1;
-      const x = side * rr(HALF + 4.6, 24), z = rr(-L - 20, 20);
-      if (this.inKosk(x, z, 1.5)) continue;
-      const k = keys[Math.floor(rand() * (keys.length - (rand() < 0.9 ? 2 : 0)))];
-      const s = k.startsWith('flower') ? rr(2, 3.2) : k.startsWith('plant') ? rr(2.5, 4.5) : rr(2, 3);
+      const x = side * rr(HALF + 4.2, 24), z = rr(-L - 18, 18);
+      if (this.inKosk(x, z, 1.5) || this.inMusic(x, z)) continue;
+      const k = keys[Math.floor(rand() * keys.length)];
+      const s = k.startsWith('Rock') ? rr(0.35, 0.8) : k.startsWith('Bush') ? rr(0.8, 1.3) : rr(0.9, 1.4);
       deco[k].push(Mx(x, groundHeight(x, z), z, 0, rand() * 6.28, 0, s, s, s));
     }
-    for (let i = 0; i < 70; i++) {
-      const k = ['flower_redA', 'flower_yellowA', 'flower_purpleA'][i % 3];
+    // pist kenarında çiçek şeridi
+    for (let i = 0; i < 60; i++) {
       const side = rand() < 0.5 ? -1 : 1;
-      const x = side * rr(HALF + 0.5, HALF + 1.4), z = rr(-L - 8, 8);
-      deco[k].push(Mx(x, 0, z, 0, rand() * 6.28, 0, 1.3, 1.3, 1.3));
+      const fx = side * rr(HALF + 0.45, HALF + 1.2), fz = rr(-L - 8, 8);
+      if (this.inMusic(fx, fz)) continue;
+      deco[rand() < 0.5 ? 'Flower_3_Group' : 'Flower_4_Group'].push(Mx(fx, 0, fz, 0, rand() * 6.28, 0, 0.5, 0.5, 0.5));
     }
-    for (const k of keys) if (deco[k].length) this.instModel(k, deco[k], { shadow: this.quality === 'high' && k.startsWith('plant') });
+    for (const k of keys) this.instNode('nature', k, deco[k], { shadow: this.quality === 'high' && k.startsWith('Bush'), wind: 0.6 });
+
+    // pist kenarlarına gür çimen öbekleri
+    const tufts = { Grass_Common_Short: [], Grass_Common_Tall: [], Grass_Wispy_Short: [] };
+    const tk = Object.keys(tufts);
+    const nT = { low: 100, medium: 170, high: 280 }[this.quality];
+    for (let i = 0; i < nT; i++) {
+      const side = rand() < 0.5 ? -1 : 1;
+      // pist ile seyirci arasındaki dar şerit + seyircilerin arkası (önlerini kapatmasın)
+      const x = side * (rand() < 0.6 ? rr(HALF + 0.25, HALF + 1.3) : rr(HALF + 4.2, HALF + 9)), z = rr(-L - 10, 10);
+      if (this.inKosk(x, z, 0.5) || this.inMusic(x, z)) continue;
+      const s = rr(0.5, 0.85);
+      tufts[tk[Math.floor(rand() * tk.length)]].push(Mx(x, groundHeight(x, z), z, 0, rand() * 6.28, 0, s, s, s));
+    }
+    for (const k of tk) this.instNode('nature', k, tufts[k], { wind: 1.2 });
   }
 
   // ---------- Rüzgârda salınan çimen ----------
@@ -649,6 +765,7 @@ export class World {
 
   update(dt) {
     this.time += dt;
+    for (const c of this.animated) c.update(dt);
     for (const u of this.updaters) u(dt, this.time);
   }
 }

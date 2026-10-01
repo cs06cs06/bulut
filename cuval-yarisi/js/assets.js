@@ -2,14 +2,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { loadCharacterParts } from './characters.js';
 
 const TEX = 'assets/textures/';
-const MODELS = [
-  'tree_oak', 'tree_oak_dark', 'tree_detailed', 'tree_detailed_dark', 'tree_fat', 'tree_default',
-  'plant_bushLarge', 'plant_bush', 'plant_bushDetailed',
-  'flower_redA', 'flower_yellowA', 'flower_purpleA', 'flower_redB',
-  'grass', 'grass_large', 'stump_round', 'log',
-];
+// Quaternius Stylized Nature MegaKit, Fantasy Props MegaKit ve Poly Haven objeleri (tools/build-assets.mjs ile paketlendi)
+const MODELS = ['nature', 'props', 'polyhaven'];
 export const SOUNDS = [
   'alkis', 'kalabalik', 'ooo', 'kuslar', 'zipla_0', 'zipla_1', 'cuval_0', 'cuval_1',
   'dusme', 'tik', 'onay', 'sec',
@@ -80,6 +77,8 @@ export async function loadAll(renderer, onProgress) {
   for (const m of MODELS) {
     track(loadBin(`assets/models/${m}.glb`).then((b) => gl.parseAsync(b, '')).then((g) => { assets.models[m] = g.scene; }));
   }
+  // iskeletli karakter parçaları ve animasyonlar
+  jobs.push(loadCharacterParts(loadBin, track));
 
   // Sesler: AudioContext henüz açılmadığı için ham baytları çekiyoruz, çözme sonra.
   for (const s of SOUNDS) {

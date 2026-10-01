@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="tr"><head><meta charset="utf-8"><title>Karakter Laboratuvarı</title>
+<style>html,body{margin:0;height:100%;background:#223}canvas{display:block;width:100%;height:100%}#log{position:fixed;left:8px;top:8px;color:#fff;font:12px monospace;white-space:pre}</style>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }</script>
+</head><body><canvas id="c"></canvas><div id="log"></div>
+<script type="module">
+import * as THREE from 'three';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+import { loadCharacterParts, createCharacter, bakePose, CLIPS } from '../js/characters.js';
+const q = new URLSearchParams(location.search);
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true });
+renderer.setSize(innerWidth, innerHeight); renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.shadowMap.enabled = true;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x8fa6b8);
+const cam = new THREE.PerspectiveCamera(30, innerWidth / innerHeight, 0.05, 100);
+const hdr = await new RGBELoader().loadAsync('../assets/hdri/ballawley_park_1k.hdr'); hdr.mapping = THREE.EquirectangularReflectionMapping;
+const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromEquirectangular(hdr).texture; scene.environmentIntensity = 0.8;
+const sun = new THREE.DirectionalLight(0xfff0d2, 2.5); sun.position.set(-3, 6, 4); sun.castShadow = true; scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshStandardMaterial({ color: 0x6b8a3a })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const bin = async (u) => (await fetch(u.replace('assets/', '../assets/'))).arrayBuffer();
+await loadCharacterParts(bin, (p) => p);
+const log = [];
+const chars = [];
+const spec = [
+  { sex: 'f', main: 0xb3263a, trim: 0xd9a441, scarf: 0xf2ead7, clip: 'Idle_Loop' },
+  { sex: 'f', main: 0x1f4e79, trim: 0xc9d1d9, scarf: 0x2e86c1, clip: 'Dance_Loop' },
+  { sex: 'm', main: 0x2c3e66, beard: true, fez: true, clip: 'Idle_Talking_Loop' },
+  { sex: 'm', main: 0x6e5a40, fez: true, clip: 'Sitting_Idle_Loop' },
+];
+spec.forEach((s, i) => {
+  const c = createCharacter(s);
+  c.root.position.x = (i - 1.5) * 0.9;
+  if (!q.has('back')) c.root.rotation.y = 0; else c.root.rotation.y = Math.PI;
+  scene.add(c.root); c.play(s.clip); chars.push(c);
+});
+// pişirilmiş kalabalık
+const baked = bakePose({ sex: 'f', clip: 'Yes', time: 0.4 });
+const im = new THREE.InstancedMesh(baked.geometry, baked.materials, 3);
+for (let i = 0; i < 3; i++) { im.setMatrixAt(i, new THREE.Matrix4().makeTranslation((i - 1) * 0.9, 0, -2.2)); im.setColorAt(i, new THREE.Color([0xc0392b, 0x2e86c1, 0x27ae60][i])); }
+scene.add(im);
+const bm = bakePose({ sex: 'm', clip: 'Idle_Rail_Call', time: 0.8, fez: true, beard: true });
+const im2 = new THREE.InstancedMesh(bm.geometry, bm.materials, 2);
+for (let i = 0; i < 2; i++) { im2.setMatrixAt(i, new THREE.Matrix4().makeTranslation(1.8 + i * 0.9, 0, -2.2)); im2.setColorAt(i, new THREE.Color([0x8e44ad, 0xd35400][i])); }
+scene.add(im2);
+const head = chars[0].bones.Head; chars[0].root.updateMatrixWorld(true);
+const hp = new THREE.Vector3(); head.getWorldPosition(hp);
+const pel = new THREE.Vector3(); chars[0].bones.pelvis.getWorldPosition(pel);
+chars[0].root.traverse((m) => { if (m.isMesh) log.push(m.name + ' / ' + m.material.name + ' / ' + m.material.color.getHexString() + ' / ' + !!m.material.userData.dye); });
+log.push(`clips: ${Object.keys(CLIPS).join(' ')}`, `head y ${hp.y.toFixed(3)} pelvis y ${pel.y.toFixed(3)}`);
+document.getElementById('log').textContent = log.join('\n');
+const zoom = +(q.get('zoom') || 1);
+cam.position.set(0, 1.3, 6 / zoom); cam.lookAt(0, q.has('face') ? 1.6 : 0.95, 0);
+if (q.has('face')) { cam.position.set(chars[0].root.position.x, 1.62, 1.3); cam.lookAt(chars[0].root.position.x, 1.6, 0); cam.fov = 25; cam.updateProjectionMatrix(); }
+for (const c of chars) c.update(+(q.get('t') || 0.5));
+renderer.render(scene, cam);
+window.__ready = { tris: renderer.info.render.triangles, calls: renderer.info.render.calls, log };
+</script></body></html>
