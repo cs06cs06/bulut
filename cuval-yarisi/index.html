@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#3a0d10">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Tosun Paşa filmindeki kır eğlencesinden esinlenen 3D çuval yarışı oyunu. Telefonda oynanır.">
+<title>Çuval Yarışı</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "./vendor/three/three.module.js", "three/addons/": "./vendor/three/addons/" } }
+</script>
+</head>
+<body>
+<canvas id="c" aria-label="Oyun sahnesi"></canvas>
+<div id="vignette"></div>
+<div id="grain"></div>
+<div id="flash"></div>
+<div id="speedlines"></div>
+<div id="letterbox"><div class="bar top"></div><div class="bar bottom"></div></div>
+
+<!-- YÜKLEME -->
+<section id="loading" class="screen show">
+  <div class="load-inner">
+    <div class="crest">☾✦</div>
+    <div class="pre">Daver Bey'in Kır Eğlencesi</div>
+    <h1 class="logo">ÇUVAL<br>YARIŞI</h1>
+    <div class="bar-wrap"><div id="load-bar"></div></div>
+    <p id="load-tip">Ahali toplanıyor, davullar akort ediliyor…</p>
+  </div>
+</section>
+
+<!-- ANA MENÜ -->
+<section id="menu" class="screen">
+  <header class="menu-head">
+    <div class="pre">Tosun Paşa'nın kır eğlencesinden</div>
+    <h1 class="logo small">ÇUVAL YARIŞI</h1>
+  </header>
+  <div class="menu-body">
+    <div class="panel">
+      <div class="panel-title">Yarışmacını seç</div>
+      <div id="heroes" class="heroes"></div>
+      <div class="panel-title">Zorluk</div>
+      <div id="diffs" class="seg"></div>
+      <button id="btn-start" class="btn primary big">YARIŞA KATIL</button>
+      <div id="best" class="best"></div>
+      <div class="row">
+        <button id="btn-howto" class="btn ghost">Nasıl oynanır?</button>
+        <button id="btn-settings" class="btn ghost">Ayarlar</button>
+        <button id="btn-credits" class="btn ghost">Emeği geçenler</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HUD -->
+<section id="hud" class="hidden">
+  <div class="hud-top">
+    <button id="btn-pause" class="icon-btn" aria-label="Duraklat">❚❚</button>
+    <div class="rank"><span id="rank">3</span><small>/6</small></div>
+    <div class="track-mini"><div class="mini-line"></div><div id="mini"></div><div class="mini-flag">⚑</div></div>
+    <div id="timer" class="timer">0.00</div>
+  </div>
+  <div id="combo" class="combo"></div>
+  <div id="judge" class="judge"></div>
+  <div class="hud-bottom">
+    <div class="balance">
+      <div class="label">DENGE</div>
+      <div class="bal-track"><div id="bal-fill"></div></div>
+    </div>
+    <div class="controls">
+      <div id="tap" class="tap">
+        <div id="tap-ring" class="tap-ring"></div>
+        <div class="tap-core">ZIPLA</div>
+      </div>
+      <button id="btn-hucum" class="hucum" aria-label="Hücum">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="hc-bg"/><circle id="hucum-arc" cx="50" cy="50" r="44" class="hc-fg"/></svg>
+        <span>HÜCUM</span>
+      </button>
+    </div>
+  </div>
+  <div id="warn" class="warn">DENGENİ TOPLA!</div>
+</section>
+
+<div id="subtitle" class="subtitle"><b id="sub-who"></b><span id="sub-text"></span></div>
+<div id="countdown" class="countdown"></div>
+<div id="titlecard" class="titlecard"><small>İskenderiye, 19. yüzyıl</small><b>Daver Bey'in<br>Kır Eğlencesi</b><i>☾ ✦ ☾</i></div>
+<div id="skip" class="skip">Geçmek için dokun ›</div>
+
+<!-- SONUÇ -->
+<section id="results" class="screen">
+  <div class="panel results-panel">
+    <div class="res-left">
+      <div id="res-banner" class="res-banner"></div>
+      <div id="res-place" class="res-place"></div>
+      <ol id="res-list" class="res-list"></ol>
+    </div>
+    <div class="res-right">
+      <div id="res-team" class="res-team"></div>
+      <div id="res-quote" class="res-quote"></div>
+      <div class="row">
+        <button id="btn-again" class="btn primary">RÖVANŞ</button>
+        <button id="btn-menu" class="btn">Ana menü</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- MODALLAR -->
+<section id="pause" class="modal"><div class="panel">
+  <div class="panel-title big">Mola</div>
+  <button id="btn-resume" class="btn primary">Devam</button>
+  <button id="btn-restart" class="btn">Baştan başla</button>
+  <button id="btn-quit" class="btn ghost">Ana menüye dön</button>
+</div></section>
+
+<section id="howto" class="modal"><div class="panel">
+  <div class="panel-title big">Nasıl oynanır?</div>
+  <ul class="how">
+    <li><b>Dokun, zıpla.</b> Ekranın herhangi bir yerine dokun (klavyede <kbd>Boşluk</kbd>).</li>
+    <li><b>Ritmi yakala.</b> Yere indiğin anda halka <span class="g">yeşil</span> yanar. O an dokunursan <b>MÜKEMMEL</b> olur, kombo artar, daha uzağa zıplarsın.</li>
+    <li><b>Acele etme.</b> Havadayken paniğe kapılıp basarsan denge bozulur. Denge çubuğu dolarsa çuvalla beraber yere kapaklanırsın.</li>
+    <li><b>Hücum!</b> Mükemmel zıplayışlar coşku biriktirir. Daire dolunca <b>HÜCUM</b>'a bas (klavyede <kbd>H</kbd>): birkaç saniye hiç düşmeden uçarsın.</li>
+    <li>Tellioğulları kadınlarının sıralaması takım puanına yazılır. Seferoğulları'na yenilmek yok!</li>
+  </ul>
+  <button class="btn primary close">Anladım</button>
+</div></section>
+
+<section id="settings" class="modal"><div class="panel">
+  <div class="panel-title big">Ayarlar</div>
+  <label class="toggle"><input type="checkbox" id="set-sfx" checked><span>Ses efektleri ve çığırtkan</span></label>
+  <label class="toggle"><input type="checkbox" id="set-music" checked><span>Davul-zurna</span></label>
+  <label class="toggle"><input type="checkbox" id="set-film"><span>Yeşilçam filtresi (1976 film havası)</span></label>
+  <label class="toggle"><input type="checkbox" id="set-haptic" checked><span>Titreşim</span></label>
+  <div class="panel-title">Grafik</div>
+  <div id="set-quality" class="seg"></div>
+  <button class="btn primary close">Tamam</button>
+</div></section>
+
+<section id="credits" class="modal"><div class="panel scroll">
+  <div class="panel-title big">Emeği geçenler</div>
+  <p class="small-text">Kartal Tibet'in yönettiği, Yavuz Turgul'un yazdığı <b>Tosun Paşa</b> (1976) filmindeki Daver Bey'in kır eğlencesine ve kadınlar arası çuval yarışına saygı olarak yapılmış, ticari olmayan bir hayran oyunudur. Filmin görüntü veya sesleri kullanılmamıştır; karakterler oyun için yeniden yorumlanmıştır.</p>
+  <ul class="credits">
+    <li><b>HDRI ve dokular:</b> Poly Haven, CC0 (ballawley_park, hessian_230, leafy_grass, velour_velvet)</li>
+    <li><b>3B ağaç, çalı, çiçek modelleri:</b> Kenney Nature Kit, CC0</li>
+    <li><b>İniş ve arayüz sesleri:</b> Kenney Impact Sounds ve Interface Sounds, CC0</li>
+    <li><b>Kalabalık, alkış, kuş sesleri:</b> OpenGameArt.org, CC0</li>
+    <li><b>Yazı tipleri:</b> Lilita One ve Nunito, SIL Open Font License</li>
+    <li><b>3B motor:</b> three.js, MIT</li>
+    <li><b>Davul ve zurna:</b> tarayıcıda gerçek zamanlı sentezlenir (Hicaz makamında)</li>
+  </ul>
+  <button class="btn primary close">Kapat</button>
+</div></section>
+
+<noscript><p style="color:#fff;padding:2rem">Bu oyun JavaScript gerektirir.</p></noscript>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

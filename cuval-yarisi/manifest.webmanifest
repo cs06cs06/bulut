@@ -1,0 +1,18 @@
+{
+  "name": "Çuval Yarışı: Tosun Paşa'nın Kır Eğlencesi",
+  "short_name": "Çuval Yarışı",
+  "description": "Tosun Paşa filmindeki kadınlar arası çuval yarışından esinlenen 3D mobil oyun.",
+  "lang": "tr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "any",
+  "background_color": "#1b0a0b",
+  "theme_color": "#3a0d10",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="35%" r="75%"><stop offset="0" stop-color="#b3262c"/><stop offset="1" stop-color="#3a0d10"/></radialGradient>
+    <linearGradient id="sack" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#e7cf98"/><stop offset="1" stop-color="#b68e55"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="0" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="214" fill="none" stroke="#d9a441" stroke-width="10" stroke-dasharray="2 18" stroke-linecap="round"/>
+  <ellipse cx="256" cy="430" rx="120" ry="18" fill="#000" opacity=".25"/>
+  <path d="M160 248 Q150 340 168 420 Q256 440 344 420 Q362 340 352 248 Q256 232 160 248Z" fill="url(#sack)" stroke="#6b4a2b" stroke-width="6"/>
+  <path d="M150 250 Q256 222 362 250 L368 232 Q256 205 144 232Z" fill="#cfae74" stroke="#6b4a2b" stroke-width="6"/>
+  <ellipse cx="256" cy="338" rx="44" ry="54" fill="none" stroke="#5a1a12" stroke-width="7" opacity=".8"/>
+  <text x="256" y="360" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="58" fill="#5a1a12" opacity=".85">1</text>
+  <path d="M188 238 Q186 160 256 150 Q326 160 324 238Z" fill="#7a1424"/>
+  <circle cx="256" cy="120" r="50" fill="#e9b995"/>
+  <path d="M200 128 Q196 56 256 52 Q316 56 312 128 Q300 100 256 96 Q212 100 200 128Z" fill="#f2ead7" stroke="#c0392b" stroke-width="5"/>
+  <circle cx="239" cy="122" r="6" fill="#1b120c"/><circle cx="273" cy="122" r="6" fill="#1b120c"/>
+  <path d="M240 142 Q256 156 272 142" fill="none" stroke="#6b1f1f" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="160" cy="250" r="17" fill="#e9b995"/><circle cx="352" cy="250" r="17" fill="#e9b995"/>
+  <text x="256" y="490" text-anchor="middle" font-family="Arial Black, sans-serif" font-size="30" fill="#f1cf7a" letter-spacing="4">ÇUVAL YARIŞI</text>
+</svg>
