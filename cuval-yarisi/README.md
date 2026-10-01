@@ -15,10 +15,12 @@ Ticari olmayan bir hayran oyunudur. Filmin görüntüsü ya da sesi kullanılmam
 
 ## Neler var
 
-- **İskeletli, animasyonlu karakterler:** Quaternius'un gerçek oranlı taban karakterleri köylü kıyafetleri ve başlıklarla giydirildi. Başlık başörtüsü olarak kullanılıyor, erkeklerde fes ve sakal var. Kıyafetler shader'da renk maskesiyle boyanıyor: krem kumaş takım rengine dönüyor, kahve deri ve korse aynen kalıyor (Tellioğulları kırmızı, Seferoğulları mavi tonlar).
-- **Çuval içinde gerçek animasyon:** Gövde Universal Animation Library'den gelen bekleme, zıplama, düşme ve dans animasyonlarıyla oynar. Bacaklar çuvalın içinde sabitlenir, eller iki kemikli IK ile çuval ağzını kavrar ve zıplarken yukarı çeker.
+- **Tamamen kodla üretilen karakterler:** Hiçbir karakter modeli indirilmez. Baş, eller, başörtüsü, fes ve katmanlı kıyafetler işaretli uzaklık alanlarıyla (SDF) heykel gibi yontulur, Web Worker'larda surface nets ile yüzeye çevrilir ve meshoptimizer ile hedef üçgen sayısına sadeleştirilir (oyuncu ~24 bin, orta ~9 bin, kalabalık ~1,6 bin üçgen). Bölge sınırları analitik sınıra kaydırılarak sırma kenarları pürüzsüz kalır.
+- **Osmanlı kıyafetleri ve kumaş shader'ları:** Kadınlarda V yakalı kutnu entari, altın sırmalı ve lale motifli kadife yelek, çizgili kuşak, oyalı çiçekli yemeni; erkeklerde redingot (pirinç düğmeli), apoletli üniforma, köylü cepkeni ve şalvar, fes ve sakal. Desenler, sırma, kadife parlaklığı ve kabartma tek bir prosedürel shader'da çizilir; tek karakter 2 çizim çağrısıdır.
+- **Canlı yüzler:** Göz kapağı, kirpik, kaş ve dudaklar morph hedefleriyle göz kırpar, gülümser, zorlanır, şaşırır. Bakış rastgele gezinir, konuşanların ağzı oynar, başörtüsünün ucu yaylı fizikle sallanır.
+- **Çuval içinde animasyon:** Prosedürel iskelet "A" pozunda bağlanır, klipler (bekleme, zıplama, düşme, dans, alkış, el sallama) kodla üretilir. Bacaklar çuvalın içinde sabitlenir, eller iki kemikli IK ile çuval ağzını kavrar ve zıplarken yukarı çeker.
 - **Sinematik giriş:** Daver Bey'in kadife gölgelikli köşkünde iskeletli misafirler oturur (Leyla, apoletli sahte Tosun Paşa, Lütfü, Sıtkı, Akil). Masada Poly Haven çay takımı, nar ve elmalar var. Çığırtkan mendili havaya kaldırarak anons eder, davulcu IK ile tokmak ve çubukla davula vurur, yarışmacılar çuvallarını beline çeker.
-- **Seyirciler:** İskeletli karakterlerin farklı pozları (alkış, kollar kavuşturulmuş, ipe yaslanma, sohbet) statik geometriye pişirilip örneklenir. Kazık ve ip çitin arkasında heyecana göre zıplarlar.
+- **Seyirciler:** Prosedürel karakterlerin farklı pozları (alkış, sevinç, kollar kavuşturulmuş, eller belde, sohbet, el sallama) statik geometriye pişirilip örneklenir; kıyafet renkleri örnek başına boyanır. Kazık ve ip çitin arkasında heyecana göre zıplarlar.
 - **Çevre:** Stylized Nature MegaKit ağaçları, çalıları, çiçekleri, çimen öbekleri; yapraklar ve otlar rüzgârda salınır. Ayrıca PBR çuval bezi, çimen ve kadife dokuları, HDRI ortam ışığı, gerçek zamanlı gölgeler ve prosedürel bulutlu gökyüzü var.
 - **Ses:** Davul ve zurna tarayıcıda gerçek zamanlı sentezlenir (Hicaz makamı); mükemmel zıplayışların davula vurgu katar. Çığırtkan anonsları (cihazda Türkçe ses varsa konuşarak), altyazılar, ağır çekim bitiş, kopan kurdele ve konfeti de var.
 - **Mobil öncelikli:** Dikey ve yatay ekran, güvenli alan desteği, titreşim, 3 kalite seviyesi var. Zayıf cihazlar otomatik olarak düşük kaliteyle açılır. Seviye ayrıntısı (LOD) düzeyleri: oyuncu tam detay, köşk orta, kalabalık düşük. Çözünürlük kendiliğinden ayarlanır. PWA olarak çevrimdışı çalışır.
@@ -29,9 +31,6 @@ Ticari olmayan bir hayran oyunudur. Filmin görüntüsü ya da sesi kullanılmam
 Ham paketler `tools/build-assets.mjs` ile mobil için işlenir:
 
 - Gereksiz UV ve renk kanalları atılır, dokular WebP'ye çevrilip 1024/512/256 piksele küçültülür.
-- Tam gövdeden sadece baş ve boyun kesilir; kıyafetin altında kalan gövde hiç çizilmez.
-- Karakter parçaları için 3 detay düzeyi üretilir (meshoptimizer ile sadeleştirme).
-- Animasyon kütüphanelerinden yalnızca kullanılan klipler alınır. Ölçek kanalları ve gereksiz ötelemeler atılır, kareler yeniden örneklenir; böylece 15 MB'tan 0,5 MB'a iner.
 - Doğa ve obje setleri ortak dokuları paylaşan tek GLB'lere birleştirilir. Ağaç kabukları ayrıca sadeleştirilir.
 
 ```bash
@@ -39,7 +38,7 @@ npm i @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensi
 node tools/build-assets.mjs <ham-paketler> assets/models
 ```
 
-`tools/lab.html` karakter birleştirme, boyama ve poz pişirmeyi tek başına görmek için bir test sahnesidir.
+`tools/lab.html` prosedürel karakter üretimini, yüz ifadelerini ve poz pişirmeyi tek başına görmek için bir test sahnesidir (`?view=face&i=0`, `side`, `back`).
 
 ## Çalıştırma
 
@@ -59,7 +58,10 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 | --- | --- |
 | `js/main.js` | Oyun döngüsü, durumlar, kamera, sinematik, HUD, menüler |
 | `js/racer.js` | Zıplama fiziği, ritim değerlendirmesi, denge/düşme, yapay zekâ |
-| `js/characters.js` | İskeletli karakter birleştirme, kıyafet boyama, animasyon, IK, kalabalık poz pişirme |
+| `js/characters.js` | Prosedürel karakter: parça üretim havuzu, deri ağırlıkları, yüz morph'ları, kumaş shader'ı, klipler, IK, kalabalık poz pişirme |
+| `js/proc/sdf.js` | SDF ilkelleri ve birleşimleri, surface nets yüzey çıkarımı |
+| `js/proc/shapes.js` | İskelet, baş/yüz, başörtüsü, fes, el ve kıyafet heykelleri; bölge sınırı yumuşatma |
+| `js/proc/worker.js` | Parçaları arka planda üretip meshoptimizer ile sadeleştiren Web Worker |
 | `js/racerModel.js` | Çuvallı yarışmacı: karakter + çuval, bacak sabitleme, el IK'sı |
 | `js/people.js` | Çuval bezi dokusu ve geometrisi, renkli geometri yardımcıları |
 | `js/world.js` | Çayır, pist, ip çit, köşk, seyirciler, davulcu ve çığırtkan, doğa, çimen, gökyüzü |
@@ -69,13 +71,10 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 
 ## Harici asset'ler ve lisanslar
 
-Tüm asset'ler serbest lisanslı kaynaklardan indirilip mobil için yeniden işlendi.
+Çevre, obje, doku ve ses asset'leri serbest lisanslı kaynaklardan indirilip mobil için yeniden işlendi. Karakterler indirilmez, kodla üretilir.
 
 | Asset | Kaynak | Lisans |
 | --- | --- | --- |
-| Taban karakterler (kadın/erkek baş, göz, kaş, sakal) | [Quaternius – Universal Base Characters](https://quaternius.com/packs/universalbasecharacters.html) | CC0 |
-| Köylü kıyafetleri, başlık | [Quaternius – Modular Character Outfits: Fantasy](https://quaternius.com/packs/modularcharacteroutfitsfantasy.html) | CC0 |
-| Animasyonlar | [Quaternius – Universal Animation Library 1 ve 2](https://quaternius.com/packs/universalanimationlibrary.html) | CC0 |
 | Ağaç, çalı, çiçek, çimen, taş | [Quaternius – Stylized Nature MegaKit](https://quaternius.com/packs/stylizednaturemegakit.html) | CC0 |
 | Sandalye, elma fıçısı | [Quaternius – Fantasy Props MegaKit](https://quaternius.com/packs/fantasypropsmegakit.html) | CC0 |
 | Çay takımı, nar, elma, oymalı tabak, ahşap kâse, pirinç fener, hasır sepet | [Poly Haven](https://polyhaven.com/models) | CC0 |
@@ -85,6 +84,7 @@ Tüm asset'ler serbest lisanslı kaynaklardan indirilip mobil için yeniden işl
 | Alkış, kalabalık, "ooo", kuş sesleri | [OpenGameArt.org](https://opengameart.org) | CC0 |
 | Lilita One, Nunito yazı tipleri | Google Fonts | SIL OFL 1.1 |
 | three.js r170 | [threejs.org](https://threejs.org) | MIT |
+| meshoptimizer 0.25 (karakter sadeleştirme) | [github.com/zeux/meshoptimizer](https://github.com/zeux/meshoptimizer) | MIT |
 
 ## Test
 

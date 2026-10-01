@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { assets } from './assets.js';
 import { TRACK } from './config.js';
 import { MAT, paint, merge, personMesh } from './people.js';
-import { createCharacter, bakePose, solveArmIK } from './characters.js';
+import { createCharacter, bakePose, solveArmIK, APOSE } from './characters.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Model setinden adıyla bir nesnenin kopyası
@@ -86,7 +86,9 @@ function addEpaulettes(c) {
   const geo = mergeGeometries(parts);
   for (const n of ['upperarm_l', 'upperarm_r']) {
     const m = new THREE.Mesh(geo, gold);
-    m.position.set(0, 0.03, 0);
+    // kemik A pozunda bağlı: apoleti sarkık kol çerçevesine geri çevir
+    m.rotation.z = (n.endsWith('l') ? 1 : -1) * APOSE;
+    m.position.set(0, 0.03, 0).applyEuler(m.rotation);
     c.bones[n].add(m);
   }
 }
@@ -456,16 +458,16 @@ export class World {
     // ileri gelenler: iskeletli karakterler masanın arkasında oturur, piste bakar (-X)
     const seatX = 0.32;
     const vip = [
-      { z: -3.0, sex: 'm', main: 0x5f5f66, trim: 0x8a7a50, beard: true, hairColor: 0xd8d6cf, clip: 'Sitting_Idle_Loop' },           // Akil, Tellioğulları reisi
-      { z: -1.9, sex: 'm', main: 0x6b4a2e, trim: 0xb08d3c, beard: true, clip: 'Sitting_Talking_Loop' },                            // Tellioğlu Lütfü
-      { z: -0.75, sex: 'm', main: 0x14182c, trim: 0xe0b44a, pasa: true, clip: 'Sitting_Idle_Loop' },                               // sahte Tosun Paşa (Şaban)
-      { z: 0.45, sex: 'f', main: 0xc0232e, trim: 0xe0b44a, scarf: 0xc8202b, clip: 'Sitting_Idle_Loop' },                           // Leyla
-      { z: 1.6, sex: 'm', main: 0x1a2340, trim: 0xd9a441, beard: true, clip: 'Sitting_Talking_Loop' },                             // Daver Bey
-      { z: 2.8, sex: 'm', main: 0x26442f, trim: 0x9a8a50, beard: true, clip: 'Sitting_Idle_Loop' },                                // Seferoğlu Sıtkı
+      { z: -3.0, sex: 'm', outfit: 'coat', main: 0x55555c, trim: 0x8a7a50, beard: true, hairColor: 0xcfccc4, skin: 0xd9a587, clip: 'Sitting_Idle_Loop' },  // Akil, Tellioğulları reisi
+      { z: -1.9, sex: 'm', outfit: 'coat', main: 0x5e3f28, trim: 0xb08d3c, skin: 0xd8a07a, clip: 'Sitting_Talking_Loop' },                                // Tellioğlu Lütfü
+      { z: -0.75, sex: 'm', outfit: 'uniform', main: 0x14182c, trim: 0xe0b44a, sash: 0xa01c1c, sash2: 0xa01c1c, skin: 0xe2ad86, pasa: true, clip: 'Sitting_Idle_Loop' }, // sahte Tosun Paşa (Şaban)
+      { z: 0.45, sex: 'f', look: { build: 1.0, dress: 0xb81f2c, vest: 0x3a0c12, trim: 0xe0b44a, scarf: 0xc8202b, scarfTrim: 0xf3d36b, skin: 0xf0c8a8, hair: 0x2a1408 }, clip: 'Sitting_Idle_Loop' }, // Leyla
+      { z: 1.6, sex: 'm', outfit: 'coat', main: 0x1a2340, trim: 0xd9a441, beard: true, skin: 0xd9a07a, clip: 'Sitting_Talking_Loop' },                   // Daver Bey
+      { z: 2.8, sex: 'm', outfit: 'coat', main: 0x26442f, trim: 0x9a8a50, beard: true, belly: 1, skin: 0xcf9873, clip: 'Sitting_Idle_Loop' },             // Seferoğlu Sıtkı
     ];
     this.vips = [];
     for (const v of vip) {
-      const c = createCharacter({ sex: v.sex, lod: this.quality === 'low' ? true : 'mid', hideLegs: true, main: v.main, trim: v.trim, scarf: v.scarf, beard: v.beard, fez: v.sex === 'm', hairColor: v.hairColor });
+      const c = createCharacter({ ...v, lod: 'mid', fez: v.sex === 'm' });
       c.root.position.set(seatX, 0, v.z);
       c.root.rotation.y = -Math.PI / 2;
       c.play(v.clip).time = rand() * 3;
@@ -484,10 +486,10 @@ export class World {
   // ---------- Seyirciler: iskeletli karakterlerin pozları statik geometriye pişirilip örneklenir ----------
   crowdBuild() {
     const POSES = [
-      { sex: 'f', clip: 'Yes', time: 0.35 }, { sex: 'f', clip: 'Idle_Talking_Loop', time: 1.1 },
-      { sex: 'f', clip: 'Dance_Loop', time: 0.6 }, { sex: 'f', clip: 'Idle_FoldArms_Loop', time: 0.4 },
-      { sex: 'm', clip: 'Idle_Rail_Call', time: 0.9, fez: true }, { sex: 'm', clip: 'Yes', time: 0.6, fez: true, beard: true },
-      { sex: 'm', clip: 'Idle_FoldArms_Loop', time: 0.5, fez: true, beard: true }, { sex: 'm', clip: 'Idle_Talking_Loop', time: 1.4, fez: true },
+      { sex: 'f', skirt: 'long', clip: 'Clap', time: 0.1 }, { sex: 'f', skirt: 'long', clip: 'Cheer', time: 0.4 },
+      { sex: 'f', skirt: 'long', clip: 'Idle_Talking_Loop', time: 1.1 }, { sex: 'f', skirt: 'long', clip: 'HandsHips', time: 0 },
+      { sex: 'm', outfit: 'villager', clip: 'Cheer', time: 0.9, fez: true }, { sex: 'm', outfit: 'villager', clip: 'Clap', time: 0.3, fez: true, beard: true },
+      { sex: 'm', outfit: 'villager', clip: 'FoldArms', time: 0, fez: true, beard: true }, { sex: 'm', outfit: 'coat', clip: 'Wave', time: 1.4, fez: true },
     ];
     const budget = { low: 60, medium: 100, high: 170 }[this.quality];
     const spots = [];
@@ -548,7 +550,7 @@ export class World {
 
   // ---------- Davulcu ve çığırtkan (iskeletli, IK ile davul çalar) ----------
   musicians() {
-    const dr = createCharacter({ sex: 'm', lod: 'mid', main: 0x8a2e1e, trim: 0xd9a441, fez: true, beard: true });
+    const dr = createCharacter({ sex: 'm', lod: 'mid', outfit: 'villager', main: 0x8a2e1e, trim: 0xd9a441, pants: 0x2f2a36, skin: 0xc98d68, fez: true, beard: true });
     dr.root.position.set(-HALF - 1.4, 0, 1.8);
     dr.root.rotation.y = Math.PI / 2 - 0.35;
     dr.play('Idle_Loop');
@@ -581,18 +583,20 @@ export class World {
     dr.bones.hand_r.add(tokmak); dr.bones.hand_l.add(cubuk);
     this.drummer = { ch: dr, drum, hitR: 0, hitL: 0, tokmak, cubuk };
 
-    const cr = createCharacter({ sex: 'm', lod: 'mid', main: 0x1f3a5a, trim: 0xd9a441, fez: true });
+    const cr = createCharacter({ sex: 'm', lod: 'mid', outfit: 'coat', main: 0x1f3a5a, trim: 0xd9a441, skin: 0xd9a07a, fez: true });
     cr.root.position.set(-HALF - 0.9, 0, -0.9);
     cr.root.rotation.y = Math.PI / 2 + 0.5;
     cr.play('Idle_Talking_Loop');
     this.scene.add(cr.root);
     const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.2, 3, 3), new THREE.MeshStandardMaterial({ color: 0xfaf7ef, roughness: 0.9, side: THREE.DoubleSide }));
-    cloth.position.set(0, 0.12, 0.05);
+    cloth.rotation.z = -APOSE; // el kemiği A pozunda bağlı
+    cloth.position.set(0, 0.12, 0.05).applyEuler(cloth.rotation);
     cr.bones.hand_r.add(cloth);
     this.crier = { ch: cr, target: 0, raise: 0, cloth };
     this.animated.push(dr, cr);
 
     const ikT = new THREE.Vector3(), pole = new THREE.Vector3();
+    const stA = new THREE.Vector3(), stB = new THREE.Vector3(), stQ = new THREE.Quaternion(), Y_UP = new THREE.Vector3(0, 1, 0);
     this.updaters.push((dtt, t) => {
       const d = this.drummer;
       d.hitR = Math.max(0, d.hitR - dtt * 7); d.hitL = Math.max(0, d.hitL - dtt * 9);
@@ -603,10 +607,18 @@ export class World {
         const B = d.ch.bones;
         B[ha].getWorldPosition(ikT); d.ch.root.worldToLocal(ikT);
         const s = Math.sign(ikT.x) || side;
-        ikT.set(s * (0.42 + (1 - hit) * 0.12), 1.06 + (1 - hit) * 0.16, 0.3);
+        ikT.set(s * (0.3 + (1 - hit) * 0.07), 1.14 + (1 - hit) * 0.16, 0.34);
         d.ch.root.localToWorld(ikT);
         pole.set(s * 0.8, 0.9, -0.3); d.ch.root.localToWorld(pole);
         solveArmIK(B[up], B[lo], B[ha], ikT, pole);
+        // tokmak/çubuk elden deriye doğru uzanır (vuruşta deriye değer)
+        const st = side > 0 ? d.tokmak : d.cubuk;
+        B[ha].updateMatrixWorld(true);
+        B[ha].getWorldPosition(stA);
+        stB.set(s * 0.16, 0.98 - hit * 0.04, 0.36); d.ch.root.localToWorld(stB);
+        stB.sub(stA).normalize();
+        B[ha].getWorldQuaternion(stQ).invert();
+        st.quaternion.setFromUnitVectors(Y_UP, stB.applyQuaternion(stQ));
       }
       const c = this.crier;
       c.raise += (Math.max(0, c.target) - c.raise) * Math.min(1, dtt * 6);

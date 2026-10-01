@@ -38,10 +38,9 @@ export function buildRacer(def, num, lod = false) {
   inner.rotation.x = -Math.PI / 2; inner.position.y = 0.9; sack.add(inner);
 
   // karakter
-  const ch = createCharacter({ sex: 'f', lod, main: look.dress, trim: look.trim, scarf: look.scarf, skin: look.skinTint ?? 0xffffff, hideLegs: true });
+  const ch = createCharacter({ sex: 'f', lod, look, grip: 0.95 });
   ch.root.rotation.y = Math.PI;
-  const wide = 1 + (b - 1) * 0.45;
-  ch.root.scale.set(wide, look.height ?? 1, wide);
+  ch.root.scale.setScalar(look.height ?? 1);
   tilt.add(ch.root);
   ch.play('Idle_Loop');
   const rimR = 0.39 * (0.92 + b * 0.12);
@@ -61,6 +60,8 @@ export function buildRacer(def, num, lod = false) {
     setFace() {},
     // racer.js her karede çağırır
     pose(r, dt) {
+      // yüz ifadesi
+      ch.face(r.state === 'finished' ? 'joy' : r.state === 'fallen' || r.wobble > 0.55 ? 'shock' : r.started && (r.combo >= 4 || r.hucum > 0) ? 'strain' : 'smile');
       if (r.state === 'finished') want('Dance_Loop', { fade: 0.3 });
       else if (r.state === 'fallen') want('Hit_Chest', { loop: false, fade: 0.1 });
       else if (r.state === 'air') want('Jump_Loop', { fade: 0.12, speed: 1.2 });
@@ -87,9 +88,10 @@ export function buildRacer(def, num, lod = false) {
         ha.getWorldPosition(_p);
         tilt.worldToLocal(_p);
         const side = Math.sign(_p.x) || 1;
-        _t.set(side * rimR * 0.94 + Math.sin(r.t * 9 + side) * r.wobble * 0.04, rimY + pull, -0.03);
+        // ağzın ön-yan kısmı (önden ~55°), parmaklar kenarın üstünden kavrar
+        _t.set(side * rimR * 0.8 + Math.sin(r.t * 9 + side) * r.wobble * 0.04, rimY + 0.05 + pull, -rimR * 0.55);
         tilt.localToWorld(_t);
-        const pole = tilt.localToWorld(new THREE.Vector3(side * 0.9, 1.05, 0.5));
+        const pole = tilt.localToWorld(new THREE.Vector3(side * 0.8, 0.9, 0.45));
         solveArmIK(up, lo, ha, _t, pole);
       }
     },
