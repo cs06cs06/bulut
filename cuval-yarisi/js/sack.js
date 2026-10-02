@@ -29,7 +29,27 @@ float wrU = sin(vSUv.x * 6.2831 * 46.0 + sin(vSUv.y * 21.0) * 1.7 + sin(vSUv.y *
 float wrV = sin(vSUv.y * 6.2831 * 34.0 + sin(vSUv.x * 6.2831 * 3.0) * 1.4 + sin(vSUv.x * 6.2831 * 11.0) * 0.5);
 float wrH = vStrain.x * wrU + vStrain.y * wrV;
 `;
+const FRAG_MUD_HEAD = /* glsl */`
+uniform float uMud; uniform float uWet;
+float sh2(vec2 p){ p = fract(p * vec2(0.1031, 0.1030)); p += dot(p, p.yx + 33.33); return fract((p.x + p.y) * p.x); }
+float sn2(vec2 x){ vec2 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(sh2(i), sh2(i + vec2(1, 0)), f.x), mix(sh2(i + vec2(0, 1)), sh2(i + vec2(1, 1)), f.x), f.y); }
+`;
+// çamur: altta düzensiz bir çizgiye kadar sıvanır, üstünde sıçrama lekeleri; ıslakken parlar
+const FRAG_MUD = /* glsl */`
+float sackMud = 0.0;
+if (uMud > 0.001) {
+  float mn1 = sn2(vSUv * vec2(40.0, 18.0)) * 0.6 + sn2(vSUv * vec2(95.0, 41.0)) * 0.4;
+  float line = 0.05 + uMud * 0.3 + (mn1 - 0.5) * 0.14;
+  float coat = 1.0 - smoothstep(line - 0.025, line + 0.025, vSUv.y);
+  float spots = step(0.8 - uMud * 0.14, sn2(vSUv * vec2(170.0, 75.0))) * (1.0 - smoothstep(line, line + 0.28, vSUv.y));
+  sackMud = max(coat, spots * 0.9);
+  vec3 mudC = mix(vec3(0.19, 0.13, 0.08), vec3(0.31, 0.22, 0.13), mn1) * (1.0 - uWet * 0.3);
+  diffuseColor.rgb = mix(diffuseColor.rgb, mudC, sackMud);
+}
+`;
 const FRAG_COLOR = /* glsl */`
+${FRAG_MUD}
 {
   ${FRAG_WRINKLE}
   float crease = clamp(-wrH, 0.0, 1.0);
@@ -53,16 +73,19 @@ const FRAG_BUMP = /* glsl */`
 
 export function sackMaterial(o) {
   const m = new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0, side: THREE.DoubleSide, ...o });
+  m.userData.U = { uMud: { value: 0 }, uWet: { value: 0 } };
   m.onBeforeCompile = (sh) => {
+    Object.assign(sh.uniforms, m.userData.U);
     sh.vertexShader = sh.vertexShader
       .replace('#include <common>', '#include <common>\nattribute vec2 aStrain;\n' + FRAG_HEAD)
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvSUv = uv; vStrain = aStrain; vWY = (modelMatrix * vec4(transformed, 1.0)).y;');
     sh.fragmentShader = sh.fragmentShader
-      .replace('#include <common>', '#include <common>\n' + FRAG_HEAD)
+      .replace('#include <common>', '#include <common>\n' + FRAG_HEAD + FRAG_MUD_HEAD)
       .replace('#include <map_fragment>', '#include <map_fragment>\n' + FRAG_COLOR)
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.3, sackMud * uWet);')
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n' + FRAG_BUMP);
   };
-  m.customProgramCacheKey = () => 'sack-cloth-v1';
+  m.customProgramCacheKey = () => 'sack-cloth-v2';
   return m;
 }
 

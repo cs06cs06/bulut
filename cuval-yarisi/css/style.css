@@ -128,6 +128,15 @@ body.cine #letterbox .bar { height: 11vh; }
 @keyframes pulse { to { transform: scale(1.1); box-shadow: 0 0 30px rgba(255, 190, 60, 0.8); } }
 .warn { position: absolute; left: 0; right: 0; top: 44%; text-align: center; font-weight: 1000; color: #fff; font-size: 18px; letter-spacing: 0.15em; opacity: 0; text-shadow: 0 0 8px var(--bad), 0 2px 4px #000; transition: opacity 0.2s; }
 .warn.on { opacity: 1; animation: blink 0.35s steps(2) infinite; }
+/* eğitim: koç kutusu ve "ŞİMDİ!" işareti */
+.coach { position: absolute; left: 50%; top: calc(104px + var(--safe-t)); transform: translate(-50%, -8px); width: min(88vw, 420px); padding: 10px 14px; border-radius: 14px; background: rgba(42, 14, 12, 0.82); border: 2px solid var(--gold); color: var(--cream); text-align: center; opacity: 0; transition: opacity 0.25s, transform 0.25s; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35); }
+.coach.on { opacity: 1; transform: translate(-50%, 0); }
+.coach b { display: block; font-family: 'Lilita One'; font-size: 20px; color: var(--gold-2); letter-spacing: 0.03em; }
+.coach span { display: block; font-size: 15px; line-height: 1.35; margin-top: 2px; }
+.now { position: absolute; left: 0; right: 0; bottom: calc(150px + var(--safe-b)); text-align: center; font-family: 'Lilita One'; font-size: 38px; color: #b8ffb8; opacity: 0; text-shadow: 0 0 14px rgba(80, 230, 110, 0.9), 0 3px 0 rgba(0, 0, 0, 0.4); pointer-events: none; }
+.now.on { opacity: 1; animation: nowp 0.4s ease-in-out infinite alternate; }
+@keyframes nowp { from { transform: scale(0.94) } to { transform: scale(1.1) } }
+.hucum.teach { animation: pulse 0.35s ease-in-out infinite alternate; box-shadow: 0 0 0 4px var(--gold-2); }
 @keyframes blink { 50% { opacity: 0.35 } }
 
 .subtitle { position: fixed; z-index: 12; left: 50%; bottom: calc(13vh + var(--safe-b)); transform: translateX(-50%) translateY(10px); width: min(92vw, 560px); text-align: center; color: #fff; font-weight: 800; font-size: clamp(16px, 4.4vw, 22px); text-shadow: 0 2px 4px #000, 0 0 14px rgba(0, 0, 0, 0.7); opacity: 0; transition: opacity 0.25s, transform 0.25s; pointer-events: none; }

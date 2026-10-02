@@ -146,6 +146,22 @@ export class AudioEngine {
     o.connect(og).connect(this.musicBus); o.start(t); o.stop(t + 0.08);
   }
 
+  // çamura iniş: alçak "şlap" (filtreli gürültü) + kısa batma sesi
+  splash(vol = 1, pan = 0) {
+    if (!this.ctx || !this.enabled.sfx) return;
+    const c = this.ctx, t = c.currentTime + 0.005;
+    const n = c.createBufferSource(); n.buffer = this._noise;
+    const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(1800, t); f.frequency.exponentialRampToValueAtTime(300, t + 0.25);
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5 * vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    let node = n.connect(f).connect(g);
+    if (c.createStereoPanner) { const p = c.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); node = node.connect(p); }
+    node.connect(this.sfxBus); n.start(t, Math.random() * 0.5); n.stop(t + 0.35);
+    const o = c.createOscillator(); o.type = 'sine';
+    o.frequency.setValueAtTime(240, t + 0.02); o.frequency.exponentialRampToValueAtTime(70, t + 0.16);
+    const og = c.createGain(); og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.35 * vol, t + 0.03); og.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+    o.connect(og).connect(this.sfxBus); o.start(t); o.stop(t + 0.2);
+  }
+
   // Oyuncu kendi zıplamasıyla davula vurgu katar
   accent(strength = 1) {
     if (!this.ctx || !this.enabled.music) return;

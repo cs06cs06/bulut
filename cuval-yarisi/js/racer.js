@@ -55,6 +55,9 @@ export class Racer {
     this.started = false;
     this.lastJudge = null;
     this.sackRise = 1;
+    this.inMud = false;    // çamura indi: sonraki zıplayış mükemmel olmalı
+    this.mud = 0; this.wet = 0;
+    this.model.setMud(0, 0);
     const r = this.model.root;
     r.position.set(this.x, 0, 0); r.rotation.set(0, 0, 0);
     this.model.hop.position.set(0, 0, 0); this.model.hop.rotation.set(0, 0, 0); this.model.hop.scale.set(1, 1, 1);
@@ -101,12 +104,26 @@ export class Racer {
     const boost = this.hucum > 0 ? 1.28 : 1;
     this.hopDist = HOP.baseDist * (1 + HOP.comboGain * this.p.comboMul * this.combo) * this.p.distMul * boost;
     if (this.combo === 0 && j === 'durgun') this.hopDist *= 0.85;
+    // çamurdan çıkış: mükemmel değilse çuval çamura yapışır
+    if (this.inMud) {
+      this.inMud = false;
+      if (j !== 'mukemmel' && this.hucum <= 0) { this.hopDist *= 0.7; this.addWobble(0.05); this.emit('mudStuck'); }
+      else this.emit('mudClean');
+    }
     this.airTime = this.p.airTime * (this.hucum > 0 ? 0.92 : 1) * (1 + this.combo * 0.012);
     this.state = 'air'; this.t = 0; this.buffered = false;
     this.squash = -0.22;
     this.pullUp = 1;
     this.judge(j);
     this.emit('hop', j);
+  }
+
+  // çamura iniş (main.js inişte çağırır)
+  landInMud() {
+    this.inMud = true;
+    this.mud = Math.min(1, this.mud + 0.34);
+    this.wet = 1;
+    if (this.hucum <= 0) this.addWobble(0.025);
   }
 
   addWobble(v) {
@@ -213,6 +230,7 @@ export class Racer {
   // ---------- Prosedürel animasyon ----------
   animate(dt, t) {
     const m = this.model;
+    if (this.wet > 0) { this.wet = Math.max(0, this.wet - dt * 0.12); m.setMud(this.mud, this.wet); }
     // esneme-büzülme yaya
     this.squash += (0 - this.squash) * Math.min(1, dt * 14);
     const sq = this.state === 'air' ? -0.1 * Math.sin(Math.min(1, this.t / this.airTime) * Math.PI) : this.squash;

@@ -67,6 +67,21 @@ export class Particles {
     }
   }
 
+  // çamura iniş: kahverengi damlalar ve alçak ıslak sıçrama
+  splash(x, z, power = 1) {
+    const n = Math.round(18 + power * 14);
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = (0.5 + Math.random() * 1.6) * power;
+      const shade = 0.16 + Math.random() * 0.12;
+      this.spawn(x + Math.cos(a) * 0.25, 0.05, z + Math.sin(a) * 0.25, Math.cos(a) * s, 1.2 + Math.random() * 2.2 * power, Math.sin(a) * s,
+        0.6 + Math.random() * 0.4, 0.035 + Math.random() * 0.05, shade * 1.35, shade, shade * 0.62, 1, 1);
+    }
+    for (let i = 0; i < 6; i++) {
+      const a = Math.random() * Math.PI * 2;
+      this.spawn(x + Math.cos(a) * 0.3, 0.04, z + Math.sin(a) * 0.3, Math.cos(a) * 0.5, 0.15, Math.sin(a) * 0.5, 0.5, 0.18, 0.3, 0.24, 0.17, 0, 1.6);
+    }
+  }
+
   confetti(x, z, n = 140) {
     const pal = [[0.85, 0.12, 0.16], [0.97, 0.93, 0.85], [0.85, 0.64, 0.25], [0.12, 0.52, 0.29], [0.95, 0.45, 0.55]];
     for (let i = 0; i < n; i++) {

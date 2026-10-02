@@ -57,6 +57,8 @@ export function buildRacer(def, num, lod = false, clothLod = false) {
   return {
     root, hop, tilt, sack, cloth, ch, blob, tagAnchor,
     setFace() {},
+    // çuvalın çamur lekesi (0..1) ve ıslaklığı (0..1)
+    setMud(level, wet) { const U = sackMat.userData.U; U.uMud.value = level; U.uWet.value = wet; },
     // racer.js her karede çağırır
     pose(r, dt) {
       // yüz ifadesi

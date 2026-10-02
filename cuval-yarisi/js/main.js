@@ -6,6 +6,7 @@ import { World, HALF } from './world.js';
 import { initMaterials } from './people.js';
 import { Racer } from './racer.js';
 import { Particles } from './fx.js';
+import { MudField } from './mud.js';
 import { HEROES, RIVALS, DIFFICULTIES, TRACK, POINTS, HOP } from './config.js';
 
 const $ = (s) => document.querySelector(s);
@@ -46,7 +47,7 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
 scene.fog = new THREE.Fog(0xb9c6bf, 60, 240);
 scene.background = new THREE.Color(0xb9c6bf);
 
-let world, fx, racers = [], heroRacers = [], rivalRacers = [], player = null;
+let world, fx, mud, racers = [], heroRacers = [], rivalRacers = [], player = null;
 let state = 'loading';
 let raceTime = 0, timeScale = 1, finishOrder = [];
 let seq = [], seqT = 0;
@@ -110,6 +111,7 @@ async function boot() {
 
   world = new World(scene, quality);
   fx = new Particles(scene, quality === 'low' ? 500 : 1000);
+  mud = new MudField(scene);
   heroRacers = HEROES.map((d, i) => new Racer(d, 0, { num: i + 1, clothLod: quality === 'low' }));
   rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4, lod: quality === 'low' ? 'mid' : false, clothLod: quality === 'low' }));
   racers = [...heroRacers, ...rivalRacers];
@@ -178,19 +180,27 @@ function hookRacer(r) {
       audio.play(Math.random() < 0.5 ? 'zipla_0' : 'zipla_1', { vol, rate: 0.85 + Math.random() * 0.25, pan: clamp((rr.x - camPos.x) / 6, -0.8, 0.8) });
       audio.play(Math.random() < 0.5 ? 'cuval_0' : 'cuval_1', { vol: vol * 0.45, rate: 0.9 + Math.random() * 0.3, verb: 0 });
     }
-    if (d < 30) fx.dust(rr.x, -rr.z, 0.6 + rr.combo * 0.12);
+    const puddle = state === 'race' || state === 'finish' ? mud.at(rr.x, rr.z) : null;
+    if (puddle && rr.finishTime === null) {
+      rr.landInMud();
+      mud.ripple(rr.x, rr.z);
+      if (d < 30) fx.splash(rr.x, -rr.z, 0.8 + rr.combo * 0.08);
+      if (vol > 0.02) audio.splash(vol * 1.2, clamp((rr.x - camPos.x) / 6, -0.8, 0.8));
+      if (rr === player) { judgeText('ÇAMUR! Mükemmel zıpla', '#d9a066'); if (settings.haptic) navigator.vibrate?.(20); tutorialOnMud(); }
+    } else if (d < 30) fx.dust(rr.x, -rr.z, 0.6 + rr.combo * 0.12);
     if (rr === player) shake = Math.max(shake, 0.04 + rr.combo * 0.012);
   });
+  r.on('mudStuck', (_, rr) => { if (rr === player && state === 'race') { setTimeout(() => judgeText('ÇAMURA YAPIŞTIN!', '#c97a4a'), 0); fx.splash(rr.x, -rr.z, 0.5); } });
+  r.on('mudClean', (_, rr) => { if (rr === player && state === 'race') setTimeout(() => judgeText('TEMİZ ÇIKIŞ!', '#7dff8f'), 0); });
   r.on('judge', (j, rr) => {
     if (rr !== player || state !== 'race') return;
+    tutorialOnJudge(j);
     const map = {
       mukemmel: ['MÜKEMMEL!', '#7dff8f'], acele: ['ACELE!', '#ffb347'], tampon: ['İYİ', '#fff3c4'],
       gec: ['GEÇ', '#d9d0c0'], panik: ['PANİK!', '#ff6a5a'], durgun: null,
     };
     const m = map[j]; if (!m) return;
-    const el = $('#judge');
-    el.textContent = m[0]; el.style.color = m[1];
-    el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+    judgeText(m[0], m[1]);
     if (j === 'mukemmel') {
       audio.accent(0.6 + rr.combo * 0.06);
       if (settings.haptic) navigator.vibrate?.(8);
@@ -215,6 +225,7 @@ function hookRacer(r) {
   });
   r.on('hucum', (_, rr) => {
     if (rr === player) {
+      tutorialOnHucum();
       audio.intensity = 1; audio.setTempo(150);
       audio.play('kalabalik', { vol: 0.6, rate: 1.1 });
       say('Çığırtkan', 'Seferoğulları\'na hücuuum!', 2);
@@ -239,6 +250,11 @@ function hookRacer(r) {
 }
 
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
+function judgeText(txt, color) {
+  const el = $('#judge');
+  el.textContent = txt; el.style.color = color;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
 
 // ---------- Altyazı / çığırtkan ----------
 let subTimer = 0;
@@ -284,6 +300,7 @@ function setupMenu() {
 
   $('#btn-start').onclick = async () => { await unlockAudio(); audio.play('onay', { vol: 0.7 }); startIntro(); };
   $('#btn-howto').onclick = () => openModal('#howto');
+  $('#btn-tutorial').onclick = async () => { $('#howto').classList.remove('show'); await unlockAudio(); audio.play('onay', { vol: 0.7 }); wantTutorial = true; startIntro(true); };
   $('#btn-settings').onclick = () => openModal('#settings');
   $('#btn-credits').onclick = () => openModal('#credits');
   document.querySelectorAll('.modal .close').forEach((b) => { b.onclick = () => { b.closest('.modal').classList.remove('show'); uiClick(); }; });
@@ -331,6 +348,7 @@ async function unlockAudio() {
 window.addEventListener('pointerdown', () => { if (!audioUnlocked && state === 'menu') unlockAudio(); }, { capture: true });
 
 function goMenu() {
+  tutorialEnd(false);
   state = 'menu';
   document.body.classList.remove('cine', 'racing', 'finished');
   $('#menu').classList.add('show');
@@ -350,6 +368,7 @@ function goMenu() {
 
 // ---------- Sinematik giriş ----------
 function startIntro(quick = false) {
+  tutorialEnd(false);
   $('#menu').classList.remove('show');
   $('#results').classList.remove('show');
   $('#hud').classList.add('hidden');
@@ -423,13 +442,17 @@ function startCountdown() {
     audio.setLoopVol('kalabalik', 0.4);
     world.excite = 0.55;
     audio.play('kalabalik', { vol: 0.5 });
+    if (wantTutorial || (!testMode && !store.get('tutorialDone', false))) tutorialBegin();
+    wantTutorial = false;
   } });
 }
+let wantTutorial = false;
 
 // ---------- Bitiş ----------
 let finishCam = 0;
 function onPlayerFinish() {
   state = 'finish';
+  tutorialEnd(true);
   document.body.classList.add('finished');
   showTags(false);
   finishCam = 0;
@@ -486,6 +509,66 @@ function showResults() {
   $('#results').classList.add('show');
   audio.startMusic(104, true);
   audio.intensity = 0;
+}
+
+// ---------- Eğitim (ilk yarış) ----------
+// Zaman yavaşlar, koç doğru anı gösterir: mükemmel zıplama, çamurdan çıkış, hücum.
+let tut = null, coachTimer = 0;
+function coach(title, text, dur = 0) {
+  $('#coach-title').textContent = title; $('#coach-text').textContent = text;
+  $('#coach').classList.add('on'); coachTimer = dur;
+}
+function coachHide() { $('#coach').classList.remove('on'); $('#now').classList.remove('on'); $('#btn-hucum').classList.remove('teach'); coachTimer = 0; }
+function tutorialBegin() {
+  tut = { step: 0, perfect: 0, mud: false, hucum: false, wait: null };
+  coach('Nasıl oynanır?', 'Dokun ve zıpla! Çuval yere değince halka yeşil yanar, tam o an yine dokun.');
+}
+function tutorialEnd(done = true) {
+  if (!tut) return;
+  tut = null; coachHide();
+  if (done) store.set('tutorialDone', true);
+}
+// eğitimde zamanın akış hızı
+function tutorialScale(rdt) {
+  if (!tut || state !== 'race') { $('#now').classList.remove('on'); return 1; }
+  if (coachTimer > 0) { coachTimer -= rdt; if (coachTimer <= 0) coachHide(); }
+  const sweet = player.state === 'ground' && player.t >= HOP.goodWindow && player.t <= HOP.goodWindow + player.p.sweet;
+  let k = 1, now = false;
+  if (player.z === 0 && player.state === 'ground') { k = 0; now = true; }   // ilk dokunuşa kadar herkes bekler
+  else if (tut.wait === 'hucum') { k = 0.3; }
+  else if (tut.wait === 'mud' || tut.step === 0) {
+    if (sweet) { k = 0.22; now = true; }
+    else if (player.state === 'air' && player.t / player.airTime > 0.75) k = 0.5;
+  }
+  $('#now').classList.toggle('on', now);
+  return k;
+}
+function tutorialOnJudge(j) {
+  if (!tut) return;
+  if (j === 'mukemmel' && tut.step === 0 && ++tut.perfect >= 3) {
+    tut.step = 1;
+    coach('Harika!', 'Ritmi koru: art arda mükemmel zıpladıkça kombo artar, daha uzağa sıçrarsın. Havadayken basma, dengen bozulur.', 4.5);
+  }
+  if (tut.wait === 'mud' && j !== 'panik') {
+    tut.wait = null;
+    coach(j === 'mukemmel' ? 'Temiz çıkış!' : 'Çamura yapıştın', j === 'mukemmel' ? 'İşte böyle! Çamurda acele etme, yeşil anı bekle.' : 'Çamurdan ancak mükemmel zıplayışla hızlı çıkılır.', 2.8);
+  }
+}
+function tutorialOnMud() {
+  if (!tut || tut.mud) return;
+  tut.mud = true; tut.wait = 'mud';
+  coach('Çamur!', 'Çamurdan çıkmak için bir sonraki zıplayışın MÜKEMMEL olmalı.');
+}
+function tutorialCheckHucum() {
+  if (!tut || tut.hucum || player.coskun < 1 || tut.wait) return;
+  tut.hucum = true; tut.wait = 'hucum';
+  coach('Coşku doldu!', 'HÜCUM düğmesine bas (klavyede H): birkaç saniye düşmeden uçarsın.');
+  $('#btn-hucum').classList.add('teach');
+}
+function tutorialOnHucum() {
+  if (!tut || tut.wait !== 'hucum') return;
+  tut.wait = null; $('#btn-hucum').classList.remove('teach');
+  coach('Hücuuum!', 'Şimdi bitiş ipine kadar yüklen!', 2.4);
 }
 
 // ---------- Duraklatma ----------
@@ -683,7 +766,8 @@ function loop(now) {
 
 function tick(rdt) {
   if (state === 'paused') return;
-  const dt = rdt * timeScale;
+  const dt = rdt * timeScale * tutorialScale(rdt);
+  if (tut && state === 'race') tutorialCheckHucum();
   if (autoBot && state === 'race' && player.state === 'ground' && player.t > HOP.goodWindow + 0.03) press();
   if (autoBot && state === 'race' && player.coskun >= 1) player.activateHucum();
 
@@ -714,6 +798,7 @@ function tick(rdt) {
   }
   // bitirdiği halde "air"de kalan YZ'ler bitiş ötesinde durur
   world.update(dt);
+  mud.update(dt);
   fx.update(dt);
   updateCamera(rdt, t);
   if (state === 'race' || state === 'countdown' || state === 'finish') updateHud();
@@ -747,6 +832,8 @@ let autoBot = false;
 window.__game = {
   get state() { return state; }, get player() { return player; }, racers: () => racers, press, startIntro, skipIntro, scene,
   set bot(v) { autoBot = v; },
+  set tutorial(v) { wantTutorial = v; },
+  get tut() { return tut; },
   shot(px, py, pz, lx, ly, lz, fov = 40) {
     camera.clearViewOffset(); camera.fov = fov; camera.position.set(px, py, pz); camera.lookAt(lx, ly, lz); camera.updateProjectionMatrix();
     renderer.render(scene, camera); return renderer.info.render;
