@@ -7,6 +7,7 @@ import { initMaterials } from './people.js';
 import { Racer } from './racer.js';
 import { Particles } from './fx.js';
 import { MudField } from './mud.js';
+import { TugOfWar, TUG, TUG_TEAMS } from './tug.js';
 import { HEROES, RIVALS, DIFFICULTIES, TRACK, POINTS, HOP } from './config.js';
 
 const $ = (s) => document.querySelector(s);
@@ -20,7 +21,7 @@ const store = {
   get(k, d) { try { const v = localStorage.getItem('cuval.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem('cuval.' + k, JSON.stringify(v)); } catch { /* özel sekme */ } },
 };
-const settings = Object.assign({ sfx: true, music: true, film: false, haptic: true, quality: 'auto', hero: 0, diff: 1 }, store.get('settings', {}));
+const settings = Object.assign({ sfx: true, music: true, film: false, haptic: true, quality: 'auto', hero: 0, diff: 1, event: 0 }, store.get('settings', {}));
 const saveSettings = () => store.set('settings', settings);
 
 const isMobile = matchMedia('(pointer: coarse)').matches || /Android|iPhone|iPad/i.test(navigator.userAgent);
@@ -47,7 +48,7 @@ const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 400);
 scene.fog = new THREE.Fog(0xb9c6bf, 60, 240);
 scene.background = new THREE.Color(0xb9c6bf);
 
-let world, fx, mud, racers = [], heroRacers = [], rivalRacers = [], player = null;
+let world, fx, mud, tug, racers = [], heroRacers = [], rivalRacers = [], player = null;
 let state = 'loading';
 let raceTime = 0, timeScale = 1, finishOrder = [];
 let seq = [], seqT = 0;
@@ -112,6 +113,7 @@ async function boot() {
   world = new World(scene, quality);
   fx = new Particles(scene, quality === 'low' ? 500 : 1000);
   mud = new MudField(scene);
+  tug = new TugOfWar(scene, quality);
   heroRacers = HEROES.map((d, i) => new Racer(d, 0, { num: i + 1, clothLod: quality === 'low' }));
   rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4, lod: quality === 'low' ? 'mid' : false, clothLod: quality === 'low' }));
   racers = [...heroRacers, ...rivalRacers];
@@ -280,6 +282,12 @@ function setupMenu() {
   });
   const blurb = document.createElement('div'); blurb.className = 'hero-blurb'; blurb.id = 'blurb';
   hs.after(blurb);
+  const es = $('#events');
+  EVENTS.forEach((ev, i) => {
+    const b = document.createElement('button'); b.textContent = ev.label;
+    b.onclick = () => { settings.event = i; saveSettings(); refreshMenu(); uiClick(); };
+    es.appendChild(b);
+  });
   const ds = $('#diffs');
   DIFFICULTIES.forEach((d, i) => {
     const b = document.createElement('button'); b.textContent = d.label;
@@ -298,7 +306,11 @@ function setupMenu() {
   });
   [...qs.children].forEach((c) => c.classList.toggle('sel', c.dataset.k === settings.quality));
 
-  $('#btn-start').onclick = async () => { await unlockAudio(); audio.play('onay', { vol: 0.7 }); startIntro(); };
+  $('#btn-start').onclick = async () => {
+    await unlockAudio(); audio.play('onay', { vol: 0.7 });
+    tourney = settings.event === 2 ? { telli: 0, sefer: 0, sack: null } : null;
+    if (settings.event === 1) startTug(); else startIntro();
+  };
   $('#btn-howto').onclick = () => openModal('#howto');
   $('#btn-tutorial').onclick = async () => { $('#howto').classList.remove('show'); await unlockAudio(); audio.play('onay', { vol: 0.7 }); wantTutorial = true; startIntro(true); };
   $('#btn-settings').onclick = () => openModal('#settings');
@@ -312,16 +324,21 @@ function setupMenu() {
   document.body.classList.toggle('film', settings.film);
 
   $('#btn-pause').onclick = () => pause(true);
+  $('#btn-pause2').onclick = () => pause(true);
+  $('#btn-together').onpointerdown = (e) => { e.stopPropagation(); if (state === 'tug') togetherNow(); };
   $('#btn-resume').onclick = () => pause(false);
-  $('#btn-restart').onclick = () => { $('#pause').classList.remove('show'); startIntro(true); };
+  $('#btn-restart').onclick = () => { $('#pause').classList.remove('show'); if (mode === 'tug') startTug(true); else startIntro(true); };
   $('#btn-quit').onclick = () => { $('#pause').classList.remove('show'); goMenu(); };
-  $('#btn-again').onclick = () => { uiClick(); startIntro(true); };
+  $('#btn-again').onclick = () => { uiClick(); againAction(); };
   $('#btn-menu').onclick = () => { uiClick(); goMenu(); };
   $('#btn-hucum').onpointerdown = (e) => { e.stopPropagation(); if (state === 'race') player.activateHucum(); };
   refreshMenu();
 }
 
 function refreshMenu() {
+  [...$('#events').children].forEach((b, i) => b.classList.toggle('sel', i === settings.event));
+  $('#event-blurb').textContent = EVENTS[settings.event].blurb;
+  document.body.classList.toggle('tugmode', settings.event === 1);
   [...$('#heroes').children].forEach((b, i) => b.classList.toggle('sel', i === settings.hero));
   [...$('#diffs').children].forEach((b, i) => b.classList.toggle('sel', i === settings.diff));
   $('#blurb').textContent = HEROES[settings.hero].blurb;
@@ -349,6 +366,7 @@ window.addEventListener('pointerdown', () => { if (!audioUnlocked && state === '
 
 function goMenu() {
   tutorialEnd(false);
+  leaveTug();
   state = 'menu';
   document.body.classList.remove('cine', 'racing', 'finished');
   $('#menu').classList.add('show');
@@ -369,6 +387,8 @@ function goMenu() {
 // ---------- Sinematik giriş ----------
 function startIntro(quick = false) {
   tutorialEnd(false);
+  leaveTug();
+  mode = 'sack';
   $('#menu').classList.remove('show');
   $('#results').classList.remove('show');
   $('#hud').classList.add('hidden');
@@ -506,6 +526,11 @@ function showResults() {
     store.set(key, player.finishTime);
     if (prev !== null) $('#res-banner').textContent = `Yeni kişisel rekor! (önceki ${prev.toFixed(2)} sn)`;
   }
+  if (tourney) {
+    tourney.telli += tel; tourney.sefer += sef; tourney.sack = { tel, sef };
+    $('#res-quote').textContent = `Kır eğlencesi: Tellioğulları ${tourney.telli} – Seferoğulları ${tourney.sefer}. Sırada erkekler arası halat çekme var!`;
+  }
+  setAgain(tourney ? 'HALAT ÇEKME ›' : 'RÖVANŞ', tourney ? () => startTug() : () => startIntro(true));
   $('#results').classList.add('show');
   audio.startMusic(104, true);
   audio.intensity = 0;
@@ -571,10 +596,216 @@ function tutorialOnHucum() {
   coach('Hücuuum!', 'Şimdi bitiş ipine kadar yüklen!', 2.4);
 }
 
+// ---------- Etkinlikler ve turnuva ----------
+const EVENTS = [
+  { label: 'Çuval yarışı', blurb: 'Kadınlar arası çuval yarışı: davulun ritminde zıpla, çamura dikkat et, bitiş ipini ilk sen kopar.' },
+  { label: 'Halat çekme', blurb: 'Erkekler arası halat çekme: Tellioğlu delikanlılarını yönet, davulun her "güm"ünde asıl.' },
+  { label: 'Kır eğlencesi', blurb: 'Turnuva: önce çuval yarışı, sonra halat çekme. İki oyunun puanı toplanır, şampiyon aile ilan edilir.' },
+];
+let mode = 'sack', tourney = null, againFn = null;
+function setAgain(label, fn) { $('#btn-again').textContent = label; againFn = fn; }
+function againAction() { (againFn || (() => startIntro(true)))(); }
+
+// ---------- Halat çekme ----------
+let tugShots = [], tugStats = null;
+function leaveTug() {
+  if (mode !== 'tug') return;
+  mode = 'sack';
+  tug.setVisible(false);
+  for (const r of racers) r.model.root.visible = true;
+  $('#tughud').classList.add('hidden');
+  $('#tug-warn').classList.remove('on');
+  document.body.classList.remove('tugplay');
+}
+function startTug(quick = false) {
+  tutorialEnd(false);
+  mode = 'tug';
+  $('#menu').classList.remove('show'); $('#results').classList.remove('show');
+  $('#hud').classList.add('hidden'); $('#tughud').classList.add('hidden');
+  state = 'tugIntro';
+  applyViewOffset();
+  timeScale = 1;
+  for (const r of racers) r.model.root.visible = false;
+  tug.reset(settings.diff); tug.setVisible(true);
+  tugStats = { perfect: 0, pulls: 0, bestCombo: 0 };
+  showTags(false);
+  document.body.classList.add('cine'); document.body.classList.remove('racing', 'finished');
+  audio.stopTheme(); audio.startMusic(100, false); audio.intensity = 0;
+  audio.setLoopVol('kalabalik', 0.3);
+  world.excite = 0.5;
+  seq = []; seqT = 0;
+  const at = (t, fn) => seq.push({ t, fn });
+  const zc = TUG.z;
+  if (!quick) {
+    tugShots = [
+      { t0: 0, t1: 3.2, p: [-4.4, 1.05, zc + 1.9], p2: [-3.6, 1.45, zc + 3.1], l: [0.5, 1.0, zc], l2: [1.0, 1.0, zc] },
+      { t0: 3.2, t1: 6.4, p: [5.6, 1.4, zc + 3.4], p2: [2.6, 1.9, zc + 5.2], l: [-1.2, 1.0, zc], l2: [-0.4, 0.95, zc] },
+    ];
+    at(0.2, () => say('Çığırtkan', 'Şimdi de erkekler arası halat çekme!', 3, true));
+    at(0.4, () => { audio.play('kalabalik', { vol: 0.5 }); world.excite = 0.7; });
+    at(3.3, () => say('Çığırtkan', 'Tellioğulları ile Seferoğulları karşı karşıya! Asılın delikanlılar!', 3, true));
+    at(6.4, () => tugCountdown());
+  } else { tugShots = []; at(0.05, () => tugCountdown()); }
+}
+function tugCountdown() {
+  state = 'tugCountdown';
+  document.body.classList.remove('cine'); document.body.classList.add('tugplay');
+  $('#subtitle').classList.remove('on');
+  $('#tughud').classList.remove('hidden');
+  updateTugHud();
+  seq = []; seqT = 0;
+  const cd = (txt, t, drum) => seq.push({ t, fn: () => {
+    const el = $('#countdown'); el.textContent = txt; el.classList.remove('go'); void el.offsetWidth; el.classList.add('go');
+    if (drum === 'D') audio.accent(1.2); else audio.play('tik', { vol: 0.7, rate: 0.8 });
+    world.drumHit(drum === 'D' ? 'D' : 't');
+  } });
+  seq.push({ t: 0, fn: () => audio.say('Hazır!') });
+  cd('HAZIR', 0.25, 't');
+  seq.push({ t: 1.05, fn: () => audio.say('Asılın!') });
+  cd('ASILIN', 1.2, 't');
+  cd('ÇEK!', 2.2, 'D');
+  seq.push({ t: 2.2, fn: () => {
+    state = 'tug';
+    const d = audio.restartMusic(TUG.bpm, true, 0.08);
+    tug.start(d);
+    audio.intensity = 0.4;
+    audio.setLoopVol('kalabalik', 0.45);
+    world.excite = 0.6;
+  } });
+}
+const TUG_JUDGE = { mukemmel: ['HEEEY-YA!', '#7dff8f'], iyi: ['İYİ', '#fff3c4'], kacti: ['RİTİM KAÇTI', '#d9d0c0'], telas: ['TELAŞ ETME!', '#ffb347'] };
+function tugJudgeText(txt, color) {
+  const el = $('#tug-judge'); el.textContent = txt; el.style.color = color;
+  el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop');
+}
+function tugPress() {
+  const j = tug.press(); if (!j) return;
+  const m = TUG_JUDGE[j]; tugJudgeText(m[0], m[1]);
+  const t = $('#tug-tap'); t.classList.add('press'); setTimeout(() => t.classList.remove('press'), 90);
+  tugStats.pulls++;
+  if (j === 'mukemmel') {
+    tugStats.perfect++; tugStats.bestCombo = Math.max(tugStats.bestCombo, tug.combo);
+    audio.accent(0.7 + tug.combo * 0.05);
+    if (settings.haptic) navigator.vibrate?.(10);
+    shake = Math.max(shake, 0.03 + tug.combo * 0.006);
+    if (tug.combo === 5) say('Çığırtkan', pick(['Asılın Tellioğulları, asılın!', 'Hey gidi Şaban hey! Çek!']), 1.8);
+  } else if (j === 'telas') audio.play('tik', { vol: 0.5, rate: 0.7 });
+}
+function togetherNow() {
+  if (!tug.activateTogether()) return;
+  say('Çığırtkan', 'Hep beraber! Heeey-ya!', 2);
+  audio.play('kalabalik', { vol: 0.6, rate: 1.1 }); audio.intensity = 1;
+  $('#speedlines').classList.add('on'); fovKick = 6;
+}
+function onTugEvent(type, arg) {
+  if (type === 'surge') {
+    say('Çığırtkan', pick(['Seferoğulları asılıyor! Diren Tellioğulları!', 'Dikkat! Seferoğulları hep birden yüklendi!']), 2.2);
+    $('#tug-warn').classList.add('on'); shake = Math.max(shake, 0.12);
+    audio.play('ooo', { vol: 0.5, rate: 1.05 });
+  } else if (type === 'surgeEnd') $('#tug-warn').classList.remove('on');
+  else if (type === 'togetherEnd') { $('#speedlines').classList.remove('on'); audio.intensity = 0.4; }
+  else if (type === 'missBeat') { if (state === 'tug') tugJudgeText('VURUŞU KAÇIRDIN', '#d9d0c0'); }
+  else if (type === 'end') {
+    state = 'tugEnd';
+    $('#tug-warn').classList.remove('on'); $('#speedlines').classList.remove('on');
+    const won = arg === 'telli';
+    world.excite = 1;
+    audio.play('alkis', { vol: won ? 1 : 0.6 }); audio.setLoopVol('kalabalik', 0.65);
+    if (won) { fx.confetti(-2.5, -TUG.z, 140); say('Çığırtkan', 'Tellioğulları kazandı! Maşallah delikanlılara!', 3, true); }
+    else say('Çığırtkan', 'Seferoğulları kazandı! Tellioğulları ipi kaptırdı!', 3, true);
+    if (settings.haptic) navigator.vibrate?.(won ? [30, 40, 30] : [60]);
+    seq = []; seqT = 0;
+    seq.push({ t: 3.6, fn: () => tugResults() });
+  }
+}
+function tugResults() {
+  state = 'results';
+  $('#subtitle').classList.remove('on'); subTimer = 0;
+  $('#tughud').classList.add('hidden'); document.body.classList.remove('tugplay');
+  const won = tug.winner === 'telli';
+  $('#res-banner').textContent = 'Erkekler arası halat çekme';
+  $('#res-place').textContent = won ? 'KAZANDINIZ!' : 'KAYBETTİNİZ';
+  const list = $('#res-list'); list.innerHTML = '';
+  const row = (pos, name, fam, val, me) => {
+    const li = document.createElement('li');
+    li.style.setProperty('--c', fam === 'Tellioğlu' ? 'var(--telli)' : 'var(--sefer)');
+    if (me) li.className = 'me';
+    li.innerHTML = `<span class="pos">${pos}</span><span>${name}<span class="fam">${fam}</span></span><span class="tm">${val}</span>`;
+    list.appendChild(li);
+  };
+  const acc = tugStats.pulls ? Math.round((tugStats.perfect / tugStats.pulls) * 100) : 0;
+  row(won ? 1 : 2, 'Tellioğulları (sen)', 'Tellioğlu', TUG_TEAMS.telli.men.join(', '), true);
+  row(won ? 2 : 1, 'Seferoğulları', 'Seferoğlu', TUG_TEAMS.sefer.men.join(', '), false);
+  row('♪', 'Tam vuruş', 'Tellioğlu', `%${acc}`, false);
+  row('×', 'En uzun seri', 'Tellioğlu', `${tugStats.bestCombo}`, false);
+  const key = `tugwins.${DIFFICULTIES[settings.diff].id}`;
+  if (won) store.set(key, store.get(key, 0) + 1);
+  let quote = won ? '“Bu sefer ip bizde kaldı! Filmdeki gibi olmadı, Seferoğlu!” — Tellioğlu Lütfü'
+    : '“Halatta Seferoğulları’na kimse yetişemez!” — Seferoğlu Sıtkı';
+  if (tourney) {
+    if (won) tourney.telli += 10; else tourney.sefer += 10;
+    const telWin = tourney.telli >= tourney.sefer;
+    $('#res-team').innerHTML = `<div class="t ${telWin ? 'win' : ''}">TELLİOĞULLARI<b>${tourney.telli}</b></div><div class="s ${telWin ? '' : 'win'}">SEFEROĞULLARI<b>${tourney.sefer}</b></div>`;
+    $('#res-banner').textContent = 'Kır eğlencesi sona erdi';
+    $('#res-place').textContent = telWin ? 'ŞAMPİYON TELLİOĞULLARI!' : 'ŞAMPİYON SEFEROĞULLARI';
+    quote = telWin ? '“Kır eğlencesinin galibi Tellioğulları! Haydi, şerbetler benden!” — Daver Bey'
+      : '“Bu eğlencenin galibi Seferoğulları. Gelecek yıl rövanş var!” — Daver Bey';
+    if (telWin) store.set('tourneyWins', store.get('tourneyWins', 0) + 1);
+    setAgain('YENİ TURNUVA', () => { tourney = { telli: 0, sefer: 0, sack: null }; startIntro(true); });
+  } else {
+    $('#res-team').innerHTML = `<div class="t ${won ? 'win' : ''}">TELLİOĞULLARI<b>${won ? 10 : 0}</b></div><div class="s ${won ? '' : 'win'}">SEFEROĞULLARI<b>${won ? 0 : 10}</b></div>`;
+    setAgain('RÖVANŞ', () => startTug(true));
+  }
+  $('#res-quote').textContent = quote;
+  $('#results').classList.add('show');
+  audio.startMusic(104, true); audio.intensity = 0;
+}
+function tugCamera(dt) {
+  const portrait = camera.aspect < 1, zc = TUG.z;
+  if (state === 'tugIntro' && tugShots.length) {
+    const s = tugShots.find((x) => seqT >= x.t0 && seqT < x.t1) || tugShots[tugShots.length - 1];
+    const u = ease(clamp((seqT - s.t0) / (s.t1 - s.t0), 0, 1)), far = portrait ? 1.35 : 1;
+    camLook.set(lerp(s.l[0], s.l2[0], u), lerp(s.l[1], s.l2[1], u), lerp(s.l[2], s.l2[2], u));
+    camPos.set(camLook.x + (lerp(s.p[0], s.p2[0], u) - camLook.x) * far, lerp(s.p[1], s.p2[1], u), camLook.z + (lerp(s.p[2], s.p2[2], u) - camLook.z) * far);
+    camera.fov = portrait ? 60 : 44;
+    return;
+  }
+  const cx = tug.x * 0.5 + (state === 'tugEnd' || state === 'results' ? (tug.winner === 'telli' ? -1.4 : 1.4) : 0);
+  const d = portrait ? 9.2 : 6.4, h = portrait ? 2.7 : 2.1;
+  tmpV.set(cx, h, zc + d); tmpL.set(cx, 0.95, zc);
+  if (state === 'results') { tmpV.set(cx + Math.sin(world.time * 0.2) * 1.5, 1.8, zc + d * 0.75); }
+  const k = 1 - Math.exp(-dt * 3);
+  camPos.lerp(tmpV, k); camLook.lerp(tmpL, k);
+  camera.fov = lerp(camera.fov, (portrait ? 62 : 48) + fovKick, 1 - Math.exp(-dt * 4));
+}
+function updateTugHud() {
+  $('#tug-mark').style.left = `${50 + clamp(tug.x / TUG.win, -1, 1) * 44}%`;
+  const left = Math.max(0, TUG.timeLimit - Math.max(0, tug.time - tug.beat0));
+  $('#tug-timer').textContent = state === 'tugCountdown' ? TUG.timeLimit : Math.ceil(left);
+  const st = $('#tug-stam'); st.style.width = `${tug.stamina * 100}%`; st.classList.toggle('low', tug.stamina < 0.3);
+  const c = $('#tug-combo'); const txt = tug.combo >= 2 ? `SERİ ×${tug.combo}` : '';
+  if (c.textContent !== txt) c.textContent = txt;
+  // vuruş halkası: her "güm"de düğmeye oturur
+  const ring = $('#tug-ring'), tap = $('#tug-tap');
+  if (state === 'tug') {
+    const ph = tug.beatPhase();
+    const k = ph > 0.5 ? (ph - 0.5) * 2 : 1 + ph * 2;   // 0..1 yaklaşır, sonra 1..2 uzaklaşır
+    ring.style.transform = `scale(${k <= 1 ? 1.7 - k * 0.7 : 1 + (k - 1) * 0.25})`;
+    ring.style.opacity = k <= 1 ? 0.3 + k * 0.7 : Math.max(0, 1 - (k - 1) * 3);
+    const hot = tug.together > 0 || ph < 0.09 || ph > 0.91;
+    ring.style.borderColor = hot ? '#b8ffb8' : 'rgba(255,255,255,0.85)';
+    tap.classList.toggle('hot', hot);
+  } else { ring.style.opacity = 0; tap.classList.remove('hot'); }
+  const hb = $('#btn-together');
+  $('#together-arc').style.strokeDashoffset = `${276.5 * (1 - (tug.together > 0 ? tug.together / 5 : tug.power))}`;
+  hb.classList.toggle('ready', tug.power >= 1 && tug.together <= 0);
+  hb.classList.toggle('active', tug.together > 0);
+}
+
 // ---------- Duraklatma ----------
 let prevState = null;
 function pause(on) {
-  if (on && (state === 'race' || state === 'countdown')) {
+  if (on && (state === 'race' || state === 'countdown' || state === 'tug' || state === 'tugCountdown')) {
     prevState = state; state = 'paused';
     $('#pause').classList.add('show');
     audio.ctx?.suspend();
@@ -592,6 +823,8 @@ document.addEventListener('visibilitychange', () => {
 // ---------- Girdi ----------
 function press() {
   if (state === 'intro') { skipIntro(); return; }
+  if (state === 'tugIntro') { if (seqT > 0.6) tugCountdown(); return; }
+  if (state === 'tug') { tugPress(); return; }
   if (state !== 'race') return;
   player.press();
   const t = $('#tap'); t.classList.add('press'); setTimeout(() => t.classList.remove('press'), 90);
@@ -611,7 +844,7 @@ window.addEventListener('pointerdown', (e) => {
 window.addEventListener('keydown', (e) => {
   if (e.repeat) return;
   if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); press(); }
-  else if (e.code === 'KeyH' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { if (state === 'race') player.activateHucum(); }
+  else if (e.code === 'KeyH' || e.code === 'ShiftLeft' || e.code === 'ShiftRight') { if (state === 'race') player.activateHucum(); else if (state === 'tug') togetherNow(); }
   else if (e.code === 'Escape' || e.code === 'KeyP') pause(state !== 'paused');
 });
 // iOS çift dokunma yakınlaştırmasını engelle
@@ -707,6 +940,8 @@ function updateCamera(dt, t) {
       camPos.set(camLook.x + Math.sin(a) * d, camLook.y + hh, camLook.z + Math.cos(a) * d);
       camera.fov = camera.aspect < 1 ? 58 : 40;
     }
+  } else if (mode === 'tug') {
+    tugCamera(dt);
   } else if (state === 'countdown' || state === 'race' || state === 'paused') {
     if (state !== 'paused') raceCamera(dt);
   } else if (state === 'finish' || state === 'results') {
@@ -728,7 +963,7 @@ function updateCamera(dt, t) {
   camera.updateProjectionMatrix();
   world.skyMesh.position.copy(camera.position);
   // gölge kamerası oyuncuyu takip eder
-  const focus = state === 'intro' ? camLook : player.model.root.position;
+  const focus = state === 'intro' || mode === 'tug' ? camLook : player.model.root.position;
   world.followSun(tmpL.set(focus.x * 0.3, 0, focus.z - 4));
 }
 
@@ -778,6 +1013,14 @@ function tick(rdt) {
   }
   if (subTimer > 0) { subTimer -= rdt; if (subTimer <= 0) $('#subtitle').classList.remove('on'); }
 
+  if (mode === 'tug') {
+    tug.update(state === 'paused' ? 0 : dt, onTugEvent);
+    if (autoBot && state === 'tug') { const ph = tug.beatPhase(); if ((ph < 0.04 || ph > 0.985) && tug.lastPullBeat !== tug.beatIndex()) tugPress(); if (tug.power >= 1) togetherNow(); }
+    world.update(dt); mud.update(dt); fx.update(dt);
+    updateCamera(rdt, world.time);
+    if (state === 'tug' || state === 'tugCountdown' || state === 'tugEnd') updateTugHud();
+    return;
+  }
   if (state === 'race') raceLogic(dt);
   else if (state === 'finish' || state === 'results') raceTime += dt;
 
@@ -834,6 +1077,7 @@ window.__game = {
   set bot(v) { autoBot = v; },
   set tutorial(v) { wantTutorial = v; },
   get tut() { return tut; },
+  get tug() { return tug; }, startTug, get mode() { return mode; },
   shot(px, py, pz, lx, ly, lz, fov = 40) {
     camera.clearViewOffset(); camera.fov = fov; camera.position.set(px, py, pz); camera.lookAt(lx, ly, lz); camera.updateProjectionMatrix();
     renderer.render(scene, camera); return renderer.info.render;

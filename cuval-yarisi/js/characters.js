@@ -98,7 +98,7 @@ const PRESETS = [
   { sex: 'f', lod: 'mid', build: 1.0 },
   { sex: 'm', lod: 'mid', outfit: 'coat', beard: true, fez: true }, { sex: 'm', lod: 'mid', outfit: 'coat', beard: true, fez: true, belly: 1 },
   { sex: 'm', lod: 'mid', outfit: 'uniform', fez: true }, { sex: 'm', lod: 'mid', outfit: 'villager', beard: true, fez: true },
-  { sex: 'm', lod: 'mid', outfit: 'coat', fez: true },
+  { sex: 'm', lod: 'mid', outfit: 'coat', fez: true }, { sex: 'm', lod: 'mid', outfit: 'villager', fez: true },
   { sex: 'f', lod: true, skirt: 'long' }, { sex: 'm', lod: true, outfit: 'villager', fez: true }, { sex: 'm', lod: true, outfit: 'villager', fez: true, beard: true },
   { sex: 'm', lod: true, outfit: 'coat', fez: true },
 ];

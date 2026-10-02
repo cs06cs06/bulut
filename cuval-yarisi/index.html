@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="Tosun Paşa filmindeki kır eğlencesinden esinlenen 3D çuval yarışı oyunu. Telefonda oynanır.">
+<meta name="description" content="Tosun Paşa filmindeki kır eğlencesinden esinlenen 3D çuval yarışı ve halat çekme oyunu. Telefonda oynanır.">
 <title>Çuval Yarışı</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -44,7 +44,10 @@
   </header>
   <div class="menu-body">
     <div class="panel">
-      <div class="panel-title">Yarışmacını seç</div>
+      <div class="panel-title">Etkinlik</div>
+      <div id="events" class="seg events"></div>
+      <div id="event-blurb" class="hero-blurb"></div>
+      <div class="panel-title hero-title">Yarışmacını seç</div>
       <div id="heroes" class="heroes"></div>
       <div class="panel-title">Zorluk</div>
       <div id="diffs" class="seg"></div>
@@ -90,6 +93,38 @@
   <div id="now" class="now">ŞİMDİ!</div>
 </section>
 
+<!-- HALAT ÇEKME HUD -->
+<section id="tughud" class="hidden">
+  <div class="hud-top">
+    <button id="btn-pause2" class="icon-btn" aria-label="Duraklat">❚❚</button>
+    <div class="tug-bar">
+      <span class="tl">TELLİOĞULLARI</span>
+      <div class="tug-track"><i class="zone l"></i><i class="zone r"></i><i class="mid"></i><b id="tug-mark"></b></div>
+      <span class="tr">SEFEROĞULLARI</span>
+    </div>
+    <div id="tug-timer" class="timer">45</div>
+  </div>
+  <div id="tug-combo" class="combo"></div>
+  <div id="tug-judge" class="judge"></div>
+  <div id="tug-warn" class="warn">SEFEROĞULLARI ASILIYOR!</div>
+  <div class="hud-bottom">
+    <div class="balance">
+      <div class="label">NEFES</div>
+      <div class="bal-track"><div id="tug-stam"></div></div>
+    </div>
+    <div class="controls">
+      <div id="tug-tap" class="tap">
+        <div id="tug-ring" class="tap-ring"></div>
+        <div class="tap-core">ÇEK!</div>
+      </div>
+      <button id="btn-together" class="hucum" aria-label="Hep beraber">
+        <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="44" class="hc-bg"/><circle id="together-arc" cx="50" cy="50" r="44" class="hc-fg"/></svg>
+        <span>HEP<br>BERABER</span>
+      </button>
+    </div>
+  </div>
+</section>
+
 <div id="subtitle" class="subtitle"><b id="sub-who"></b><span id="sub-text"></span></div>
 <div id="countdown" class="countdown"></div>
 <div id="titlecard" class="titlecard"><small>İskenderiye, 19. yüzyıl</small><b>Daver Bey'in<br>Kır Eğlencesi</b><i>☾ ✦ ☾</i></div>
@@ -131,6 +166,8 @@
     <li><b>Acele etme.</b> Havadayken paniğe kapılıp basarsan denge bozulur. Denge çubuğu dolarsa çuvalla beraber yere kapaklanırsın.</li>
     <li><b>Hücum!</b> Mükemmel zıplayışlar coşku biriktirir. Daire dolunca <b>HÜCUM</b>'a bas (klavyede <kbd>H</kbd>): birkaç saniye hiç düşmeden uçarsın.</li>
     <li>Tellioğulları kadınlarının sıralaması takım puanına yazılır. Seferoğulları'na yenilmek yok!</li>
+    <li><b>Halat çekme.</b> Davulun her "güm"ünde <b>ÇEK!</b>'e dokun. Tam vuruşta dokunmak tam güç verir; vuruşu kaçırmak ya da arka arkaya basmak <b>nefesini</b> tüketir. Mükemmel çekişler <b>HEP BERABER</b> göstergesini doldurur: basınca birkaç vuruş boyunca bütün takım tek yürek asılır. Seferoğulları toplu asıldığında ritmi bozma!</li>
+    <li><b>Kır eğlencesi.</b> Çuval yarışı ve halat çekme art arda oynanır; iki oyunun puanı toplanır, şampiyon aile ilan edilir.</li>
   </ul>
   <div class="row">
     <button id="btn-tutorial" class="btn">Eğitimli yarış</button>

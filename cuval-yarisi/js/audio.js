@@ -229,6 +229,16 @@ export class AudioEngine {
     if (!zurna) this._zurnaRest(this.ctx.currentTime);
   }
 
+  // davul-zurnayı baştan başlat: ilk "güm" delay saniye sonra (oyun vuruş ızgarasını buna kilitler)
+  restartMusic(bpm, zurna = true, delay = 0.08) {
+    if (!this.ctx || this.themeOn) return delay;
+    this.bpm = bpm; this.musicOn = true; this.step = 0;
+    this.nextTime = this.ctx.currentTime + delay;
+    this.zurnaOn = zurna;
+    if (zurna && !this.zurna) this._zurnaVoice();
+    return delay;
+  }
+
   stopMusic() {
     this.musicOn = false;
     if (this.ctx) this._zurnaRest(this.ctx.currentTime);
