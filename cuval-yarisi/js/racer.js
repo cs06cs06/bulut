@@ -7,14 +7,14 @@ import { HALF } from './world.js';
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 export class Racer {
-  constructor(def, lane, { isPlayer = false, sweet = 0.17, skill = 0.75, num = 1, lod = false } = {}) {
+  constructor(def, lane, { isPlayer = false, sweet = 0.17, skill = 0.75, num = 1, lod = false, clothLod = false } = {}) {
     this.def = def;
     this.lane = lane;
     this.isPlayer = isPlayer;
     this.p = derive(def.stats, sweet);
     this.skill = skill;
     this.baseSkill = skill;
-    this.model = buildRacer(def, num, lod);
+    this.model = buildRacer(def, num, lod, clothLod);
     this.x = -HALF + TRACK.laneWidth * (lane + 0.5);
     this.model.root.position.set(this.x, 0, 0);
     this.listeners = {};
@@ -218,7 +218,6 @@ export class Racer {
     const sq = this.state === 'air' ? -0.1 * Math.sin(Math.min(1, this.t / this.airTime) * Math.PI) : this.squash;
     const sy = 1 - sq * 0.4, sxz = 1 + sq * 0.2;
     m.hop.scale.set(sxz, sy, sxz);
-    m.sack.scale.set(1, (1 + (this.state === 'air' ? 0.04 : -this.squash * 0.15)) * 1.06 * this.sackRise, 1);
 
     // denge kaybı: yana sallanma
     this.wobbleDir = Math.sin(t * 2.3 + this.lane) > 0 ? 1 : -1;

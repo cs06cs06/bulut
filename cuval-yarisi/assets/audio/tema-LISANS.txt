@@ -1,0 +1,9 @@
+Yarış müziği (assets/audio/tema.mp3)
+
+Santuri Ethem Efendi (1855-1926), "Şehnaz Longa". Beste kamu malıdır.
+Nota verisi: SymbTr, M. Kemal Karaosmanoğlu / Music Technology Group (UPF),
+"A Turkish makam music symbolic database for music information retrieval: SymbTr", ISMIR 2012.
+https://github.com/MTG/SymbTr  - CC BY-NC-SA 4.0
+
+Düzenleme ve seslendirme bu proje için yapıldı (tools/tema-duzenle.py, FluidR3 GM ses fontu, MIT).
+Bu ses dosyası CC BY-NC-SA 4.0 ile lisanslıdır: https://creativecommons.org/licenses/by-nc-sa/4.0/

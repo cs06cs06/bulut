@@ -1,7 +1,7 @@
 // Çevrimdışı oynama: önce önbellek, yoksa ağ (indirilenler önbelleğe yazılır)
-const CACHE = 'cuval-yarisi-v4';
+const CACHE = 'cuval-yarisi-v5';
 const CORE = ['./', 'index.html', 'css/style.css', 'js/main.js', 'js/assets.js', 'js/audio.js', 'js/config.js',
-  'js/fx.js', 'js/people.js', 'js/racer.js', 'js/world.js', 'js/characters.js', 'js/racerModel.js', 'js/proc/sdf.js', 'js/proc/shapes.js', 'js/proc/worker.js',
+  'js/fx.js', 'js/people.js', 'js/racer.js', 'js/world.js', 'js/characters.js', 'js/racerModel.js', 'js/sack.js', 'js/proc/sdf.js', 'js/proc/shapes.js', 'js/proc/worker.js',
   'vendor/meshoptimizer/meshopt_simplifier.module.js', 'vendor/three/three.module.js',
   'vendor/three/addons/loaders/GLTFLoader.js', 'vendor/three/addons/loaders/RGBELoader.js',
   'vendor/three/addons/utils/BufferGeometryUtils.js', 'manifest.webmanifest', 'icons/icon.svg', 'assets/audio/tema.mp3'];

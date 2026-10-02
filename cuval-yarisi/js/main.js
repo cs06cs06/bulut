@@ -110,8 +110,8 @@ async function boot() {
 
   world = new World(scene, quality);
   fx = new Particles(scene, quality === 'low' ? 500 : 1000);
-  heroRacers = HEROES.map((d, i) => new Racer(d, 0, { num: i + 1 }));
-  rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4, lod: quality === 'low' ? 'mid' : false }));
+  heroRacers = HEROES.map((d, i) => new Racer(d, 0, { num: i + 1, clothLod: quality === 'low' }));
+  rivalRacers = RIVALS.map((d, i) => new Racer(d, 0, { num: i + 4, lod: quality === 'low' ? 'mid' : false, clothLod: quality === 'low' }));
   racers = [...heroRacers, ...rivalRacers];
   for (const r of racers) { scene.add(r.model.root); hookRacer(r); }
   tags = racers.map((r) => makeTag(r));

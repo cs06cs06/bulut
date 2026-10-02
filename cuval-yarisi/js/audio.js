@@ -221,7 +221,7 @@ export class AudioEngine {
   setTempo(bpm) {
     if (this.themeOn) {
       // hücumda tema hafifçe hızlanır (eski film hızlandırması gibi); davulcu da onunla
-      const r = Math.min(1.12, Math.max(1, bpm / THEME.bpm));
+      const r = Math.min(1.1, Math.max(1, bpm / this._themeRef));
       this.theme.src.playbackRate.setTargetAtTime(r, this.ctx.currentTime, 0.3);
       this.bpm = THEME.bpm * r;
       return;
@@ -258,6 +258,7 @@ export class AudioEngine {
     src.start(t);
     this.theme = { src, g };
     this.themeOn = true;
+    this._themeRef = this.bpm; // yarışın taban temposu: hücum buna göre hızlandırır
     // sentez davul-zurna susar; zamanlayıcı yalnızca davulcu animasyonu için temanın vuruşlarını sayar
     this._zurnaRest(t);
     this.zurnaOn = false;

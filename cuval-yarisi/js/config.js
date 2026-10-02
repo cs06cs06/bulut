@@ -1,10 +1,11 @@
 // Oyun ayarları: karakterler, zorluk seviyeleri, pist ölçüleri.
 
 // Yarış müziği: yarış başlayınca çalar, döngüye girer, ana menüye dönünce susar.
-// Varsayılan parça Mozart'ın "Rondo alla Turca"sının (kamu malı) bando düzenlemesidir.
-// Başka bir parça çalmak için url'yi değiştirin; bpm ve firstBeat (ilk güçlü vuruşun
-// saniyesi) davulcu animasyonunu müziğe kilitler.
-export const THEME = { url: 'assets/audio/tema.mp3', bpm: 126, firstBeat: 60 / 126, loopBeats: 256, vol: 0.85 };
+// Varsayılan parça Santuri Ethem Efendi'nin "Şehnaz Longa"sının (Tosun Paşa filminde de çalan
+// kamu malı beste) fasıl topluluğu düzenlemesidir; nota SymbTr'den (CC BY-NC-SA 4.0).
+// Başka bir parça için url'yi değiştirin; bpm ve firstBeat (ilk güçlü vuruşun saniyesi)
+// davulcuyu müziğe kilitler, loopBeats döngünün kaç vuruşta kapanacağıdır (0 = parça sonu).
+export const THEME = { url: 'assets/audio/tema.mp3', bpm: 150, firstBeat: 0, loopBeats: 192, vol: 0.85 };
 
 export const TRACK = {
   length: 50,        // metre: başlangıç çizgisinden bitiş ipine

@@ -2,7 +2,8 @@
 // Animasyon kütüphanesi gövdeyi canlandırır; bacaklar çuvalın içinde sabitlenir, eller IK ile çuval ağzını tutar.
 import * as THREE from 'three';
 import { createCharacter, solveArmIK } from './characters.js';
-import { sackTexture, sackGeometry, blobMaterial } from './people.js';
+import { sackTexture, blobMaterial } from './people.js';
+import { SackCloth, sackMaterial } from './sack.js';
 import { assets } from './assets.js';
 
 const LEG_BONES = ['thigh_l', 'calf_l', 'foot_l', 'ball_l', 'thigh_r', 'calf_r', 'foot_r', 'ball_r'];
@@ -15,7 +16,7 @@ function rotateWorld(bone, axis, angle) {
   bone.quaternion.copy(_qp.multiply(_qw));
 }
 
-export function buildRacer(def, num, lod = false) {
+export function buildRacer(def, num, lod = false, clothLod = false) {
   const look = def.look, b = look.build;
   const root = new THREE.Group();
   const hop = new THREE.Group(); root.add(hop);
@@ -25,17 +26,14 @@ export function buildRacer(def, num, lod = false) {
   const tex = sackTexture(def.family === 'Tellioğlu' ? ['TELLİOĞLU', 'UN • İSKENDERİYE'] : ['SEFEROĞLU', 'BUĞDAY • MISIR'], num,
     def.family === 'Tellioğlu' ? '#5a1a12' : '#14304d');
   tex.repeat.set(2, 1);
-  const sackMat = new THREE.MeshStandardMaterial({
+  const sackMat = sackMaterial({
     map: tex, normalMap: assets.tex.hessianNor, roughnessMap: assets.tex.hessianArm,
-    roughness: 1, metalness: 0, side: THREE.DoubleSide, normalScale: new THREE.Vector2(0.9, 0.9),
+    normalScale: new THREE.Vector2(0.9, 0.9),
   });
-  const sack = new THREE.Mesh(sackGeometry(b), sackMat);
-  sack.castShadow = true; sack.receiveShadow = true;
-  sack.rotation.y = Math.PI * 0.75;
-  sack.scale.y = 1.06;
-  tilt.add(sack);
-  const inner = new THREE.Mesh(new THREE.CircleGeometry(0.3 * (0.92 + b * 0.12), 20), new THREE.MeshBasicMaterial({ color: 0x1a120a }));
-  inner.rotation.x = -Math.PI / 2; inner.position.y = 0.9; sack.add(inner);
+  // kumaş simülasyonu: ağız ellerde, içi bacaklarla dolu, altı yere yığılır
+  const cloth = new SackCloth({ build: b, height: look.height ?? 1, material: sackMat, lod: clothLod });
+  const sack = cloth.mesh;
+  root.add(sack);
 
   // karakter
   const ch = createCharacter({ sex: 'f', lod, look, grip: 0.95 });
@@ -43,7 +41,8 @@ export function buildRacer(def, num, lod = false) {
   ch.root.scale.setScalar(look.height ?? 1);
   tilt.add(ch.root);
   ch.play('Idle_Loop');
-  const rimR = 0.39 * (0.92 + b * 0.12);
+  const rimR = cloth.rimR;
+  const _hands = [new THREE.Vector3(), new THREE.Vector3()], _rootInv = new THREE.Matrix4();
 
   const blob = new THREE.Mesh(new THREE.CircleGeometry(0.5, 24), blobMaterial());
   blob.rotation.x = -Math.PI / 2; blob.position.y = 0.015; blob.renderOrder = 2;
@@ -56,7 +55,7 @@ export function buildRacer(def, num, lod = false) {
   const want = (clip, o) => { if (mode !== clip) { mode = clip; ch.play(clip, o); } };
 
   return {
-    root, hop, tilt, sack, ch, blob, tagAnchor,
+    root, hop, tilt, sack, cloth, ch, blob, tagAnchor,
     setFace() {},
     // racer.js her karede çağırır
     pose(r, dt) {
@@ -80,16 +79,26 @@ export function buildRacer(def, num, lod = false) {
       _ax.set(1, 0, 0).applyQuaternion(root.getWorldQuaternion(_qw));
       rotateWorld(B.spine_01, _ax, -r.lean * 0.9);
       ch.root.updateMatrixWorld(true);
-      if (r.state === 'finished' || r.state === 'fallen') return;
-      // eller çuvalın ağzını kavrar (çuval ağzı zıplarken yukarı çekilir)
-      const rimY = 1.0 * sack.scale.y * (r.sackRise ?? 1) - 0.02;
+      // çuval ağzı: ayakta belde, zıplarken eller yukarı çeker; girişte dizden bele çekilir
+      const rise = r.sackRise ?? 1;
       const pull = r.state === 'air' ? Math.sin(Math.min(1, r.t / r.airTime) * Math.PI) * 0.05 : 0;
+      const rimY = cloth.rimY0 * rise + pull;
+      const hold = r.state !== 'finished' && r.state !== 'fallen';
+      if (hold) this._grip(r, rimY, pull);
+      root.updateMatrixWorld(true);
+      let hs = null;
+      if (hold && rise > 0.9) { hs = [B.hand_l, B.hand_r].map((hb, i) => hb.getWorldPosition(_hands[i])); }
+      cloth.step(dt, { frame: tilt.matrixWorld, rimY, hands: hs });
+      cloth.updateMesh(_rootInv.copy(root.matrixWorld).invert());
+    },
+    // eller çuvalın ağzını kavrar (ağzın ön-yan kısmı)
+    _grip(r, rimY, pull) {
       for (const [up, lo, ha] of hands) {
         ha.getWorldPosition(_p);
         tilt.worldToLocal(_p);
         const side = Math.sign(_p.x) || 1;
         // ağzın ön-yan kısmı (önden ~55°), parmaklar kenarın üstünden kavrar
-        _t.set(side * rimR * 0.8 + Math.sin(r.t * 9 + side) * r.wobble * 0.04, rimY + 0.05 + pull, -rimR * 0.55);
+        _t.set(side * rimR * 0.8 + Math.sin(r.t * 9 + side) * r.wobble * 0.04, rimY + 0.05, -rimR * 0.55);
         tilt.localToWorld(_t);
         const pole = tilt.localToWorld(new THREE.Vector3(side * 0.8, 0.9, 0.45));
         solveArmIK(up, lo, ha, _t, pole);

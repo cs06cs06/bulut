@@ -290,6 +290,7 @@ function eyeGeometry(sex, lod) {
 const FRAG_HEAD = /* glsl */`
 uniform vec3 uPal[20];
 uniform vec3 uCheek;
+uniform float uClipY;
 flat varying float vRegion; varying float vAux; varying vec3 vRest;
 float h31(vec3 p){ p = fract(p * 0.3183099 + 0.1); p *= 17.0; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
 float vnoise(vec3 x){ vec3 i = floor(x), f = fract(x); f = f * f * (3.0 - 2.0 * f);
@@ -299,6 +300,7 @@ float fbm3(vec3 p){ return vnoise(p) * 0.5 + vnoise(p * 2.03) * 0.25 + vnoise(p 
 float aaf(float c){ float w = fwidth(c); return 1.0 - smoothstep(0.35, 0.9, w); }
 `;
 const FRAG_ALBEDO = (instanced) => /* glsl */`
+if (vRest.y < uClipY) discard;   // çuvalın içinde kalan bacaklar/etek çizilmez
 int rg = int(vRegion + 0.5);
 vec3 P = vRest;
 vec3 base = uPal[rg];
@@ -436,7 +438,7 @@ function palette(p) {
 
 function avatarMaterial(pal, instanced = false, cheek = [0.041, 1.536, 0.06]) {
   const m = new THREE.MeshStandardMaterial({ roughness: 0.7, metalness: 0 });
-  m.userData.U = { uPal: { value: pal }, uCheek: { value: new THREE.Vector3(...cheek) } };
+  m.userData.U = { uPal: { value: pal }, uCheek: { value: new THREE.Vector3(...cheek) }, uClipY: { value: -10 } };
   m.onBeforeCompile = (sh) => {
     Object.assign(sh.uniforms, m.userData.U);
     sh.vertexShader = sh.vertexShader
@@ -451,7 +453,7 @@ function avatarMaterial(pal, instanced = false, cheek = [0.041, 1.536, 0.06]) {
       .replace('#include <normal_fragment_maps>', '#include <normal_fragment_maps>\n' + FRAG_BUMP)
       .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n' + FRAG_RIM);
   };
-  m.customProgramCacheKey = () => 'avatar-v3' + (instanced ? 'I' : '');
+  m.customProgramCacheKey = () => 'avatar-v4' + (instanced ? 'I' : '');
   return m;
 }
 
@@ -742,7 +744,8 @@ export function createCharacter(o = {}) {
 
   const ch = {
     root, bones, mesh, mats: [mat, eyeMat], legMeshes: [], rest, restPos,
-    showLegs() {}, // kadınlarda etek var; çuvalın içinde ayrıca gizlemeye gerek yok
+    // çuvalın içindeki bacak ve etek kısmını gizle (bağlama pozunda bu yüksekliğin altı)
+    showLegs(show, clipY = 0.62) { mat.userData.U.uClipY.value = show ? -10 : clipY; },
     play(name, { fade: f = 0.2, speed = 1, restart = false } = {}) {
       if (!CLIPS_DEF[name]) name = 'Idle_Loop';
       if (cur.name === name && !restart) { cur.speed = speed; return cur; }

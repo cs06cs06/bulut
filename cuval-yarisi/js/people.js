@@ -1,5 +1,5 @@
-// Prosedürel yardımcılar: renkli geometri birleştirme, çuval bezi dokusu ve çuval geometrisi, zemin gölgesi.
-// (İnsan karakterleri artık js/characters.js içindeki iskeletli modellerden gelir.)
+// Prosedürel yardımcılar: renkli geometri birleştirme, çuval bezi dokusu, zemin gölgesi.
+// (İnsan karakterleri js/characters.js, çuval kumaşı js/sack.js içinde üretilir.)
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { assets } from './assets.js';
@@ -41,10 +41,6 @@ const M = (x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0, sx = 1, sy = 1, sz = 1) 
 };
 
 // Basit gürültü: kumaş kırışıkları için
-function wrinkle(a, y, seed) {
-  return Math.sin(a * 5 + seed) * 0.5 + Math.sin(a * 11 + y * 9 + seed * 2) * 0.3 + Math.sin(a * 17 - y * 23 + seed) * 0.2;
-}
-
 export const MAT = {};
 export function initMaterials() {
   MAT.vc = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.78, metalness: 0 });
@@ -95,29 +91,6 @@ export function sackTexture(stamp, num, inkColor = '#3b2a1e') {
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
   t.anisotropy = 4;
   return t;
-}
-
-// ---------- Çuval geometrisi ----------
-export function sackGeometry(build) {
-  const pts = [];
-  const prof = [
-    [0.0, 0.0], [0.17, 0.0], [0.26, 0.025], [0.3, 0.09], [0.31, 0.2], [0.3, 0.4],
-    [0.29, 0.6], [0.295, 0.76], [0.31, 0.86], [0.345, 0.93], [0.375, 0.985], [0.37, 1.0],
-  ];
-  for (const [r, y] of prof) pts.push(new THREE.Vector2(r * (0.92 + build * 0.12), y));
-  const g = new THREE.LatheGeometry(pts, 36);
-  const p = g.attributes.position, v = new THREE.Vector3(), seed = Math.random() * 10;
-  for (let i = 0; i < p.count; i++) {
-    v.fromBufferAttribute(p, i);
-    const a = Math.atan2(v.x, v.z), r = Math.hypot(v.x, v.z);
-    if (r < 0.01) continue;
-    const k = Math.min(1, v.y / 0.12) * (v.y > 0.85 ? 1.8 : 1); // ağızda büzgü
-    const d = 1 + wrinkle(a, v.y, seed) * 0.035 * k;
-    v.x *= d * 1.06; v.z *= d * 0.94;
-    p.setXYZ(i, v.x, v.y, v.z);
-  }
-  g.computeVertexNormals();
-  return g;
 }
 
 let _blobMat = null;
