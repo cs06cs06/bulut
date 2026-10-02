@@ -1,0 +1,21 @@
+{
+  "name": "gibi-yedek-anahtar",
+  "private": true,
+  "type": "module",
+  "description": "Gibi hayran bölümü: senaryo + three.js ile videoya dönüştürme",
+  "scripts": {
+    "senaryo": "node tools/build-script-md.mjs",
+    "lines": "node tools/export-lines.mjs",
+    "tts": "python3 tools/tts.py",
+    "timeline": "node tools/make-timeline.mjs",
+    "mix": "python3 tools/mix.py",
+    "render": "node tools/render.mjs",
+    "serve": "http-server -p 8080 -c-1 ."
+  },
+  "dependencies": {
+    "three": "0.180.0"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gibi — Yedek Anahtar</title>
+<style>
+  :root { --bg: #111; --fg: #f3efe2; --accent: #f2b705; }
+  html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: "DejaVu Sans", system-ui, sans-serif; }
+  body.render { overflow: hidden; }
+  #wrap { max-width: 1280px; margin: 0 auto; padding: 16px; }
+  h1 { font-size: 20px; margin: 0 0 12px; color: var(--accent); letter-spacing: .04em; }
+  #stage canvas { display: block; width: 100%; border-radius: 6px; background: #000; }
+  #bar { display: flex; gap: 12px; align-items: center; margin-top: 10px; }
+  #bar input { flex: 1; accent-color: var(--accent); }
+  #play { background: var(--accent); color: #111; border: 0; border-radius: 4px; font-size: 18px; width: 48px; height: 36px; cursor: pointer; }
+  #time { font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./node_modules/three/build/three.module.js" } }
+</script>
+</head>
+<body>
+<div id="wrap">
+  <h1>GİBİ · Yedek Anahtar <small style="color:#999;font-weight:normal">(hayran bölümü)</small></h1>
+  <div id="stage"></div>
+  <div id="bar">
+    <button id="play" title="Oynat / duraklat">▶</button>
+    <input id="seek" type="range" min="0" step="0.01" value="0">
+    <span id="time">0:00</span>
+  </div>
+  <audio id="audio" src="build/episode.m4a" preload="auto"></audio>
+</div>
+<script>
+  if (new URLSearchParams(location.search).get('mode') === 'render') {
+    document.body.className = 'render';
+    document.getElementById('wrap').style.display = 'none';
+  }
+</script>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
