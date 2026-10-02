@@ -205,8 +205,12 @@ const shots = [];
 
 function parseCam(cam, b) {
   if (typeof cam === 'object') return { kind: 'fixed', pos: cam.pos, look: cam.look };
-  const [kind, who] = cam.split(':');
-  if (kind === 'two') return { kind: 'two', a: b.who ? b.who[0] : who, b: b.to || who };
+  const [kind, who, who2] = cam.split(':');
+  if (kind === 'two') {
+    if (who && who2) return { kind: 'two', a: who, b: who2 };
+    if (b.who) return { kind: 'two', a: b.who[0], b: b.to || b.who[1] || b.who[0] };
+    return { kind: 'two', a: 'yil', b: 'ilk' };
+  }
   if (kind === 'cu' || kind === 'crash') return { kind, who: who || (b.who && b.who[0]), to: b.to };
   return { kind };
 }
@@ -573,7 +577,12 @@ function renderAt(t) {
   fill.position.set(o[0] - 6, 4, o[2] + 8);
   fill.target.position.set(o[0], 1, o[2]);
 
-  const cam = computeCamera(t, sc);
+  let cam;
+  try { cam = computeCamera(t, sc); } catch (e) {
+    console.warn('kamera', t, e.message);
+    const w = WIDE[sc.set];
+    cam = { pos: toWorld(sc.set, w.pos), look: toWorld(sc.set, w.look), fov: w.fov };
+  }
   camera.position.copy(cam.pos);
   camera.fov = cam.fov;
   camera.updateProjectionMatrix();
