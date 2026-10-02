@@ -1,5 +1,11 @@
 // Oyun ayarları: karakterler, zorluk seviyeleri, pist ölçüleri.
 
+// Yarış müziği: yarış başlayınca çalar, döngüye girer, ana menüye dönünce susar.
+// Varsayılan parça Mozart'ın "Rondo alla Turca"sının (kamu malı) bando düzenlemesidir.
+// Başka bir parça çalmak için url'yi değiştirin; bpm ve firstBeat (ilk güçlü vuruşun
+// saniyesi) davulcu animasyonunu müziğe kilitler.
+export const THEME = { url: 'assets/audio/tema.mp3', bpm: 126, firstBeat: 60 / 126, loopBeats: 256, vol: 0.85 };
+
 export const TRACK = {
   length: 50,        // metre: başlangıç çizgisinden bitiş ipine
   laneWidth: 1.7,

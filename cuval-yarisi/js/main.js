@@ -325,6 +325,7 @@ async function unlockAudio() {
   audio.loop('kuslar', 0.35);
   audio.loop('kalabalik', 0.12);
   audio.startMusic(96, true);
+  audio.loadTheme(); // yarış müziği arka planda hazırlanır
 }
 // menüde herhangi bir dokunuş sesi açar
 window.addEventListener('pointerdown', () => { if (!audioUnlocked && state === 'menu') unlockAudio(); }, { capture: true });
@@ -343,7 +344,7 @@ function goMenu() {
   world.resetRibbon();
   world.excite = 0.25;
   showTags(false);
-  if (audioUnlocked) { audio.startMusic(96, true); audio.intensity = 0; audio.setLoopVol('kalabalik', 0.12); }
+  if (audioUnlocked) { audio.stopTheme(); audio.startMusic(96, true); audio.intensity = 0; audio.setLoopVol('kalabalik', 0.12); }
   applyViewOffset();
 }
 
@@ -361,6 +362,7 @@ function startIntro(quick = false) {
   document.body.classList.add('cine');
   document.body.classList.remove('racing', 'finished');
   showTags(false);
+  audio.stopTheme();
   audio.startMusic(100, false);
   audio.setLoopVol('kalabalik', 0.25);
   audio.intensity = 0;
@@ -416,6 +418,7 @@ function startCountdown() {
     state = 'race'; raceTime = 0;
     for (const r of racers) r.start();
     audio.startMusic(126, true);
+    audio.startTheme(); // yarış başlarken müzik girer
     audio.intensity = 0.3;
     audio.setLoopVol('kalabalik', 0.4);
     world.excite = 0.55;

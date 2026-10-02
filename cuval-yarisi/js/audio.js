@@ -1,5 +1,6 @@
 // Ses motoru: indirilen efektler + gerçek zamanlı sentezlenen davul ve zurna.
 import { assets, SOUNDS } from './assets.js';
+import { THEME } from './config.js';
 
 // Hicaz makamı (Re karar): Re, Mi♭, Fa♯, Sol, La, Si♭, Do, Re', Mi♭'
 const HICAZ = [293.66, 311.13, 369.99, 392.0, 440.0, 466.16, 523.25, 587.33, 622.25, 739.99];
@@ -29,6 +30,7 @@ export class AudioEngine {
     this.loops = {};
     this.intensity = 0;
     this.voice = null;
+    this.theme = null; this.themeBuf = null; this.themeOn = false; this.themeWanted = false; this._themeLoad = null;
   }
 
   // İlk kullanıcı dokunuşunda çağrılmalı (iOS kısıtı)
@@ -203,7 +205,7 @@ export class AudioEngine {
   }
 
   startMusic(bpm = 112, zurna = true) {
-    if (!this.ctx) return;
+    if (!this.ctx || this.themeOn) return;
     this.bpm = bpm;
     if (!this.musicOn) { this.musicOn = true; this.step = 0; this.nextTime = this.ctx.currentTime + 0.1; }
     this.zurnaOn = zurna;
@@ -216,7 +218,60 @@ export class AudioEngine {
     if (this.ctx) this._zurnaRest(this.ctx.currentTime);
   }
 
-  setTempo(bpm) { this.bpm = bpm; }
+  setTempo(bpm) {
+    if (this.themeOn) {
+      // hücumda tema hafifçe hızlanır (eski film hızlandırması gibi); davulcu da onunla
+      const r = Math.min(1.12, Math.max(1, bpm / THEME.bpm));
+      this.theme.src.playbackRate.setTargetAtTime(r, this.ctx.currentTime, 0.3);
+      this.bpm = THEME.bpm * r;
+      return;
+    }
+    this.bpm = bpm;
+  }
+
+  // ---------- Yarış müziği (indirilen parça) ----------
+  loadTheme() {
+    if (!this.ctx || this._themeLoad) return this._themeLoad;
+    this._themeLoad = fetch(THEME.url)
+      .then((r) => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+      .then((b) => this.ctx.decodeAudioData(b))
+      .then((buf) => { this.themeBuf = buf; if (this.themeWanted) this._startTheme(); })
+      .catch((e) => { console.warn('yarış müziği yüklenemedi', e); });
+    return this._themeLoad;
+  }
+
+  startTheme() {
+    this.themeWanted = true;
+    if (!this.ctx) return;
+    if (this.themeBuf) this._startTheme(); else this.loadTheme();
+  }
+
+  _startTheme() {
+    if (this.themeOn) return;
+    const c = this.ctx, t = c.currentTime + 0.05, spb = 60 / THEME.bpm;
+    const src = c.createBufferSource();
+    src.buffer = this.themeBuf; src.loop = true;
+    // döngü tam ölçü sayısında kapanır: davulcu vuruşları her turda aynı yere düşer
+    if (THEME.loopBeats) { src.loopStart = 0; src.loopEnd = Math.min(this.themeBuf.duration, THEME.loopBeats * spb); }
+    const g = c.createGain(); g.gain.value = THEME.vol;
+    src.connect(g).connect(this.musicBus);
+    src.start(t);
+    this.theme = { src, g };
+    this.themeOn = true;
+    // sentez davul-zurna susar; zamanlayıcı yalnızca davulcu animasyonu için temanın vuruşlarını sayar
+    this._zurnaRest(t);
+    this.zurnaOn = false;
+    this.musicOn = true; this.bpm = THEME.bpm; this.step = 0; this.nextTime = t + THEME.firstBeat;
+  }
+
+  stopTheme(fade = 0.6) {
+    this.themeWanted = false;
+    if (!this.theme) return;
+    const { src, g } = this.theme, t = this.ctx.currentTime;
+    g.gain.setTargetAtTime(0, t, fade / 3);
+    src.stop(t + fade + 0.1);
+    this.theme = null; this.themeOn = false;
+  }
 
   _schedule() {
     if (!this.ctx || !this.musicOn) return;
@@ -225,14 +280,15 @@ export class AudioEngine {
       const t = this.nextTime, eighth = 30 / this.bpm;
       const d = DRUM[this.step % DRUM.length];
       const v = 0.85 + Math.random() * 0.15;
-      if (d === 'D') this._dum(t, v);
-      else if (d === 't') this._tek(t, v);
-      if (this.intensity > 0.6 && d === '.') this._tek(t, 0.5); // coşkuda boşlukları doldur
+      const synth = !this.themeOn;
+      if (synth && d === 'D') this._dum(t, v);
+      else if (synth && d === 't') this._tek(t, v);
+      if (synth && this.intensity > 0.6 && d === '.') this._tek(t, 0.5); // coşkuda boşlukları doldur
       if (this.onBeat && d !== '.') {
         const delay = Math.max(0, (t - c.currentTime) * 1000);
         setTimeout(() => this.onBeat(d), delay);
       }
-      if (this.zurnaOn) {
+      if (this.zurnaOn && synth) {
         const m = MELODY[this.step % MELODY.length];
         if (typeof m === 'number') {
           let len = 1;

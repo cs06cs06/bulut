@@ -22,7 +22,8 @@ Ticari olmayan bir hayran oyunudur. Filmin görüntüsü ya da sesi kullanılmam
 - **Sinematik giriş:** Daver Bey'in kadife gölgelikli köşkünde iskeletli misafirler oturur (Leyla, apoletli sahte Tosun Paşa, Lütfü, Sıtkı, Akil). Masada Poly Haven çay takımı, nar ve elmalar var. Çığırtkan mendili havaya kaldırarak anons eder, davulcu IK ile tokmak ve çubukla davula vurur, yarışmacılar çuvallarını beline çeker.
 - **Seyirciler:** Prosedürel karakterlerin farklı pozları (alkış, sevinç, kollar kavuşturulmuş, eller belde, sohbet, el sallama) statik geometriye pişirilip örneklenir; kıyafet renkleri örnek başına boyanır. Kazık ve ip çitin arkasında heyecana göre zıplarlar.
 - **Çevre:** Stylized Nature MegaKit ağaçları, çalıları, çiçekleri, çimen öbekleri; yapraklar ve otlar rüzgârda salınır. Ayrıca PBR çuval bezi, çimen ve kadife dokuları, HDRI ortam ışığı, gerçek zamanlı gölgeler ve prosedürel bulutlu gökyüzü var.
-- **Ses:** Davul ve zurna tarayıcıda gerçek zamanlı sentezlenir (Hicaz makamı); mükemmel zıplayışların davula vurgu katar. Çığırtkan anonsları (cihazda Türkçe ses varsa konuşarak), altyazılar, ağır çekim bitiş, kopan kurdele ve konfeti de var.
+- **Yarış müziği:** "Başla!" ile birlikte Mozart'ın "Rondo alla Turca"sı yeniçeri bandosu düzenlemesiyle (klarnet, şehnay, pikolo, pizzicato yaylılar, fagot; büyük davul, zil, üçgen) girer, döngüye girer ve sonuç ekranında sürer. HÜCUM'da eski film hızlandırması gibi hafifçe hızlanır; davulcu animasyonu müziğin vuruşlarına kilitlidir. Ana menüye dönünce susar.
+- **Ses:** Menü ve girişte davul ve zurna tarayıcıda gerçek zamanlı sentezlenir (Hicaz makamı); mükemmel zıplayışların davula vurgu katar. Çığırtkan anonsları (cihazda Türkçe ses varsa konuşarak), altyazılar, ağır çekim bitiş, kopan kurdele ve konfeti de var.
 - **Mobil öncelikli:** Dikey ve yatay ekran, güvenli alan desteği, titreşim, 3 kalite seviyesi var. Zayıf cihazlar otomatik olarak düşük kaliteyle açılır. Seviye ayrıntısı (LOD) düzeyleri: oyuncu tam detay, köşk orta, kalabalık düşük. Çözünürlük kendiliğinden ayarlanır. PWA olarak çevrimdışı çalışır.
 - İsteğe bağlı **Yeşilçam filtresi**: 1976 film havası için sepya, gren ve çizik.
 
@@ -80,11 +81,26 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 | Çay takımı, nar, elma, oymalı tabak, ahşap kâse, pirinç fener, hasır sepet | [Poly Haven](https://polyhaven.com/models) | CC0 |
 | `ballawley_park` HDRI | [Poly Haven](https://polyhaven.com/a/ballawley_park) | CC0 |
 | `hessian_230` (çuval bezi), `leafy_grass` (çimen), `velour_velvet` (kadife) dokuları | [Poly Haven](https://polyhaven.com/textures) | CC0 |
+| Yarış müziği: Mozart, "Rondo alla Turca" KV 331/3 notası (MIDI) | [Mutopia Project](https://www.mutopiaproject.org/cgibin/piece-info.cgi?id=108) | Kamu malı |
+| Müziği sese çeviren ses fontu: FluidR3 GM (Frank Wen) | [fluid-soundfont](https://packages.debian.org/fluid-soundfont-gm) | MIT |
 | İniş ve arayüz sesleri | [Kenney Impact Sounds](https://kenney.nl/assets/impact-sounds), [Interface Sounds](https://kenney.nl/assets/interface-sounds) | CC0 |
 | Alkış, kalabalık, "ooo", kuş sesleri | [OpenGameArt.org](https://opengameart.org) | CC0 |
 | Lilita One, Nunito yazı tipleri | Google Fonts | SIL OFL 1.1 |
 | three.js r170 | [threejs.org](https://threejs.org) | MIT |
 | meshoptimizer 0.25 (karakter sadeleştirme) | [github.com/zeux/meshoptimizer](https://github.com/zeux/meshoptimizer) | MIT |
+
+## Yarış müziğini değiştirmek
+
+Yarış müziği `js/config.js` içindeki `THEME` ayarından gelir. Başka bir parça çalmak için dosyayı `assets/audio/` altına koyup `url`'yi değiştirin; `bpm` ve `firstBeat` (ilk güçlü vuruşun saniyesi) davulcuyu müziğe kilitler, `loopBeats` döngünün kaç vuruşta kapanacağını belirler (bilinmiyorsa `0` verin, parça baştan sona döner). Telif hakkı süren bir parçayı (örneğin filmin kendi müziğini) yalnızca kişisel kopyanızda kullanın, depoya ya da yayınlanan sürüme eklemeyin.
+
+Varsayılan parça `tools/` altındaki betikle yeniden üretilebilir:
+
+```bash
+pip install mido   # ayrıca: fluidsynth ve fluid-soundfont-gm paketleri
+python3 tools/tema-duzenle.py KV331_3_RondoAllaTurca.mid tema.mid
+fluidsynth -ni -F tema.wav -r 44100 -g 0.32 /usr/share/sounds/sf2/FluidR3_GM.sf2 tema.mid
+ffmpeg -i tema.wav -af "atrim=0:124.5,afade=t=out:st=122.5:d=2,loudnorm=I=-16:TP=-1.5" -b:a 96k assets/audio/tema.mp3
+```
 
 ## Test
 
