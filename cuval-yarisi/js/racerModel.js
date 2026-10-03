@@ -1,7 +1,7 @@
 // Çuvallı yarışmacı: iskeletli karakter + PBR çuval bezi.
 // Animasyon kütüphanesi gövdeyi canlandırır; bacaklar çuvalın içinde sabitlenir, eller IK ile çuval ağzını tutar.
 import * as THREE from 'three';
-import { createCharacter, solveArmIK } from './characters.js';
+import { createCharacter, solveArmIK } from './avatars.js';
 import { sackTexture, blobMaterial } from './people.js';
 import { SackCloth, sackMaterial } from './sack.js';
 import { assets } from './assets.js';
@@ -36,9 +36,9 @@ export function buildRacer(def, num, lod = false, clothLod = false) {
   root.add(sack);
 
   // karakter
-  const ch = createCharacter({ sex: 'f', lod, look, grip: 0.95 });
+  const ch = createCharacter({ sex: 'f', variant: def.id, look });
   ch.root.rotation.y = Math.PI;
-  ch.root.scale.setScalar(look.height ?? 1);
+  ch.root.scale.setScalar((look.height ?? 1) * 0.95);
   tilt.add(ch.root);
   ch.play('Idle_Loop');
   const rimR = cloth.rimR;

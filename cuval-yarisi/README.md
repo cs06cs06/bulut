@@ -15,18 +15,18 @@ Ticari olmayan bir hayran oyunudur. Filmin görüntüsü ya da sesi kullanılmam
 
 ## Neler var
 
-- **Tamamen kodla üretilen karakterler:** Hiçbir karakter modeli indirilmez. Baş, eller, başörtüsü, fes ve katmanlı kıyafetler işaretli uzaklık alanlarıyla (SDF) heykel gibi yontulur, Web Worker'larda surface nets ile yüzeye çevrilir ve meshoptimizer ile hedef üçgen sayısına sadeleştirilir (oyuncu ~24 bin, orta ~9 bin, kalabalık ~1,6 bin üçgen). Bölge sınırları analitik sınıra kaydırılarak sırma kenarları pürüzsüz kalır.
-- **Osmanlı kıyafetleri ve kumaş shader'ları:** Kadınlarda V yakalı kutnu entari, altın sırmalı ve lale motifli kadife yelek, çizgili kuşak, oyalı çiçekli yemeni; erkeklerde redingot (pirinç düğmeli), apoletli üniforma, köylü cepkeni ve şalvar, fes ve sakal. Desenler, sırma, kadife parlaklığı ve kabartma tek bir prosedürel shader'da çizilir; tek karakter 2 çizim çağrısıdır.
-- **Canlı yüzler:** Göz kapağı, kirpik, kaş ve dudaklar morph hedefleriyle göz kırpar, gülümser, zorlanır, şaşırır. Bakış rastgele gezinir, konuşanların ağzı oynar, başörtüsünün ucu yaylı fizikle sallanır.
-- **Halat çekme:** Filmdeki kır eğlencesinde Tellioğulları'nın kaybettiği tek oyun. Dörder delikanlı (Tellioğulları'nda Şaban da var) pistin ortasında ipe asılır; prosedürel erkek karakterler geriye yaslanıp çömelir, bacaklar ve eller IK ile yere ve ipe oturur. İp her karede yeniden kurulan lif dokulu bir tüptür, gerginliğe göre sarkar; ortadaki kırmızı kurdele kireç çizgisini geçince oyun biter. Oyuncu davul-zurnanın her "güm"ünde ÇEK!'e dokunur: tam vuruş tam güç verir, kaçırmak ve arka arkaya basmak nefesi tüketir. Art arda mükemmel çekişler seri kurar ve HEP BERABER göstergesini doldurur (basınca birkaç vuruş tüm takım tek yürek asılır). Seferoğulları ara ara toplu asılır, formu değişir; zorluk seviyeleri insan benzeri zamanlama hatasıyla simüle edilerek ayarlandı. Sonunda kazananlar sevinir, kaybedenler sürüklenir.
+- **Gerçekçi karakterler:** Bütün insanlar [Microsoft Rocketbox](https://github.com/microsoft/Microsoft-Rocketbox) avatar kütüphanesinden (MIT) geliyor. FBX'ler `tools/build-rocketbox.cjs` ile GLB'ye çevrilir, dokular WebP'ye, geometri meshopt ile sıkıştırılır (avatar başına ~7 bin üçgen, kalabalık LOD'u ~2,5 bin). Yarışmacılar entari ve yemenili `Female_Adult_06`; her birinin entarisi (çizgili kırmızı/mavi, pembe vb.), yemenisinin çiçek deseni ve oyası `tools/rocketbox-textures.py` ile ayrı ayrı yeniden boyanır. Erkekler takım elbise ve yelekli Rocketbox avatarları; başlarına Printables'tan indirilen bir fes (Esteban Chardonnet, CC BY) kemiğe bağlanarak giydirilir, takımlarda kuşak takılır.
+- **Hareket yakalama:** Bekleme, sevinç, alkış, dans, el sallama, konuşma, anons, oturma, gülme ve onaylama klipleri Rocketbox'ın 400'ü aşkın mocap animasyonundan seçilip yalnızca biped kemik dönüşleri bırakılarak sıkıştırılır (toplam ~2 MB). Klipler arasında yumuşak geçiş yapılır.
+- **Canlı yüzler:** Rocketbox yüz kemikleriyle göz kapakları kırpılır, çene konuşurken, sevinirken, zorlanırken ve şaşırırken açılır.
+- **Halat çekme:** Filmdeki kır eğlencesinde Tellioğulları'nın kaybettiği tek oyun. Dörder delikanlı (Tellioğulları'nda Şaban da var) pistin ortasında ipe asılır; fesli, kuşaklı erkekler geriye yaslanıp çömelir, bacaklar ve eller IK ile yere ve ipe oturur. İp her karede yeniden kurulan lif dokulu bir tüptür, gerginliğe göre sarkar; ortadaki kırmızı kurdele kireç çizgisini geçince oyun biter. Oyuncu davul-zurnanın her "güm"ünde ÇEK!'e dokunur: tam vuruş tam güç verir, kaçırmak ve arka arkaya basmak nefesi tüketir. Art arda mükemmel çekişler seri kurar ve HEP BERABER göstergesini doldurur (basınca birkaç vuruş tüm takım tek yürek asılır). Seferoğulları ara ara toplu asılır, formu değişir; zorluk seviyeleri insan benzeri zamanlama hatasıyla simüle edilerek ayarlandı. Sonunda kazananlar sevinir, kaybedenler sürüklenir.
 - **Kır eğlencesi turnuvası:** Menüden "Kır eğlencesi" seçilince çuval yarışı ve halat çekme art arda oynanır. Çuval yarışının takım puanlarına halat çekmenin galibi için 10 puan eklenir, şampiyon aile ilan edilir.
 - **Çamur birikintileri:** Her kulvarda iki ıslak çamur birikintisi var; yüzey gökyüzünü yansıtır, basılınca halka halka dalgalanır. Çamura inen yarışmacının çuvalı kirlenir (kumaşın alt kısmı düzensiz bir çizgiye kadar çamurlanır, sıçrama lekeleri olur, ıslakken parlar), kahverengi damlalar sıçrar, "şlap" sesi gelir. Çamurdan ancak MÜKEMMEL bir zıplayışla temiz çıkılır; yoksa çuval yapışır, yavaşlarsın ve dengen sarsılır. Kural rakipler için de geçerlidir.
 - **Etkileşimli eğitim:** İlk yarışta koç devreye girer: ilk dokunuşa kadar zaman durur, yeşil pencerede zaman yavaşlar ve "ŞİMDİ!" yanar; ilk çamurda ve coşku ilk dolduğunda (HÜCUM) yine yavaşlayıp ne yapılacağını söyler. "Nasıl oynanır?" ekranından istendiğinde yeniden oynanabilir.
 - **Kumaş simülasyonu ile çuval:** Çuval artık sert bir model değil, konum tabanlı dinamik (PBD) bir kumaş: 20×12 parçacık, mesafe, kesme ve eğilme kısıtları. Gerçek un çuvalı gibi düz dikilmiş bir torbadır; altında dikiş çizgisi ve iki köşe "kulağı", üstünde dışa kıvrılmış kalın bir ağız kenarı vardır. Ağız ellerde ve belde tutulur (elin olduğu yerde kumaş toplanır), içerideki bacak ve ayaklarla çarpışır, inişte yere yayılıp sürtünür, zıplarken savrulur, düşünce yere serilir; girişte dizlerdeyken yere yığılır. Kumaşın sıkıştığı yerlerde kıvrımlar oluşur: geometride gerçek katlar, gölgelendiricide sıkışmaya bağlı kırışık kabartması, kıvrım diplerinde ve yere değen kısımda koyulaşma. Görüntü ağı simülasyondan Catmull-Rom ile 52×30 çözünürlükte üretilir; 6 çuvalın hepsi kare başına yaklaşık 2,5 ms tutar (düşük kalitede daha az).
-- **Çuval içinde animasyon:** Prosedürel iskelet "A" pozunda bağlanır, klipler (bekleme, zıplama, düşme, dans, alkış, el sallama) kodla üretilir. Bacaklar çuvalın içinde sabitlenir, eller iki kemikli IK ile çuval ağzını kavrar ve zıplarken yukarı çeker.
-- **Sinematik giriş:** Daver Bey'in kadife gölgelikli köşkünde iskeletli misafirler oturur (Leyla, apoletli sahte Tosun Paşa, Lütfü, Sıtkı, Akil). Masada Poly Haven çay takımı, nar ve elmalar var. Çığırtkan mendili havaya kaldırarak anons eder, davulcu IK ile tokmak ve çubukla davula vurur, yarışmacılar çuvallarını beline çeker.
-- **Seyirciler:** Prosedürel karakterlerin farklı pozları (alkış, sevinç, kollar kavuşturulmuş, eller belde, sohbet, el sallama) statik geometriye pişirilip örneklenir; kıyafet renkleri örnek başına boyanır. Kazık ve ip çitin arkasında heyecana göre zıplarlar.
-- **Çevre:** Stylized Nature MegaKit ağaçları, çalıları, çiçekleri, çimen öbekleri; yapraklar ve otlar rüzgârda salınır. Ayrıca PBR çuval bezi, çimen ve kadife dokuları, HDRI ortam ışığı, gerçek zamanlı gölgeler ve prosedürel bulutlu gökyüzü var.
+- **Çuval içinde animasyon:** Yarışmacının belden aşağısı çuvalın içinde kalır (gölgelendiricide dinlenme pozundaki yüksekliğe göre kesilir), eller iki kemikli IK ile çuval ağzını kavrar ve zıplarken yukarı çeker.
+- **Sinematik giriş:** Daver Bey'in kadife gölgelikli köşkünde fesli misafirler Poly Haven sandalyelerinde oturur (Leyla pembe entarisiyle, kuşaklı sahte Tosun Paşa, Lütfü, Sıtkı, Akil); konuşanlar el kol hareketi yapar. Masada Poly Haven çay takımı, nar ve elmalar var. Çığırtkan anons klibiyle mendili sallar, davulcu IK ile tokmak ve çubukla davula vurur, yarışmacılar çuvallarını beline çeker.
+- **Seyirciler:** Rocketbox avatarlarının sadeleştirilmiş kopyaları mocap kliplerinin bir anında (alkış, sevinç, sohbet, el sallama) dondurulup statik geometriye pişirilir ve örneklenir; çarşaflı kadınlar, renkli entarili köylü kadınlar, fesli erkekler. Kazık ve ip çitin arkasında heyecana göre zıplarlar.
+- **Çevre:** Bütün bitki ve eşyalar Poly Haven'dan (CC0). Ağaçlar (zeytin benzeri ada ağaçları, ince gövdeli ağaç, çam) 1–7 milyon üçgenlik taramalar olduğundan tarayıcıda üç açıdan render edilip tek bir atlasa basılır ve 60°'lik kesişen düzlemlere giydirilir (ağaç başına 6 üçgen). Çalılar, eğrelti, kır çiçekleri (gazanya, ursinia, kırlangıçotu, karahindiba, cezayir menekşesi), çimen öbekleri, yosunlu taşlar ve kütük sadeleştirilip örneklenir; yapraklar ve otlar rüzgârda salınır. Davulcunun yanında boyalı bank, testi, sepet ve kova; başlangıç ve bitişte fıçı, sandık, katlanır tabure durur. Ayrıca PBR çuval bezi, çimen ve kadife dokuları, HDRI ortam ışığı, gerçek zamanlı gölgeler ve prosedürel bulutlu gökyüzü var.
 - **Yarış müziği:** "Başla!" ile birlikte Santuri Ethem Efendi'nin Tosun Paşa filminde de çalan "Şehnaz Longa"sı girer. Fasıl topluluğu düzenlemesinde keman ve klarnet ezgiyi, arp (kanun yerine) ve naylon gitar (ud yerine) heterofoniyi, darbuka ve def Sofyan usulünü çalar. Perdeler 53 koma sisteminden pitch bend ile seslendirilir, böylece Şehnaz'ın Hicaz aralıkları korunur. Müzik döngüye girer, sonuç ekranında sürer, HÜCUM'da hafifçe hızlanır; davulcu animasyonu vuruşlara kilitlidir. Ana menüye dönünce susar.
 - **Ses:** Menü ve girişte davul ve zurna tarayıcıda gerçek zamanlı sentezlenir (Hicaz makamı); mükemmel zıplayışların davula vurgu katar. Çığırtkan anonsları (cihazda Türkçe ses varsa konuşarak), altyazılar, ağır çekim bitiş, kopan kurdele ve konfeti de var.
 - **Mobil öncelikli:** Dikey ve yatay ekran, güvenli alan desteği, titreşim, 3 kalite seviyesi var. Zayıf cihazlar otomatik olarak düşük kaliteyle açılır. Seviye ayrıntısı (LOD) düzeyleri: oyuncu tam detay, köşk orta, kalabalık düşük. Çözünürlük kendiliğinden ayarlanır. PWA olarak çevrimdışı çalışır.
@@ -34,17 +34,21 @@ Ticari olmayan bir hayran oyunudur. Filmin görüntüsü ya da sesi kullanılmam
 
 ## Asset hattı
 
-Ham paketler `tools/build-assets.mjs` ile mobil için işlenir:
-
-- Gereksiz UV ve renk kanalları atılır, dokular WebP'ye çevrilip 1024/512/256 piksele küçültülür.
-- Doğa ve obje setleri ortak dokuları paylaşan tek GLB'lere birleştirilir. Ağaç kabukları ayrıca sadeleştirilir.
+Ham asset'ler `tools/` altındaki betiklerle mobil için işlenir (`npm i @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 sharp meshoptimizer playwright`):
 
 ```bash
-npm i @gltf-transform/core@4 @gltf-transform/functions@4 @gltf-transform/extensions@4 sharp meshoptimizer
-node tools/build-assets.mjs <ham-paketler> assets/models
+# 1) Karakterler: Rocketbox deposundaki Assets klasörü + FBX2glTF
+python3 tools/rocketbox-textures.py <Rocketbox/Assets> <doku-klasörü>        # TGA -> PNG, entari/yemeni varyantları
+node tools/build-rocketbox.cjs <Rocketbox/Assets> <doku-klasörü> <FBX2glTF> <fez.stl> assets/avatars
+# 2) Ağaç billboard'ları: Poly Haven glTF'leri tarayıcıda üç açıdan render edilir, sonra atlasa dizilir
+OUT=<bake-klasörü> node tools/tree-bake.mjs island_tree_01 island_tree_02 island_tree_03 tree_small_02   # tree-bake.html, three/ ve ph/ klasörünü sunan bir sunucu gerekir
+# çam: pine_tree_01'deki üç ağaçtan 'b' ayrı bir GLB'ye çıkarılıp F=/ph/pine_b/pine_b_1k.glb ile pişirilir (pine_b)
+python3 tools/tree-atlas.py <bake-klasörü> trees_atlas.webp trees_atlas.json island_tree_01 island_tree_02 island_tree_03 tree_small_02 pine_b
+# 3) Doğa, eşya ve masa takımı paketleri
+node tools/build-assets.mjs <poly-haven-klasörü> trees_atlas.webp trees_atlas.json assets/models
 ```
 
-`tools/lab.html` prosedürel karakter üretimini, yüz ifadelerini ve poz pişirmeyi tek başına görmek için bir test sahnesidir (`?view=face&i=0`, `side`, `back`).
+Bitkiler sadeleştirilir, yaprak malzemeleri alfa maskeye çevrilir, köşe renkleri (Poly Haven'da maske olarak kullanılıyor) atılır, dokular WebP'ye küçültülür, geometri quantize edilip meshopt ile sıkıştırılır. `tools/avatar-lab.html` avatarları ve klipleri, `tools/env-lab.html` doğa/eşya paketlerini tek başına görmek için test sahneleridir.
 
 ## Çalıştırma
 
@@ -64,10 +68,7 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 | --- | --- |
 | `js/main.js` | Oyun döngüsü, durumlar, kamera, sinematik, HUD, menüler |
 | `js/racer.js` | Zıplama fiziği, ritim değerlendirmesi, denge/düşme, yapay zekâ |
-| `js/characters.js` | Prosedürel karakter: parça üretim havuzu, deri ağırlıkları, yüz morph'ları, kumaş shader'ı, klipler, IK, kalabalık poz pişirme |
-| `js/proc/sdf.js` | SDF ilkelleri ve birleşimleri, surface nets yüzey çıkarımı |
-| `js/proc/shapes.js` | İskelet, baş/yüz, başörtüsü, fes, el ve kıyafet heykelleri; bölge sınırı yumuşatma |
-| `js/proc/worker.js` | Parçaları arka planda üretip meshoptimizer ile sadeleştiren Web Worker |
+| `js/avatars.js` | Rocketbox avatarları: yükleme, varyant dokuları, fes ve kuşak, mocap klipleri ve geçişler, göz kırpma/çene, çuval içi kesme, kol IK'sı, kalabalık poz pişirme |
 | `js/racerModel.js` | Çuvallı yarışmacı: karakter + çuval, bacak sabitleme, el IK'sı |
 | `js/tug.js` | Halat çekme: takımlar, poz ve IK, dinamik ip, vuruş ızgarası, YZ ve ip fiziği |
 | `js/mud.js` | Çamur birikintileri: yerleşim, ıslak yüzey ve dalga gölgelendiricisi, çarpışma sorgusu |
@@ -80,13 +81,15 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 
 ## Harici asset'ler ve lisanslar
 
-Çevre, obje, doku ve ses asset'leri serbest lisanslı kaynaklardan indirilip mobil için yeniden işlendi. Karakterler indirilmez, kodla üretilir.
+Karakter, çevre, obje, doku ve ses asset'leri serbest lisanslı kaynaklardan indirilip mobil için yeniden işlendi.
 
 | Asset | Kaynak | Lisans |
 | --- | --- | --- |
-| Ağaç, çalı, çiçek, çimen, taş | [Quaternius – Stylized Nature MegaKit](https://quaternius.com/packs/stylizednaturemegakit.html) | CC0 |
-| Sandalye, elma fıçısı | [Quaternius – Fantasy Props MegaKit](https://quaternius.com/packs/fantasypropsmegakit.html) | CC0 |
-| Çay takımı, nar, elma, oymalı tabak, ahşap kâse, pirinç fener, hasır sepet | [Poly Haven](https://polyhaven.com/models) | CC0 |
+| Karakterler (Female_Adult_06/10, Business_Male_01–06, Male_Adult_15) ve hareket yakalama animasyonları | [Microsoft Rocketbox Avatar Library](https://github.com/microsoft/Microsoft-Rocketbox) | MIT |
+| Fes ("Just a FEZ") | [Printables – Esteban Chardonnet](https://www.printables.com/model/601430) | CC BY |
+| Ağaçlar (island_tree_01–03, tree_small_02, pine_tree_01), çalılar (shrub_02/03, searsia_lucida), eğrelti, kır çiçekleri, çimen öbekleri, yosunlu taşlar, kütük | [Poly Haven](https://polyhaven.com/models/nature) | CC0 |
+| Sandalye, bank, tabureler, fıçılar, kova, sandık, sepetler, testi | [Poly Haven](https://polyhaven.com/models) | CC0 |
+| Çay takımı, nar, elma, oymalı tabak, ahşap kâse, pirinç fener | [Poly Haven](https://polyhaven.com/models) | CC0 |
 | `ballawley_park` HDRI | [Poly Haven](https://polyhaven.com/a/ballawley_park) | CC0 |
 | `hessian_230` (çuval bezi), `leafy_grass` (çimen), `velour_velvet` (kadife) dokuları | [Poly Haven](https://polyhaven.com/textures) | CC0 |
 | Yarış müziği notası: Santuri Ethem Efendi (1855–1926), "Şehnaz Longa" (beste kamu malı) | [SymbTr](https://github.com/MTG/SymbTr), M. K. Karaosmanoğlu, ISMIR 2012 | CC BY-NC-SA 4.0 (nota verisi ve ondan üretilen `assets/audio/tema.mp3`) |
@@ -95,7 +98,7 @@ Sonra telefondan aynı ağdaki `http://<bilgisayar-ip>:8080` adresini aç. GitHu
 | Alkış, kalabalık, "ooo", kuş sesleri | [OpenGameArt.org](https://opengameart.org) | CC0 |
 | Lilita One, Nunito yazı tipleri | Google Fonts | SIL OFL 1.1 |
 | three.js r170 | [threejs.org](https://threejs.org) | MIT |
-| meshoptimizer 0.25 (karakter sadeleştirme) | [github.com/zeux/meshoptimizer](https://github.com/zeux/meshoptimizer) | MIT |
+| meshoptimizer (sıkıştırılmış geometri çözücüsü, three.js ile gelir) | [github.com/zeux/meshoptimizer](https://github.com/zeux/meshoptimizer) | MIT |
 
 ## Yarış müziğini değiştirmek
 

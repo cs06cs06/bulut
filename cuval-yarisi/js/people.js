@@ -1,5 +1,5 @@
 // Prosedürel yardımcılar: renkli geometri birleştirme, çuval bezi dokusu, zemin gölgesi.
-// (İnsan karakterleri js/characters.js, çuval kumaşı js/sack.js içinde üretilir.)
+// (İnsan karakterleri js/avatars.js'te Rocketbox avatarlarından kurulur, çuval kumaşı js/sack.js içinde üretilir.)
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { assets } from './assets.js';

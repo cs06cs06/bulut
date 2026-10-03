@@ -3,7 +3,7 @@
 // tam güç verir, vuruşu kaçırmak ya da üst üste basmak nefesi tüketir. Mükemmel çekişler
 // "HEP BERABER!" göstergesini doldurur. Seferoğulları ara ara toplu asılır.
 import * as THREE from 'three';
-import { createCharacter, solveArmIK } from './characters.js';
+import { createCharacter, solveArmIK } from './avatars.js';
 
 export const TUG = {
   z: -25,            // pistin ortası (iki çamur kuşağının arası)
@@ -25,6 +25,13 @@ const SPACING = 0.95, FIRST = 1.05, ROPE_Y = 0.9, K_IMP = 0.72;
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _p = new THREE.Vector3(), _q = new THREE.Quaternion(), _ax = new THREE.Vector3();
 const AX = { x: new THREE.Vector3(1, 0, 0), y: new THREE.Vector3(0, 1, 0), z: new THREE.Vector3(0, 0, 1) };
 const rotLocal = (bone, axis, a) => { _q.setFromAxisAngle(AX[axis], a); bone.quaternion.multiply(_q); };
+// kemiği karakter kökünün eksenlerinde kaydır (ebeveyn çerçevesi ne olursa olsun)
+const _m3 = new THREE.Matrix3(), _m4 = new THREE.Matrix4();
+function offsetInRoot(root, bone, x, y, z) {
+  _v.set(x, y, z).applyMatrix3(_m3.setFromMatrix4(root.matrixWorld));
+  _v.applyMatrix3(_m3.setFromMatrix4(_m4.copy(bone.parent.matrixWorld).invert()));
+  bone.position.add(_v);
+}
 
 // ---------- İp: kenetli lif dokulu, her karede yeniden kurulan tüp ----------
 class Rope {
@@ -102,7 +109,7 @@ export class TugOfWar {
     for (const [key, side] of [['telli', -1], ['sefer', 1]]) {
       const T = TUG_TEAMS[key];
       const men = T.men.map((name, i) => {
-        const ch = createCharacter({ sex: 'm', lod: 'mid', outfit: 'villager', fez: true, beard: i % 2 === 1, main: T.main, trim: T.trim, sash: T.sash, pants: T.pants, skin: [0xd9a07a, 0xc98e66, 0xe2ae88, 0xb98058][i] });
+        const ch = createCharacter({ sex: 'm', outfit: 'villager', pick: i, fez: true, sash: T.main });
         ch.play('Idle_Loop');
         this.group.add(ch.root);
         return { ch, name, i, phase: Math.random() * 6 };
@@ -244,13 +251,15 @@ export class TugOfWar {
         if (m.clip) { m.clip = null; ch.play('Idle_Loop', { fade: 0.1 }); }
         ch.update(dt);
         const lean = lost ? t.lean * (1 - fall) : t.lean;
+        // leğen: çömel ve geri otur (karakter uzayında: -z geri), biped eksenlerinden bağımsız
         B.pelvis.position.copy(ch.restPos.pelvis);
-        B.pelvis.position.y -= 0.12 + lean * 0.06 - (lost ? fall * 0.05 : 0);
-        B.pelvis.position.z -= 0.06 + lean * 0.12 - (lost ? fall * 0.12 : 0);
-        rotLocal(B.spine_01, 'x', -lean * 0.62 + (lost ? fall * 0.75 : 0));
-        rotLocal(B.spine_02, 'x', -lean * 0.12);
-        rotLocal(B.spine_03, 'x', 0.1);
-        rotLocal(B.Head, 'x', 0.22 + lean * 0.25 - (lost ? fall * 0.3 : 0));
+        ch.root.updateMatrixWorld(true);
+        offsetInRoot(ch.root, B.pelvis, 0, -(0.12 + lean * 0.06 - (lost ? fall * 0.05 : 0)), -(0.06 + lean * 0.12 - (lost ? fall * 0.12 : 0)));
+        // biped omurgası: yerel z yan eksen (+ öne eğer)
+        rotLocal(B.spine_01, 'z', -lean * 0.62 + (lost ? fall * 0.75 : 0));
+        rotLocal(B.spine_02, 'z', -lean * 0.12);
+        rotLocal(B.spine_03, 'z', 0.1);
+        rotLocal(B.Head, 'z', 0.22 + lean * 0.25 - (lost ? fall * 0.3 : 0));
         ch.root.updateMatrixWorld(true);
         // ayaklar yere: öndeki ayak ileride, arkadaki geride (bacak IK)
         const step = Math.sin(this.time * 2 + m.phase) * 0.03;

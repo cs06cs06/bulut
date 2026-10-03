@@ -2,10 +2,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
-import { loadCharacterParts } from './characters.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { loadCharacterParts } from './avatars.js';
 
 const TEX = 'assets/textures/';
-// Quaternius Stylized Nature MegaKit, Fantasy Props MegaKit ve Poly Haven objeleri (tools/build-assets.mjs ile paketlendi)
+// Poly Haven (CC0) bitkileri, ağaç billboard'ları, köy eşyaları ve masa takımı (tools/build-assets.mjs ile paketlendi)
 const MODELS = ['nature', 'props', 'polyhaven'];
 export const SOUNDS = [
   'alkis', 'kalabalik', 'ooo', 'kuslar', 'zipla_0', 'zipla_1', 'cuval_0', 'cuval_1',
@@ -73,7 +74,7 @@ export async function loadAll(renderer, onProgress) {
 
   track(loadBin('assets/hdri/ballawley_park_1k.hdr').then((b) => { assets.hdr = hdrTexture(b); }));
 
-  const gl = new GLTFLoader();
+  const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
   for (const m of MODELS) {
     track(loadBin(`assets/models/${m}.glb`).then((b) => gl.parseAsync(b, '')).then((g) => { assets.models[m] = g.scene; }));
   }

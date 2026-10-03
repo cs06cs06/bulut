@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>env lab</title>
+<style>html,body{margin:0;height:100%;background:#223}canvas{display:block}</style>
+<script type="importmap">{ "imports": { "three": "../vendor/three/three.module.js", "three/addons/": "../vendor/three/addons/" } }</script>
+</head><body><script type="module">
+// Doğa/eşya paketlerindeki her düğümü ızgaraya dizer: ?set=nature|props|polyhaven&s=ölçek&cam=x,y,z
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+const q = new URLSearchParams(location.search);
+const set = q.get('set') || 'nature', only = q.get('only');
+const renderer = new THREE.WebGLRenderer({ antialias: true }); renderer.setSize(innerWidth, innerHeight); document.body.appendChild(renderer.domElement);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.shadowMap.enabled = true;
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x9fb6c8);
+scene.add(new THREE.HemisphereLight(0xdde8ff, 0x556644, 1.4));
+const sun = new THREE.DirectionalLight(0xfff2dd, 2.6); sun.position.set(4, 8, 5); sun.castShadow = true;
+Object.assign(sun.shadow.camera, { left: -12, right: 12, top: 12, bottom: -12 }); sun.shadow.mapSize.set(2048, 2048); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 80), new THREE.MeshStandardMaterial({ color: 0x6b8a3a })); ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+const gl = new GLTFLoader(); gl.setMeshoptDecoder(MeshoptDecoder);
+const g = (await gl.loadAsync(`../assets/models/${set}.glb`)).scene;
+const items = g.children.slice().filter((n) => !only || new RegExp(only).test(n.name));
+const N = Math.ceil(Math.sqrt(items.length)), sp = +(q.get('sp') || 1.2), S = +(q.get('s') || 1);
+const labels = [];
+items.forEach((n, i) => {
+  n.position.set(((i % N) - (N - 1) / 2) * sp, 0, (Math.floor(i / N) - (N - 1) / 2) * sp); n.scale.setScalar(S);
+  n.traverse((o) => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+  scene.add(n); labels.push(n.name);
+});
+const c = (q.get('cam') || `0,${N * sp * 0.7},${N * sp * 1.1}`).split(',').map(Number);
+const cam = new THREE.PerspectiveCamera(35, innerWidth / innerHeight, 0.05, 300); cam.position.set(...c); cam.lookAt(0, +(q.get('ty') || 0.2), 0);
+renderer.render(scene, cam);
+window.__labels = labels; window.__ready = true;
+</script></body></html>

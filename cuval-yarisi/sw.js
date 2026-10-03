@@ -1,8 +1,8 @@
 // Çevrimdışı oynama: önce önbellek, yoksa ağ (indirilenler önbelleğe yazılır)
-const CACHE = 'cuval-yarisi-v7';
+const CACHE = 'cuval-yarisi-v8';
 const CORE = ['./', 'index.html', 'css/style.css', 'js/main.js', 'js/assets.js', 'js/audio.js', 'js/config.js',
-  'js/fx.js', 'js/people.js', 'js/racer.js', 'js/world.js', 'js/characters.js', 'js/racerModel.js', 'js/sack.js', 'js/mud.js', 'js/tug.js', 'js/proc/sdf.js', 'js/proc/shapes.js', 'js/proc/worker.js',
-  'vendor/meshoptimizer/meshopt_simplifier.module.js', 'vendor/three/three.module.js',
+  'js/fx.js', 'js/people.js', 'js/racer.js', 'js/world.js', 'js/avatars.js', 'js/racerModel.js', 'js/sack.js', 'js/mud.js', 'js/tug.js',
+  'vendor/three/three.module.js', 'vendor/three/addons/libs/meshopt_decoder.module.js', 'vendor/three/addons/utils/SkeletonUtils.js',
   'vendor/three/addons/loaders/GLTFLoader.js', 'vendor/three/addons/loaders/RGBELoader.js',
   'vendor/three/addons/utils/BufferGeometryUtils.js', 'manifest.webmanifest', 'icons/icon.svg', 'assets/audio/tema.mp3'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE)).then(() => self.skipWaiting())); });

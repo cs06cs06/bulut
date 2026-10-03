@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { assets } from './assets.js';
 import { TRACK } from './config.js';
 import { MAT, paint, merge, personMesh } from './people.js';
-import { createCharacter, bakePose, solveArmIK, APOSE } from './characters.js';
+import { createCharacter, bakePose, solveArmIK, APOSE } from './avatars.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 // Model setinden adıyla bir nesnenin kopyası
@@ -41,6 +41,20 @@ function windMaterial(mat, amp, U) {
 }
 
 // Statik birleştirme: bir gruptaki hareketsiz meshleri malzemeye göre tek mesh'e toplar (çizim çağrısını azaltır)
+// meshopt/quantize ile sıkıştırılmış (Int16 normalize) öznitelikleri dönüştürülebilir Float32 kopyaya çevirir
+function floatCopy(src, keys) {
+  const g = new THREE.BufferGeometry();
+  for (const k of keys) {
+    const a = src.attributes[k];
+    if (!a) continue;
+    const f = new Float32Array(a.count * a.itemSize);
+    for (let i = 0; i < a.count; i++) for (let j = 0; j < a.itemSize; j++) f[i * a.itemSize + j] = a.getComponent(i, j);
+    g.setAttribute(k, new THREE.BufferAttribute(f, a.itemSize));
+  }
+  if (src.index) g.setIndex(new THREE.BufferAttribute(Uint32Array.from(src.index.array), 1));
+  return g;
+}
+
 function staticBatch(group) {
   group.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(group.matrixWorld).invert();
@@ -48,11 +62,10 @@ function staticBatch(group) {
   const visit = (o) => {
     if (o.userData.dynamic) return;
     if (o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && !Array.isArray(o.material)) {
-      const g = o.geometry.index ? o.geometry.clone() : o.geometry.clone();
-      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
       const keep = ['position', 'normal', 'uv'];
       if (o.material.vertexColors) keep.push('color');
-      for (const k of Object.keys(g.attributes)) if (!keep.includes(k)) g.deleteAttribute(k);
+      const g = floatCopy(o.geometry, keep);
+      g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
       if (!g.attributes.normal) g.computeVertexNormals();
       if (!g.attributes.uv) g.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
       const g2 = g.index ? g : g.toNonIndexed();
@@ -76,23 +89,6 @@ function staticBatch(group) {
 }
 
 // Sahte Tosun Paşa'nın altın apoletleri ve madalyaları
-function addEpaulettes(c) {
-  const gold = new THREE.MeshStandardMaterial({ color: 0xe0b44a, metalness: 0.85, roughness: 0.3 });
-  const parts = [new THREE.CylinderGeometry(0.075, 0.075, 0.02, 18)];
-  for (let k = 0; k < 10; k++) {
-    const a = (k / 10) * Math.PI * 2;
-    parts.push(new THREE.CylinderGeometry(0.006, 0.006, 0.07, 4).translate(Math.cos(a) * 0.07, -0.035, Math.sin(a) * 0.07));
-  }
-  const geo = mergeGeometries(parts);
-  for (const n of ['upperarm_l', 'upperarm_r']) {
-    const m = new THREE.Mesh(geo, gold);
-    // kemik A pozunda bağlı: apoleti sarkık kol çerçevesine geri çevir
-    m.rotation.z = (n.endsWith('l') ? 1 : -1) * APOSE;
-    m.position.set(0, 0.03, 0).applyEuler(m.rotation);
-    c.bones[n].add(m);
-  }
-}
-
 const L = TRACK.length;
 export const HALF = (TRACK.lanes * TRACK.laneWidth) / 2;
 const rand = mulberry(7);
@@ -131,6 +127,7 @@ export class World {
     this.kosk();
     this.crowdBuild();
     this.musicians();
+    this.village();
     this.trees();
     this.grassField();
   }
@@ -452,31 +449,31 @@ export class World {
     onTable('wooden_bowl_01', 0.05, 0.05, 1.2);
     const basket = propClone('polyhaven', 'wicker_basket_01');
     if (basket) { basket.position.set(-W / 2 - 0.35, 0, D / 2 + 0.2); g.add(basket); }
-    const barrel = propClone('props', 'Barrel_Apples');
+    const barrel = propClone('props', 'barrel');
     if (barrel) { barrel.position.set(-W / 2 - 0.3, 0, -D / 2 - 0.5); barrel.scale.setScalar(0.85); g.add(barrel); }
 
     // ileri gelenler: iskeletli karakterler masanın arkasında oturur, piste bakar (-X)
     const seatX = 0.32;
+    // Rocketbox avatarları: takım elbiseli, fesli efendiler; Leyla entari-yemeni ile
     const vip = [
-      { z: -3.0, sex: 'm', outfit: 'coat', main: 0x55555c, trim: 0x8a7a50, beard: true, hairColor: 0xcfccc4, skin: 0xd9a587, clip: 'Sitting_Idle_Loop' },  // Akil, Tellioğulları reisi
-      { z: -1.9, sex: 'm', outfit: 'coat', main: 0x5e3f28, trim: 0xb08d3c, skin: 0xd8a07a, clip: 'Sitting_Talking_Loop' },                                // Tellioğlu Lütfü
-      { z: -0.75, sex: 'm', outfit: 'uniform', main: 0x14182c, trim: 0xe0b44a, sash: 0xa01c1c, sash2: 0xa01c1c, skin: 0xe2ad86, pasa: true, clip: 'Sitting_Idle_Loop' }, // sahte Tosun Paşa (Şaban)
-      { z: 0.45, sex: 'f', look: { build: 1.0, dress: 0xb81f2c, vest: 0x3a0c12, trim: 0xe0b44a, scarf: 0xc8202b, scarfTrim: 0xf3d36b, skin: 0xf0c8a8, hair: 0x2a1408 }, clip: 'Sitting_Idle_Loop' }, // Leyla
-      { z: 1.6, sex: 'm', outfit: 'coat', main: 0x1a2340, trim: 0xd9a441, beard: true, skin: 0xd9a07a, clip: 'Sitting_Talking_Loop' },                   // Daver Bey
-      { z: 2.8, sex: 'm', outfit: 'coat', main: 0x26442f, trim: 0x9a8a50, beard: true, belly: 1, skin: 0xcf9873, clip: 'Sitting_Idle_Loop' },             // Seferoğlu Sıtkı
+      { z: -3.0, sex: 'm', avatar: 'bm05', clip: 'Sitting_Idle_Loop' },                    // Akil, Tellioğulları reisi
+      { z: -1.9, sex: 'm', avatar: 'bm03', clip: 'Sitting_Talking_Loop' },                 // Tellioğlu Lütfü
+      { z: -0.75, sex: 'm', avatar: 'bm02', sash: 0xa01c1c, clip: 'Sitting_Idle_Loop' },   // sahte Tosun Paşa (Şaban)
+      { z: 0.45, sex: 'f', variant: 'leyla', clip: 'Sitting_Idle_Loop' },                  // Leyla
+      { z: 1.6, sex: 'm', avatar: 'bm01', clip: 'Sitting_Talking_Loop' },                  // Daver Bey
+      { z: 2.8, sex: 'm', avatar: 'bm04', clip: 'Sitting_Idle_Loop' },                     // Seferoğlu Sıtkı
     ];
     this.vips = [];
     for (const v of vip) {
-      const c = createCharacter({ ...v, lod: 'mid', fez: v.sex === 'm' });
+      const c = createCharacter({ ...v, fez: v.sex === 'm' });
       c.root.position.set(seatX, 0, v.z);
       c.root.rotation.y = -Math.PI / 2;
       c.play(v.clip).time = rand() * 3;
-      if (v.pasa) addEpaulettes(c);
       c.root.userData.dynamic = true;
       c.root.traverse((m) => { if (m.isMesh) m.castShadow = false; });
       g.add(c.root);
       this.vips.push(c);
-      const chair = propClone('props', 'Chair_1');
+      const chair = propClone('props', 'chair');
       if (chair) { chair.position.set(seatX + 0.06, 0, v.z); chair.rotation.y = -Math.PI / 2; g.add(chair); }
     }
     this.animated.push(...this.vips);
@@ -485,11 +482,14 @@ export class World {
 
   // ---------- Seyirciler: iskeletli karakterlerin pozları statik geometriye pişirilip örneklenir ----------
   crowdBuild() {
+    // Rocketbox avatarları (sadeleştirilmiş), hareket yakalama klibinden donmuş pozlar
     const POSES = [
-      { sex: 'f', skirt: 'long', clip: 'Clap', time: 0.1 }, { sex: 'f', skirt: 'long', clip: 'Cheer', time: 0.4 },
-      { sex: 'f', skirt: 'long', clip: 'Idle_Talking_Loop', time: 1.1 }, { sex: 'f', skirt: 'long', clip: 'HandsHips', time: 0 },
-      { sex: 'm', outfit: 'villager', clip: 'Cheer', time: 0.9, fez: true }, { sex: 'm', outfit: 'villager', clip: 'Clap', time: 0.3, fez: true, beard: true },
-      { sex: 'm', outfit: 'villager', clip: 'FoldArms', time: 0, fez: true, beard: true }, { sex: 'm', outfit: 'coat', clip: 'Wave', time: 1.4, fez: true },
+      { sex: 'f', variant: 'crowd0', clip: 'Clap', time: 0.6 }, { sex: 'f', variant: 'crowd1', clip: 'Cheer', time: 1.1 },
+      { sex: 'f', variant: 'crowd2', clip: 'Idle_Talking_Loop', time: 1.4 }, { sex: 'f', chador: true, clip: 'Clap', time: 1.0 },
+      { sex: 'f', variant: 'crowd3', clip: 'Wave', time: 1.2 },
+      { sex: 'm', avatar: 'm15', clip: 'Cheer', time: 0.9 }, { sex: 'm', avatar: 'bm05', clip: 'Clap', time: 0.5, fez: true },
+      { sex: 'm', avatar: 'bm03', clip: 'Idle2', time: 2.0, fez: true }, { sex: 'm', avatar: 'bm06', clip: 'Wave', time: 1.0, fez: true },
+      { sex: 'm', avatar: 'bm04', clip: 'Cheer2', time: 0.8, fez: true },
     ];
     const budget = { low: 60, medium: 100, high: 170 }[this.quality];
     const spots = [];
@@ -508,8 +508,6 @@ export class World {
     // bütçeye göre seyrelt (kameraya yakın ön sıra öncelikli)
     spots.sort((p, q) => p.row - q.row + (rand() - 0.5) * 0.8);
     spots.length = Math.min(spots.length, budget);
-    const scarves = [0xf2ead7, 0xe9d8b4, 0xc94f4f, 0x8fb3c9, 0x6a8f5a, 0xd9a441, 0x7d4e8a];
-    const shirts = [0xe8e2d0, 0x3c5a8a, 0x8a3c3c, 0x5a7a4a, 0x6b5a3a, 0xc9b88a, 0x2c3e50];
     this.crowdInst = [];
     const dummy = new THREE.Object3D();
     POSES.forEach((pose, pi) => {
@@ -520,12 +518,9 @@ export class World {
       im.castShadow = this.quality === 'high';
       const list = [];
       mine.forEach((s, k) => {
-        const rot = s.side * Math.PI / 2 + rr(-0.35, 0.35) + (s.row === 3 ? 0.5 * Math.sign(this.koskPos.z - s.z) : 0);
-        const pal = pose.sex === 'f' ? scarves : shirts;
-        im.setColorAt(k, new THREE.Color(pal[Math.floor(rand() * pal.length)]).multiplyScalar(rr(0.85, 1.1)));
+        const rot = -s.side * Math.PI / 2 + rr(-0.35, 0.35) + (s.row === 3 ? 0.5 * Math.sign(this.koskPos.z - s.z) : 0);
         list.push({ k, x: s.x, z: s.z, y: groundHeight(s.x, s.z), rot, sc: rr(0.93, 1.06), ph: rand() * 10, sp: rr(0.8, 1.3) });
       });
-      im.instanceColor.needsUpdate = true;
       this.scene.add(im);
       this.crowdInst.push({ im, list });
     });
@@ -550,7 +545,7 @@ export class World {
 
   // ---------- Davulcu ve çığırtkan (iskeletli, IK ile davul çalar) ----------
   musicians() {
-    const dr = createCharacter({ sex: 'm', lod: 'mid', outfit: 'villager', main: 0x8a2e1e, trim: 0xd9a441, pants: 0x2f2a36, skin: 0xc98d68, fez: true, beard: true });
+    const dr = createCharacter({ sex: 'm', avatar: 'bm04', fez: true, sash: 0x8a2e1e });
     dr.root.position.set(-HALF - 1.4, 0, 1.8);
     dr.root.rotation.y = Math.PI / 2 - 0.35;
     dr.play('Idle_Loop');
@@ -583,10 +578,10 @@ export class World {
     dr.bones.hand_r.add(tokmak); dr.bones.hand_l.add(cubuk);
     this.drummer = { ch: dr, drum, hitR: 0, hitL: 0, tokmak, cubuk };
 
-    const cr = createCharacter({ sex: 'm', lod: 'mid', outfit: 'coat', main: 0x1f3a5a, trim: 0xd9a441, skin: 0xd9a07a, fez: true });
+    const cr = createCharacter({ sex: 'm', avatar: 'bm06', fez: true });
     cr.root.position.set(-HALF - 0.9, 0, -0.9);
     cr.root.rotation.y = Math.PI / 2 + 0.5;
-    cr.play('Idle_Talking_Loop');
+    cr.play('Announce');
     this.scene.add(cr.root);
     const cloth = new THREE.Mesh(new THREE.PlaneGeometry(0.17, 0.2, 3, 3), new THREE.MeshStandardMaterial({ color: 0xfaf7ef, roughness: 0.9, side: THREE.DoubleSide }));
     cloth.rotation.z = -APOSE; // el kemiği A pozunda bağlı
@@ -622,7 +617,7 @@ export class World {
       }
       const c = this.crier;
       c.raise += (Math.max(0, c.target) - c.raise) * Math.min(1, dtt * 6);
-      const wantClip = c.target < 0 ? 'Yes' : 'Idle_Talking_Loop';
+      const wantClip = c.target < 0 ? 'Yes' : 'Announce';
       if (c.mode !== wantClip) { c.mode = wantClip; c.ch.play(wantClip, { fade: 0.4 }); }
       if (c.raise > 0.02) {
         // anons ederken sağ el mendille havaya kalkar
@@ -640,6 +635,37 @@ export class World {
     });
   }
 
+  // ---------- Köy eşyaları (Poly Haven): davulcunun bankı, bitiş ve başlangıçta fıçı-sandık yığınları ----------
+  village() {
+    const g = new THREE.Group();
+    const put = (name, x, z, ry = 0, s = 1, y = 0) => {
+      const o = propClone('props', name);
+      if (!o) return;
+      o.position.set(x, groundHeight(x, z) + y, z); o.rotation.y = ry; o.scale.setScalar(s);
+      g.add(o);
+    };
+    // davulcu ile çığırtkanın arkası: boyalı bank, üstünde testi; yanında sepet ve kova
+    put('bench', -HALF - 3.3, 1.2, Math.PI / 2, 1.1);
+    put('jug', -HALF - 3.25, 0.7, 0.6, 1.3, 0.5);
+    put('basket', -HALF - 2.7, -2.7, 0.4, 1.2);
+    put('bucket', -HALF - 3.6, -1.6, 1.1, 1.1);
+    put('stool', -HALF - 2.4, 3.6, 0.3, 1.2);
+    // bitiş ipinin iki yanı: eski fıçı, sandık, katlanır tabure
+    put('barrel_old', -HALF - 3.6, -L - 3.2, 0.5, 0.9);
+    put('crate', -HALF - 4.4, -L - 2.0, 1.4, 1.0);
+    put('stool_folding', HALF + 3.5, -L - 3.6, -0.7, 1.1);
+    put('barrel', HALF + 4.3, -L - 2.4, 2.0, 0.8);
+    put('bucket', HALF + 3.6, -L - 1.6, 0.2, 1.0);
+    // başlangıç çizgisinin gerisi
+    put('crate', HALF + 3.8, 6.8, 0.2, 1.0);
+    put('crate', HALF + 3.8, 6.8, 0.9, 0.9, 0.42);
+    put('barrel', HALF + 5.0, 7.6, 1.0, 0.8);
+    put('basket', -HALF - 3.6, 7.2, 2.2, 1.2);
+    g.traverse((m) => { if (m.isMesh) { m.castShadow = this.quality !== 'low'; m.receiveShadow = true; } });
+    this.scene.add(g);
+    staticBatch(g);
+  }
+
   // davulcu ve çığırtkanın durduğu alan (giriş çekimi kamerası da burada)
   inMusic(x, z) { return x < -HALF + 0.2 && x > -HALF - 4 && z > -6 && z < 5; }
 
@@ -652,8 +678,8 @@ export class World {
     if (type === 'D') this.drummer.hitR = 1; else this.drummer.hitL = 1;
   }
 
-  // ---------- Doğa: Quaternius Stylized Nature MegaKit (örneklenmiş, yapraklar rüzgârda salınır) ----------
-  instNode(set, name, placements, { shadow = false, wind = 0 } = {}) {
+  // ---------- Doğa: Poly Haven bitkileri (örneklenmiş, yapraklar rüzgârda salınır) ----------
+  instNode(set, name, placements, { shadow = false, wind = 0, tint = null } = {}) {
     const src = assets.models[set]?.getObjectByName(name);
     if (!src || !placements.length) return;
     src.updateMatrixWorld(true);
@@ -662,10 +688,12 @@ export class World {
       if (!o.isMesh) return;
       const local = new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld);
       let mat = o.material;
-      const leafy = /Leaves|Leaf|Grass|Flowers/i.test(mat.name);
+      const leafy = !/rock|stump|bark|trunk/i.test(mat.name);
       if (wind && leafy) mat = windMaterial(mat, wind, this.windU);
       const im = new THREE.InstancedMesh(o.geometry, mat, placements.length);
       placements.forEach((m, i) => im.setMatrixAt(i, new THREE.Matrix4().multiplyMatrices(m, local)));
+      // ağaç billboard'larında örnek başına hafif ton farkı: orman tekdüze durmasın
+      if (tint) { const c = new THREE.Color(); placements.forEach((_, i) => im.setColorAt(i, c.setScalar(tint[0] + rand() * (tint[1] - tint[0])))); }
       im.castShadow = shadow; im.receiveShadow = true;
       im.computeBoundingSphere();
       this.scene.add(im);
@@ -675,57 +703,69 @@ export class World {
   trees() {
     this.windU = { uTime: { value: 0 } };
     this.updaters.push((dt, t) => { this.windU.uTime.value = t; });
-    const treeNames = ['CommonTree_1', 'CommonTree_2', 'CommonTree_3', 'CommonTree_4', 'CommonTree_5'];
+    // Poly Haven ağaçları milyonlarca üçgen: üç açıdan pişirilmiş kesişen düzlemler (billboard) olarak gelir
+    const TREES = [['tree_island_01', 1.5, 2.1], ['tree_island_02', 1.6, 2.2], ['tree_island_03', 1.6, 2.3], ['tree_small', 1.4, 1.9]];
     const nTrees = { low: 32, medium: 48, high: 80 }[this.quality];
-    const buckets = Object.fromEntries([...treeNames, 'Pine_1', 'Pine_3'].map((n) => [n, []]));
+    const buckets = Object.fromEntries([...TREES.map((t) => t[0]), 'tree_pine'].map((n) => [n, []]));
     const place = (x, z, s, pine = false) => {
-      const n = pine ? (rand() < 0.5 ? 'Pine_1' : 'Pine_3') : treeNames[Math.floor(rand() * treeNames.length)];
-      buckets[n].push(Mx(x, groundHeight(x, z) - 0.05, z, 0, rand() * 6.28, 0, s, s * rr(0.9, 1.15), s));
+      const [n, s0, s1] = pine ? ['tree_pine', 0.65, 1.0] : TREES[Math.floor(rand() * TREES.length)];
+      const k = rr(s0, s1) * s;
+      buckets[n].push(Mx(x, groundHeight(x, z) - 0.05, z, 0, rand() * 6.28, 0, k, k * rr(0.9, 1.12), k));
     };
     for (let i = 0; i < nTrees; i++) {
       const side = rand() < 0.5 ? -1 : 1;
       const x = side * rr(HALF + 5.5, 45), z = rr(-110, 35);
       if (side === 1 && Math.abs(z - this.koskPos.z) < 6 && Math.abs(x) < HALF + 10) continue;
-      place(x, z, rr(1.0, 1.6) * (1 + Math.abs(x) / 90), Math.abs(x) > 30 && rand() < 0.4);
+      place(x, z, 1 + Math.abs(x) / 120, Math.abs(x) > 26 && rand() < 0.45);
     }
-    for (let i = 0; i < nTrees * 0.35; i++) place(rr(-38, 38), rr(-L - 22, -L - 80), rr(1.1, 1.7), rand() < 0.3);
-    for (let i = 0; i < nTrees * 0.2; i++) place(rr(-38, 38), rr(16, 55), rr(1.1, 1.7), rand() < 0.3);
-    for (const [n, list] of Object.entries(buckets)) this.instNode('nature', n, list, { shadow: false, wind: 1 });
+    for (let i = 0; i < nTrees * 0.35; i++) place(rr(-38, 38), rr(-L - 22, -L - 80), 1.1, rand() < 0.4);
+    for (let i = 0; i < nTrees * 0.2; i++) place(rr(-38, 38), rr(16, 55), 1.1, rand() < 0.4);
+    for (const [n, list] of Object.entries(buckets)) this.instNode('nature', n, list, { wind: 0.3, tint: n === 'tree_pine' ? [1.2, 1.45] : [0.88, 1.08] });
 
-    // çalılar, eğrelti, çiçekler, taşlar
-    const deco = { Bush_Common: [], Bush_Common_Flowers: [], Fern_1: [], Flower_3_Group: [], Flower_4_Group: [], Plant_1_Big: [], Rock_Medium_1: [], Rock_Medium_2: [] };
-    const keys = Object.keys(deco);
-    const nDeco = { low: 70, medium: 120, high: 200 }[this.quality];
+    // çalılar, eğrelti, taşlar, kütük
+    const DECO = {
+      bush_a: [0.8, 1.15], bush_b: [0.8, 1.2], bush_c: [0.8, 1.2], bush_d: [1.3, 1.9], shrub_small_a: [1.6, 2.4], shrub_small_b: [1.6, 2.4],
+      fern_a: [1.0, 1.5], fern_b: [1.1, 1.6], rock_a: [0.14, 0.3], rock_b: [0.15, 0.32], rock_c: [0.14, 0.3], stump: [0.55, 0.85],
+    };
+    const deco = Object.fromEntries(Object.keys(DECO).map((k) => [k, []]));
+    const keys = Object.keys(DECO);
+    const nDeco = { low: 60, medium: 100, high: 170 }[this.quality];
     for (let i = 0; i < nDeco; i++) {
       const side = rand() < 0.5 ? -1 : 1;
       const x = side * rr(HALF + 4.2, 24), z = rr(-L - 18, 18);
       if (this.inKosk(x, z, 1.5) || this.inMusic(x, z)) continue;
       const k = keys[Math.floor(rand() * keys.length)];
-      const s = k.startsWith('Rock') ? rr(0.35, 0.8) : k.startsWith('Bush') ? rr(0.8, 1.3) : rr(0.9, 1.4);
-      deco[k].push(Mx(x, groundHeight(x, z), z, 0, rand() * 6.28, 0, s, s, s));
+      const s = rr(...DECO[k]);
+      deco[k].push(Mx(x, groundHeight(x, z) - (k.startsWith('rock') ? 0.06 : 0), z, 0, rand() * 6.28, 0, s, s, s));
     }
-    // pist kenarında çiçek şeridi
-    for (let i = 0; i < 60; i++) {
+    for (const k of keys) this.instNode('nature', k, deco[k], { shadow: this.quality === 'high' && /bush|rock|stump/.test(k), wind: 0.6 });
+
+    // pist kenarında kır çiçekleri: gazanya, ursinia, kırlangıçotu, karahindiba, cezayir menekşesi
+    const FLOWERS = ['flower_gazania_a', 'flower_gazania_b', 'flower_ursinia', 'flower_celandine', 'flower_dandelion', 'flower_periwinkle'];
+    const flowers = Object.fromEntries(FLOWERS.map((k) => [k, []]));
+    const nF = { low: 40, medium: 80, high: 140 }[this.quality];
+    for (let i = 0; i < nF; i++) {
       const side = rand() < 0.5 ? -1 : 1;
-      const fx = side * rr(HALF + 0.45, HALF + 1.2), fz = rr(-L - 8, 8);
-      if (this.inMusic(fx, fz)) continue;
-      deco[rand() < 0.5 ? 'Flower_3_Group' : 'Flower_4_Group'].push(Mx(fx, 0, fz, 0, rand() * 6.28, 0, 0.5, 0.5, 0.5));
+      const fx = side * (rand() < 0.7 ? rr(HALF + 0.45, HALF + 1.2) : rr(HALF + 4.2, HALF + 10)), fz = rr(-L - 8, 8);
+      if (this.inMusic(fx, fz) || this.inKosk(fx, fz, 0.5)) continue;
+      const s = rr(1.6, 2.3);
+      flowers[FLOWERS[Math.floor(rand() * FLOWERS.length)]].push(Mx(fx, groundHeight(fx, fz), fz, 0, rand() * 6.28, 0, s, s, s));
     }
-    for (const k of keys) this.instNode('nature', k, deco[k], { shadow: this.quality === 'high' && k.startsWith('Bush'), wind: 0.6 });
+    for (const k of FLOWERS) this.instNode('nature', k, flowers[k], { wind: 0.9 });
 
     // pist kenarlarına gür çimen öbekleri
-    const tufts = { Grass_Common_Short: [], Grass_Common_Tall: [], Grass_Wispy_Short: [] };
-    const tk = Object.keys(tufts);
+    const TUFTS = ['grass_tall_a', 'grass_tall_b', 'grass_tall_a', 'grass_tall_b', 'grass_mid', 'grass_clump_a', 'grass_clump_b'];
+    const tufts = Object.fromEntries(TUFTS.map((k) => [k, []]));
     const nT = { low: 100, medium: 170, high: 280 }[this.quality];
     for (let i = 0; i < nT; i++) {
       const side = rand() < 0.5 ? -1 : 1;
       // pist ile seyirci arasındaki dar şerit + seyircilerin arkası (önlerini kapatmasın)
       const x = side * (rand() < 0.6 ? rr(HALF + 0.25, HALF + 1.3) : rr(HALF + 4.2, HALF + 9)), z = rr(-L - 10, 10);
       if (this.inKosk(x, z, 0.5) || this.inMusic(x, z)) continue;
-      const s = rr(0.5, 0.85);
-      tufts[tk[Math.floor(rand() * tk.length)]].push(Mx(x, groundHeight(x, z), z, 0, rand() * 6.28, 0, s, s, s));
+      const s = rr(1.0, 1.6);
+      tufts[TUFTS[Math.floor(rand() * TUFTS.length)]].push(Mx(x, groundHeight(x, z), z, 0, rand() * 6.28, 0, s, s, s));
     }
-    for (const k of tk) this.instNode('nature', k, tufts[k], { wind: 1.2 });
+    for (const k of Object.keys(tufts)) this.instNode('nature', k, tufts[k], { wind: 1.2, tint: [0.55, 0.8] });
   }
 
   // ---------- Rüzgârda salınan çimen ----------
@@ -738,7 +778,7 @@ export class World {
     for (let i = 0; i < bp.count; i++) {
       const y = bp.getY(i) / h;
       bp.setX(i, bp.getX(i) * (1 - y * 0.85));
-      const c = new THREE.Color().setRGB(0.18 + y * 0.32, 0.32 + y * 0.38, 0.08 + y * 0.12);
+      const c = new THREE.Color().setRGB(0.14 + y * 0.26, 0.2 + y * 0.26, 0.06 + y * 0.1);   // zemin dokusunun zeytin yeşiline uysun
       colors[i * 3] = c.r; colors[i * 3 + 1] = c.g; colors[i * 3 + 2] = c.b;
       nrm.setXYZ(i, 0, 1, 0);
     }
@@ -767,7 +807,7 @@ export class World {
       if (this.inKosk(x, z, 0.6)) { d.position.set(0, -50, 0); d.updateMatrix(); im.setMatrixAt(i, d.matrix); continue; }
       d.position.set(x, groundHeight(x, z), z);
       d.rotation.set(rr(-0.2, 0.2), rand() * Math.PI, rr(-0.2, 0.2));
-      const s = rr(0.6, 1.5); d.scale.set(s, s * rr(0.8, 1.4), s);
+      const s = rr(0.6, 1.25); d.scale.set(s, s * rr(0.75, 1.2), s);
       d.updateMatrix(); im.setMatrixAt(i, d.matrix);
     }
     im.receiveShadow = true;

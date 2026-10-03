@@ -1,0 +1,32 @@
+<!doctype html><html><head><meta charset="utf-8"><title>tree bake</title></head>
+<!-- Ağacı şeffaf arka planda üç açıdan ortografik render eder (tools/tree-bake.mjs çağırır) --><body style="margin:0;background:transparent">
+<script type="importmap">{ "imports": { "three": "/three/three.module.js", "three/addons/": "/three/addons/" } }</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const q = new URLSearchParams(location.search);
+const id = q.get('id'), S = +(q.get('s') || 512), views = +(q.get('v') || 3);
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setSize(S, S); renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.NoToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.add(new THREE.HemisphereLight(0xeef4ff, 0x4a5a3a, 1.25));
+const sun = new THREE.DirectionalLight(0xfff1dc, 1.7); scene.add(sun);
+const g = await new GLTFLoader().loadAsync(q.get("f") || `/ph/${id}/${id}_1k.gltf`);
+const obj = g.scene; scene.add(obj);
+obj.traverse((o) => { if (o.isMesh) { const m = o.material; if (m.transparent) { m.transparent = false; m.alphaTest = 0.45; } m.side = THREE.DoubleSide; m.vertexColors = false; if (/twig/.test(m.name)) { m.map = null; m.color.set(0x3f5530); } m.needsUpdate = true; } });
+const box = new THREE.Box3().setFromObject(obj), c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3());
+const half = Math.max(sz.x, sz.y, sz.z) * 0.56;
+const cam = new THREE.OrthographicCamera(-half, half, half, -half, 0.01, 100);
+const out = [];
+for (let i = 0; i < views; i++) {
+  const a = (i / views) * Math.PI;
+  cam.position.set(c.x + Math.sin(a) * 30, c.y, c.z + Math.cos(a) * 30); cam.lookAt(c.x, c.y, c.z);
+  // ışık kameraya göre sabit: önden-yukarıdan
+  sun.position.set(c.x + Math.sin(a + 0.6) * 20, c.y + 25, c.z + Math.cos(a + 0.6) * 20);
+  renderer.render(scene, cam);
+  out.push(renderer.domElement.toDataURL('image/png'));
+}
+window.__bake = { out, box: [box.min.toArray(), box.max.toArray()], half, center: c.toArray() };
+</script></body></html>
