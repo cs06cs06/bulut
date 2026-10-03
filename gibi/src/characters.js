@@ -63,11 +63,11 @@ const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
 const smooth = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 
 // --- kol pozları: {R:{sx,sy,sz,ex}, L:{...}} (L için sy/sz aynalanır) ---------
-const REST = { sx: 0.05, sy: 0, sz: -0.1, ex: -0.18 };
+export const REST = { sx: 0.05, sy: 0, sz: -0.1, ex: -0.18 };
 const A = (sx, sy, sz, ex) => ({ sx, sy, sz, ex });
 
 // t: jestin başından beri geçen süre; sp: konuşma anı
-function gesturePose(g, t) {
+export function gesturePose(g, t) {
   const s = Math.sin, w = t * 7;
   switch (g) {
     case 'point': return { R: A(-1.45, 0.25, -0.05, -0.08) };
@@ -104,15 +104,19 @@ function gesturePose(g, t) {
     case 'freeze': return { R: A(-0.35, 0, -0.5, -0.4), L: A(0.35, 0, -0.5, -0.4), lean: 0.1 };
     case 'work': return { R: A(-1.1 + 0.15 * s(t * 15), 0.3, -0.1, -0.7), L: A(-0.9, 0.3, -0.1, -0.9), lean: 0.35, pitch: 0.25 };
     case 'phoneShow': return { R: A(-1.3, 0.2, -0.05, -0.9) };
+    case 'tie': return { R: A(-0.75, 0.75, 0.2, -2.0 + 0.08 * s(t * 9)), L: A(-0.7, 0.75, 0.2, -1.95), pitch: 0.18 };
+    case 'bell': { const k = Math.max(0, s(Math.min(t, 1.1) * 5.7)); return { R: A(-0.95 + 0.2 * k, 0.35, -0.05, -0.75 - 0.15 * k), pitch: 0.12 }; }
+    case 'write': return { R: A(-0.45 + 0.04 * s(t * 16), 0.45, 0.0, -1.05 + 0.05 * s(t * 23)), pitch: 0.38 };
+    case 'sigh': return { shrug: -1 + Math.sin(Math.min(t, 1.5) * 2.1) * 2, pitch: 0.12 * Math.sin(Math.min(t, 1.5) * 2.1), tilt: 0.05 };
     default: return {};
   }
 }
 
-const PERSIST = {
+export const PERSIST = {
   phone: { R: A(-0.95, 0.95, -0.3, -2.5), tilt: 0.14 },
   tiptoe: { R: A(-0.55, 0.2, -0.35, -1.7), L: A(-0.55, 0.2, -0.35, -1.7), lean: 0.22 },
 };
-const HOLD_POSE = {
+export const HOLD_POSE = {
   tea: { R: A(-0.25, 0.25, -0.05, -1.35) },
   key: { R: A(-0.3, 0.2, -0.05, -1.2) },
   gift: { R: A(-0.75, 0.3, 0.05, -0.85), L: A(-0.75, 0.3, 0.05, -0.85) },
@@ -123,16 +127,18 @@ const HOLD_POSE = {
   toolbox: { R: A(0.0, 0, -0.18, -0.05) },
   phone: { R: A(-0.75, 0.35, -0.05, -1.45), pitch: 0.12 },
   remote: { R: A(-0.35, 0.2, -0.05, -1.1) },
-  notebook: { R: A(-0.8, 0.45, 0.0, -1.3), L: A(-0.8, 0.45, 0.0, -1.3), pitch: 0.15 },
+  notebook: { R: A(-0.55, 0.45, 0.0, -1.1), L: A(-0.55, 0.45, 0.0, -1.1), pitch: 0.2 },
   phoneItem: {},
+  clipboard: { R: A(-0.7, 0.45, 0.0, -1.25), pitch: 0.06 },
+  envelope: { R: A(-0.35, 0.2, -0.05, -1.15) },
 };
 
-function blendArm(a, b, w) {
+export function blendArm(a, b, w) {
   return { sx: lerp(a.sx, b.sx, w), sy: lerp(a.sy, b.sy, w), sz: lerp(a.sz, b.sz, w), ex: lerp(a.ex, b.ex, w) };
 }
 
 // --- el eşyaları --------------------------------------------------------------
-function makeItem(kind) {
+export function makeItem(kind) {
   const g = new THREE.Group();
   switch (kind) {
     case 'key': { const k = keyMesh(); k.rotation.x = Math.PI / 2; k.position.set(0, -0.03, 0.03); g.add(k); break; }
@@ -173,6 +179,19 @@ function makeItem(kind) {
     }
     case 'coat': box(0.2, 0.18, 0.45, '#6b4a2e', 0.1, 0, 0.12, g); break;
     case 'remote': box(0.045, 0.02, 0.17, '#1c1c1c', 0, -0.01, 0.06, g); break;
+    case 'clipboard': {
+      const b = box(0.24, 0.33, 0.012, '#8a5a2b', 0.02, 0.0, 0.13, g); b.rotation.x = -1.0;
+      const pp = box(0.21, 0.28, 0.004, mat('#ffffff', { map: canvasTex(84, 112, (c, w, h) => {
+        c.fillStyle = '#fbfbf6'; c.fillRect(0, 0, w, h); c.fillStyle = '#334';
+        c.fillRect(8, 8, 50, 6); for (let i = 0; i < 9; i++) c.fillRect(8, 22 + i * 9, 40 + (i * 17) % 28, 3);
+      }) }), 0.02, 0.008, 0.124, g); pp.rotation.x = -1.0;
+      box(0.07, 0.02, 0.02, '#c0c0c0', 0.02, 0.13, 0.04, g).rotation.x = -1.0;
+      break;
+    }
+    case 'envelope': {
+      const e = box(0.17, 0.1, 0.006, '#e8dcc0', 0, -0.01, 0.07, g); e.rotation.x = -0.4;
+      break;
+    }
     case 'notebook': {
       const pg = mat('#f6f0dc');
       const l = box(0.2, 0.012, 0.27, pg, 0.11, 0, 0.1, g); l.rotation.z = 0.12;

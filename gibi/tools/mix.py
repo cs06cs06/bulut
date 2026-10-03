@@ -6,6 +6,7 @@ Bütün efektler ve müzik burada numpy ile sıfırdan üretilir (dış ses dosy
 """
 import json, os, sys, subprocess, wave
 import numpy as np
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from scipy.signal import butter, sosfilt, fftconvolve
 
 SR = 44100
@@ -54,6 +55,15 @@ def place(buf, x, at, gain=1.0):
 
 
 # ---------------------------------------------------------------- efektler
+def padd(*xs):
+    """Farklı uzunluktaki sesleri üst üste toplar."""
+    n = max(len(x) for x in xs)
+    out = np.zeros(n, np.float32)
+    for x in xs:
+        out[:len(x)] += x
+    return out
+
+
 def thump(f=110, d=0.18, tau=0.04, nz=0.6, nlp=900):
     t = tt(d)
     body = np.sin(2 * np.pi * f * t * (1 - 0.3 * t / d)) * np.exp(-t / tau)
@@ -182,6 +192,15 @@ def sfx_bank():
     for i, n in enumerate([60, 64, 67, 72, 67, 64]):
         place(bub, marimba(440 * 2 ** ((n - 69) / 12), 0.5, 0.18), i * 0.4)
     B['bubbles'] = bub
+    # topuk sesleri (merdivende 6 adım)
+    he = np.zeros(int(3.2 * SR), np.float32)
+    for i in range(6):
+        place(he, padd(click(0.03, 2600) * 0.9, thump(240, 0.08, 0.015, 0.5, 3000) * 0.5), i * 0.42 + rng.uniform(0, 0.03))
+    B['heels'] = he * 0.7
+    # masa zili (ding)
+    tb = tt(2.2)
+    ding = sum(np.sin(2 * np.pi * f * tb) * np.exp(-tb / dcy) * a for f, dcy, a in [(2489, 0.9, 1.0), (3729, 0.5, 0.45), (5274, 0.25, 0.25), (6644, 0.12, 0.15)])
+    B['deskbell'] = (ding * 0.35 * np.clip(tb / 0.002, 0, 1)).astype(np.float32)
     return B
 
 
@@ -276,6 +295,11 @@ def ambience(name, d):
         sz = hp(rng.standard_normal(n), 3000) * 0.05
         pops = (rng.random(n) > 0.9993) * rng.standard_normal(n) * 0.6
         return (base + sz + hp(pops, 2000)).astype(np.float32)
+    if name == 'clock':
+        out = base * 0.8
+        for k in range(int(d)):
+            place(out, (click(0.012, 3500) * (0.22 if k % 2 else 0.17)).astype(np.float32), k + 0.5)
+        return out.astype(np.float32)
     if name == 'shop':
         t = np.arange(n) / SR
         hum = (np.sin(2 * np.pi * 100 * t) * 0.012 + np.sin(2 * np.pi * 200 * t) * 0.004)
@@ -332,6 +356,52 @@ def main():
             print('efekt yok:', s['name'])
     fx = fx + fftconvolve(fx, room_ir(0.35, 0.2))[:n]
 
+    engine = (tl.get('meta') or {}).get('engine', 1)
+    # --- ayak sesleri (motor 2): yürüyüş izlerinden adım zamanları
+    if engine >= 2:
+        surf = {'A': 'wood', 'B': 'wood', 'G': 'wood', 'C': 'tile', 'D': 'tile', 'F': 'tile', 'E': 'stone'}
+        org = {'A': 0, 'B': 40, 'C': 80, 'D': 120, 'E': 160, 'F': 200, 'G': 240}
+        def set_of(x):
+            return min(org, key=lambda k: abs(org[k] - x))
+        nsteps = 0
+        for cid, C in tl['chars'].items():
+            pos = C['pos']
+            for a, b in zip(pos, pos[1:]):
+                if not b.get('move') or b.get('noWalk') or b['t'] <= a['t']:
+                    continue
+                sp = b.get('sp') or 1.25
+                step = (0.8 if sp > 2.2 else 0.525) / sp
+                tt0 = a['t'] + step * 0.5
+                kind = surf[set_of(a['x'])]
+                while tt0 < b['t']:
+                    if cid == 'sev':
+                        st = padd(click(0.025, 2800) * 0.8, thump(260, 0.06, 0.012, 0.4, 3500) * 0.4)
+                    elif kind == 'wood':
+                        st = thump(rng.uniform(95, 120), 0.12, 0.025, 0.7, 1400) * 0.55
+                    elif kind == 'tile':
+                        st = thump(rng.uniform(140, 170), 0.1, 0.02, 0.9, 2600) * 0.5
+                    else:
+                        st = padd(thump(rng.uniform(80, 100), 0.1, 0.02, 1.0, 2000) * 0.45, (bp(noise(0.08), 1500, 5000) * env_exp(0.08, 0.02) * 0.15).astype(np.float32))
+                    g = (0.5 if sp > 2.2 else 0.32) * rng.uniform(0.8, 1.1)
+                    place(fx, st.astype(np.float32), tt0, g)
+                    nsteps += 1
+                    tt0 += step * rng.uniform(0.95, 1.05)
+        print(f'ayak sesi: {nsteps} adım')
+
+    music_st = np.zeros((n, 2), np.float32)
+    if engine >= 2:
+        import music2
+        k = 0
+        for m in tl['music']:
+            if m['name'] == 'theme':
+                x = music2.theme2() * 0.55
+            elif m['name'] == 'outro':
+                x = music2.outro2(); x = x * np.clip((len(x) / SR - np.arange(len(x)) / SR) / 3.0, 0, 1)[:, None] * 0.5
+            else:
+                x = music2.sting2(k) * 0.42; k += 1
+            i = int(max(0, m['t'] - 0.05) * SR); j = min(n, i + len(x))
+            music_st[i:j] += x[:j - i]
+        tl['music'] = []
     for m in tl['music']:
         if m['name'] == 'theme':
             place(mus, theme(3, 132, True) * 0.75, m['t'] - 0.1)
@@ -351,12 +421,12 @@ def main():
             f = np.clip(np.minimum(tx, L / SR - tx) / 0.5, 0, 1)
             place(amb, x * f, a['start'], 0.1 if a['name'] != 'street' else 0.07)
 
-    mix = dia * 0.95 + fx * 0.8 + mus + amb
+    mono = dia * 0.95 + fx * 0.8 + mus + amb
+    st = np.stack([mono, mono], 1) + music_st
     # yumuşak sınırlayıcı
-    peak = np.max(np.abs(mix)) + 1e-9
-    mix = mix / max(1.0, peak / 0.98)
-    mix = np.tanh(mix * 1.15) / np.tanh(1.15)
-    st = np.stack([mix, mix], 1)
+    peak = np.max(np.abs(st)) + 1e-9
+    st = st / max(1.0, peak / 0.98)
+    st = np.tanh(st * 1.15) / np.tanh(1.15)
     out = os.path.join(BUILD, 'episode.wav')
     with wave.open(out, 'wb') as w:
         w.setnchannels(2); w.setsampwidth(2); w.setframerate(SR)

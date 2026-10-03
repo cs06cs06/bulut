@@ -5,5 +5,6 @@ import { listLines } from '../src/timeline.js';
 
 const episode = await loadEpisode();
 const lines = listLines(episode);
+fs.writeFileSync(`${BUILD}/tts-engine.txt`, (episode.meta && episode.meta.tts) || 'piper');
 fs.writeFileSync(`${BUILD}/lines.json`, JSON.stringify(lines, null, 1));
 console.log(`${lines.length} replik -> ${BUILD}/lines.json`);

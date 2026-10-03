@@ -5,3 +5,5 @@ build/*/chunks/
 build/*/episode.wav
 build/*/lines.json
 build/*/*.log
+__pycache__/
+build/*/test.mp4

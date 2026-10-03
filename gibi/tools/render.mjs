@@ -39,10 +39,10 @@ async function worker(k, a, b) {
   const browser = await chromium.launch({ args: CHROME_ARGS });
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
   page.on('pageerror', (e) => console.log(`[işçi ${k}] hata:`, e.message));
-  await page.goto(`${url}/index.html?mode=render&ep=${EP}`);
+  await page.goto(`${url}/index.html?mode=render&ep=${EP}${process.env.QS || ""}`);
   await page.waitForFunction(() => window.READY === true, null, { timeout: 180000 });
   const ff = spawn('ffmpeg', ['-y', '-loglevel', 'error', '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'mjpeg', '-i', '-',
-    '-c:v', 'libx264', '-preset', 'medium', '-crf', CRF, '-pix_fmt', 'yuv420p', '-r', String(FPS), file], { stdio: ['pipe', 'inherit', 'inherit'] });
+    '-c:v', 'libx264', '-preset', 'medium', '-tune', 'animation', '-crf', CRF, '-pix_fmt', 'yuv420p', '-r', String(FPS), file], { stdio: ['pipe', 'inherit', 'inherit'] });
   const closed = new Promise((r) => ff.on('close', r));
   for (let i = a; i < b; i++) {
     const data = await page.evaluate((n) => window.renderFrame(n, 0.93), i);

@@ -15,7 +15,11 @@ fi
 
 [ -d node_modules ] || npm install
 node tools/export-lines.mjs      # replik listesi
-python3 tools/tts.py             # piper ile seslendirme (önbellekli)
+if [ "$(cat build/$EP/tts-engine.txt 2>/dev/null)" = "edge" ]; then
+  python3 tools/tts_edge.py      # Microsoft neural sesler (önbellekli)
+else
+  python3 tools/tts.py           # piper ile seslendirme (önbellekli)
+fi
 node tools/make-timeline.mjs     # zamanlama + animasyon izleri
 node tools/build-script-md.mjs   # SENARYO.md
 python3 tools/mix.py             # efekt + müzik + ortam sesi miksajı

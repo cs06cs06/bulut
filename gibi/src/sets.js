@@ -14,10 +14,15 @@ export function toonGradient() {
   return gradientMap;
 }
 const matCache = new Map();
+let STYLE = 'toon';
+// 'pbr': fiziksel tabanlı malzemeler (motor 2)
+export function setStyle(s) { STYLE = s; matCache.clear(); }
 export function mat(color, opts = {}) {
   const key = color + JSON.stringify(opts);
   if (!opts.map && matCache.has(key)) return matCache.get(key);
-  const m = new THREE.MeshToonMaterial({ color, gradientMap: toonGradient(), ...opts });
+  const m = STYLE === 'pbr'
+    ? new THREE.MeshStandardMaterial({ color, roughness: 0.78, metalness: 0, ...opts })
+    : new THREE.MeshToonMaterial({ color, gradientMap: toonGradient(), ...opts });
   if (!opts.map) matCache.set(key, m);
   return m;
 }
@@ -160,6 +165,12 @@ function room(parent, o) {
   // süpürgelik
   const sk = o.skirt || '#5b4636';
   box(w, 0.1, 0.03, sk, 0, 0.05, -d / 2 + 0.015, g, { cast: false });
+  // dördüncü duvar (motor 2): kamera sahnenin açık tarafına baktığında boşluk görünmesin
+  if (STYLE === 'pbr') {
+    const fw = wallMesh(w, h, [], o.frontMat || wm);
+    fw.rotation.y = Math.PI; fw.position.set(0, 0, d / 2 + 3); g.add(fw);
+    box(w, 0.1, 0.03, o.skirt || '#5b4636', 0, 0.05, d / 2 + 3 - 0.015, g, { cast: false });
+  }
   // kornij + tavan (yalnızca aşağıdan görünür, gölge düşürmez)
   box(w, 0.08, 0.08, '#f2efe8', 0, h - 0.04, -d / 2 + 0.04, g, { cast: false });
   addCeiling(g, w, d + 3, h, 0, 1.5, o.ceil || '#f4f0e6');
@@ -482,6 +493,16 @@ export function buildSets(scene) {
     const tex3 = lf.children[1].material.map;
     const tex4 = canvasTex(Math.round(256 * 0.75 / 0.6), 256, drawList(4));
     sets.listFrames = { mesh: lf.children[1], 3: tex3, 4: tex4 };
+    const belge = framePic(g, 0.46, 0.6, -1.35, 1.68, -2.97, (c, w, h) => {
+      c.fillStyle = '#fbf8ee'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#1e3a8a'; c.font = `bold ${h * 0.065}px DejaVu Serif, serif`; c.textAlign = 'center';
+      c.fillText('HUZUR APT. YÖNETİMİ', w / 2, h * 0.1);
+      c.fillStyle = '#222'; c.font = `${h * 0.055}px DejaVu Serif, serif`; c.textAlign = 'left';
+      ['Asansör yoktur.', 'Kapıcı kapı açmaz.', 'Otomat on saniyedir.', 'Bunlara rağmen', 'Yılmaz Bey', 'aidat öder.'].forEach((t, i) => c.fillText(t, w * 0.1, h * (0.25 + i * 0.1)));
+      c.strokeStyle = '#1e3a8a'; c.lineWidth = 2; c.beginPath(); c.moveTo(w * 0.5, h * 0.9); c.bezierCurveTo(w * 0.6, h * 0.8, w * 0.7, h * 0.95, w * 0.85, h * 0.86); c.stroke();
+      c.fillStyle = '#b91c1c'; c.beginPath(); c.arc(w * 0.25, h * 0.88, h * 0.06, 0, 7); c.fill();
+    });
+    sets.flags['B.belge'] = { obj: belge, def: false };
     framePic(g, 0.5, 0.65, -0.9, 1.75, -2.97, (c, w, h) => {
       c.fillStyle = '#e8d8b8'; c.fillRect(0, 0, w, h);
       c.fillStyle = '#7a5a3a'; c.beginPath(); c.arc(w / 2, h * 0.4, w * 0.22, 0, 7); c.fill();
@@ -522,6 +543,10 @@ export function buildSets(scene) {
     for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * 2 / 3.4);
     back.position.set(0, 0, -2.5); g.add(back);
     addCeiling(g, 16, 7, 3.4, 1.5, 0.9, '#f2f0e8');
+    if (STYLE === 'pbr') {
+      const fw = wallMesh(12, 3.4, [], wm); fw.rotation.y = Math.PI; fw.position.set(1.0, 0, 4.1); g.add(fw);
+      const uvf = fw.geometry.attributes.uv; for (let i = 0; i < uvf.count; i++) uvf.setY(i, uvf.getY(i) * 2 / 3.4);
+    }
     const left = wallMesh(7, 3.4, [], wm);
     left.geometry.attributes.uv.array.forEach((_, i, a) => { if (i % 2) a[i] = a[i] * 2 / 3.4; });
     left.rotation.y = Math.PI / 2; left.position.set(-4.9, 0, 1.0); g.add(left);
@@ -574,6 +599,15 @@ export function buildSets(scene) {
     ceilingLight(g, sets, 'C', 0, 3.1, -0.6);
     cl.scale.y = 0.5; cl.castShadow = false;
     plant(g, 3.3, -2.0, 0.9);
+    const notice = textPlane(0.42, 0.56, (c, w, h) => {
+      c.fillStyle = '#fdfcf6'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#b91c1c'; c.font = `bold ${h * 0.06}px DejaVu Sans, sans-serif`; c.textAlign = 'center';
+      c.fillText('OLAĞANÜSTÜ', w / 2, h * 0.12); c.fillText('TOPLANTI', w / 2, h * 0.2);
+      c.fillStyle = '#333'; for (let i = 0; i < 8; i++) c.fillRect(w * 0.12, h * (0.3 + i * 0.07), w * (0.5 + ((i * 13) % 5) * 0.06), h * 0.018);
+      c.fillStyle = '#c8a24a'; c.beginPath(); c.arc(w / 2, h * 0.035, h * 0.018, 0, 7); c.fill();
+    }, 256);
+    notice.position.set(1.0, 1.5, -2.47); g.add(notice);
+    sets.flags['C.notice'] = { obj: notice, def: false };
     // ayakkabılık
     box(0.8, 0.45, 0.35, '#8a6a4a', -3.6, 0.225, -2.3, g);
     box(0.25, 0.08, 0.12, '#222', -3.75, 0.49, -2.25, g);
@@ -854,7 +888,177 @@ export function buildSets(scene) {
     ceilingLight(g, sets, 'F', 2.0, 3.0, -0.8, true, 4, '#fff3dc');
   }
 
+  buildNecmiHome(scene, sets);
   return sets;
+}
+
+// ---------------------------------------------------------------- G: Necmi Bey'in evi
+function buildNecmiHome(scene, sets) {
+  const g = new THREE.Group(); g.position.set(...layout.G.origin); scene.add(g); sets.groups.G = g;
+  const parquet = canvasTex(512, 512, (c, w, h) => {
+    c.fillStyle = '#8a5a34'; c.fillRect(0, 0, w, h);
+    const s = 64;
+    for (let i = -8; i < 16; i++) for (let j = 0; j < 20; j++) {
+      c.save(); c.translate(i * s + (j % 2) * s / 2, j * s / 2); c.rotate((j % 2 ? 1 : -1) * Math.PI / 4);
+      const v = 120 + ((i * 37 + j * 53) % 40);
+      c.fillStyle = `rgb(${v + 20},${v - 20},${v - 60})`; c.fillRect(0, 0, s * 0.95, s * 0.3);
+      c.strokeStyle = 'rgba(0,0,0,0.25)'; c.strokeRect(0, 0, s * 0.95, s * 0.3); c.restore();
+    }
+  });
+  parquet.wrapS = parquet.wrapT = THREE.RepeatWrapping; parquet.repeat.set(3, 3);
+  const paper = canvasTex(256, 256, (c, w, h) => {
+    c.fillStyle = '#e9dcbc'; c.fillRect(0, 0, w, h);
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) {
+      const x = i * 64 + (j % 2) * 32 + 16, y = j * 64 + 20;
+      c.fillStyle = '#b9a27a'; c.beginPath(); c.ellipse(x, y, 7, 11, 0.4, 0, 7); c.fill();
+      c.fillStyle = '#7e8f5e'; c.beginPath(); c.ellipse(x + 9, y + 10, 4, 9, -0.6, 0, 7); c.fill(); c.beginPath(); c.ellipse(x - 9, y + 10, 4, 9, 0.6, 0, 7); c.fill();
+      c.fillStyle = '#a0522d'; c.beginPath(); c.arc(x, y - 2, 3, 0, 7); c.fill();
+    }
+    c.fillStyle = 'rgba(120,90,50,0.08)'; for (let x = 0; x < w; x += 16) c.fillRect(x, 0, 2, h);
+  });
+  paper.wrapS = paper.wrapT = THREE.RepeatWrapping;
+  room(g, { w: 9, d: 6, h: 3.2, floorMat: mat('#ffffff', { map: parquet, roughness: 0.55 }), wallMat: mat('#ffffff', { map: paper }),
+    backHoles: [[0.6, 2.4, 1.0, 2.4]], leftHoles: [[0.1, 1.1, 0, 2.12]], skirt: '#5a3d25', ceil: '#f1ead8' });
+  const sky = windowSky(g, 1.5, 1.7, -3.6, 1.8, 1.4); sets.skies.push({ mesh: sky, set: 'G' });
+  windowFrame(g, 1.5, 1.7, -2.98, 1.8, 1.4);
+  const lace = canvasTex(128, 128, (c, w, h) => {
+    c.clearRect(0, 0, w, h); c.strokeStyle = 'rgba(255,255,255,0.9)'; c.lineWidth = 2;
+    for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { c.beginPath(); c.arc(i * 32 + 16, j * 32 + 16, 11, 0, 7); c.stroke(); c.beginPath(); c.arc(i * 32 + 16, j * 32 + 16, 4, 0, 7); c.stroke(); }
+    c.fillStyle = 'rgba(255,255,255,0.35)'; c.fillRect(0, 0, w, h);
+  });
+  lace.wrapS = lace.wrapT = THREE.RepeatWrapping; lace.repeat.set(3, 3);
+  const laceM = mat('#ffffff', { map: lace, transparent: true, side: THREE.DoubleSide, roughness: 0.9 });
+  for (const s2 of [-1, 1]) { const lp = new THREE.Mesh(new THREE.PlaneGeometry(0.75, 1.6), laceM); lp.position.set(1.5 + s2 * 0.55, 1.65, -2.88); g.add(lp); }
+  curtains(g, 1.5, 1.7, -2.98, 1.8, 1.4, '#7a2e2e');
+  for (let i = 0; i < 10; i++) box(0.06, 0.6, 0.1, '#e9e6de', 0.9 + i * 0.13, 0.55, -2.92, g);
+  const kilim = canvasTex(512, 320, (c, w, h) => {
+    c.fillStyle = '#8c1c1c'; c.fillRect(0, 0, w, h);
+    c.strokeStyle = '#e8c27a'; c.lineWidth = 10; c.strokeRect(14, 14, w - 28, h - 28);
+    c.strokeStyle = '#1f3a5f'; c.lineWidth = 6; c.strokeRect(34, 34, w - 68, h - 68);
+    for (let i = 0; i < 5; i++) {
+      const x = 80 + i * 88, y = h / 2;
+      c.fillStyle = i % 2 ? '#1f3a5f' : '#e8c27a';
+      c.beginPath(); c.moveTo(x, y - 60); c.lineTo(x + 34, y); c.lineTo(x, y + 60); c.lineTo(x - 34, y); c.closePath(); c.fill();
+      c.fillStyle = '#8c1c1c'; c.beginPath(); c.moveTo(x, y - 24); c.lineTo(x + 13, y); c.lineTo(x, y + 24); c.lineTo(x - 13, y); c.closePath(); c.fill();
+    }
+  });
+  const rug = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 2.6), mat('#ffffff', { map: kilim, roughness: 0.95 }));
+  rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.006, -0.9); rug.receiveShadow = true; g.add(rug);
+  // oval masa + dantel örtü + masa zili + çay
+  const tbl = new THREE.Group(); tbl.position.set(0, 0, -0.85); g.add(tbl);
+  const top = cyl(0.62, 0.62, 0.05, '#6b4226', 0, 0.74, 0, tbl, 40); top.scale.x = 1.25;
+  const cloth = cyl(0.5, 0.5, 0.006, mat('#ffffff', { map: lace, transparent: true, roughness: 0.9 }), 0, 0.768, 0, tbl, 40); cloth.scale.x = 1.25;
+  cyl(0.06, 0.09, 0.7, '#5a3820', 0, 0.37, 0, tbl, 16);
+  cyl(0.3, 0.34, 0.04, '#5a3820', 0, 0.02, 0, tbl, 24);
+  const bell = new THREE.Group(); bell.position.set(0.0, 0.775, -0.42); tbl.add(bell);
+  cyl(0.04, 0.045, 0.012, mat('#2a2a2a', { metalness: 0.5, roughness: 0.4 }), 0, 0.006, 0, bell, 20);
+  sph(0.034, mat('#d4af37', { metalness: 0.95, roughness: 0.2 }), 0, 0.014, 0, bell, 20).scale.y = 0.75;
+  cyl(0.006, 0.006, 0.02, mat('#d4af37', { metalness: 0.9, roughness: 0.25 }), 0, 0.045, 0, bell, 8);
+  cyl(0.07, 0.09, 0.14, mat('#c0c0c0', { metalness: 0.8, roughness: 0.3 }), 0.35, 0.84, 0.1, tbl, 18);
+  for (const [x, z] of [[-0.45, 0.05], [0.5, -0.15], [-0.15, 0.3]]) cyl(0.025, 0.02, 0.07, mat('#b5481c', { transparent: true, opacity: 0.85, roughness: 0.1 }), x, 0.81, z, tbl, 12);
+  const sticky = (parent, x, y, z, ry = 0, rx = 0) => {
+    const n = textPlane(0.09, 0.09, (c, w, h) => {
+      c.fillStyle = '#fde047'; c.fillRect(0, 0, w, h); c.fillStyle = '#333'; c.font = `bold ${h * 0.2}px DejaVu Sans`; c.textAlign = 'center';
+      c.fillText('Yılmaz', w / 2, h * 0.42); c.fillText('Bey', w / 2, h * 0.7);
+    }, 64);
+    n.position.set(x, y, z); n.rotation.set(rx, ry, 0); parent.add(n); return n;
+  };
+  // Yılmaz Bey'in dört sandalyesi
+  const chair = (x, z, yaw) => {
+    const c = new THREE.Group(); c.position.set(x, 0, z); c.rotation.y = yaw; g.add(c);
+    box(0.46, 0.05, 0.44, '#7a4a2a', 0, 0.42, 0, c);
+    box(0.44, 0.04, 0.42, '#3f5d3a', 0, 0.46, 0.0, c);
+    box(0.46, 0.55, 0.04, '#7a4a2a', 0, 0.72, -0.21, c);
+    for (const [a, b] of [[-0.2, -0.19], [0.2, -0.19], [-0.2, 0.19], [0.2, 0.19]]) box(0.04, 0.42, 0.04, '#5a3820', a, 0.21, b, c);
+    sticky(c, 0.0, 0.85, -0.185, Math.PI, 0);
+    return c;
+  };
+  chair(-1.12, -0.65, Math.PI / 2);
+  chair(1.12, -0.65, -Math.PI / 2);
+  chair(0.0, -2.07, 0);
+  const c4 = chair(-2.3, -2.5, 0.3);
+  box(0.3, 0.12, 0.25, '#2c3e50', 0, 0.54, 0, c4);
+  // Necmi Bey'in kadife koltuğu
+  const arm = new THREE.Group(); arm.position.set(2.66, 0, -1.12); arm.rotation.y = -70 * Math.PI / 180; g.add(arm);
+  const vel = mat('#6d1f2a', { roughness: 0.95 });
+  box(0.85, 0.42, 0.8, vel, 0, 0.21, 0, arm); box(0.85, 0.8, 0.18, vel, 0, 0.62, -0.33, arm);
+  box(0.16, 0.6, 0.8, vel, -0.43, 0.42, 0, arm); box(0.16, 0.6, 0.8, vel, 0.43, 0.42, 0, arm);
+  const doily = new THREE.Mesh(new THREE.CircleGeometry(0.14, 20), mat('#ffffff', { map: lace, transparent: true }));
+  doily.position.set(0, 0.98, -0.235); arm.add(doily);
+  // vitrin
+  const vit = new THREE.Group(); vit.position.set(-3.3, 0, -2.7); g.add(vit);
+  box(1.4, 2.0, 0.45, '#5a3820', 0, 1.0, 0, vit);
+  const vg = box(1.3, 1.1, 0.02, mat('#cfe7f5', { transparent: true, opacity: 0.22, roughness: 0.05 }), 0, 1.35, 0.23, vit); vg.castShadow = false;
+  for (let r = 0; r < 2; r++) {
+    box(1.3, 0.03, 0.4, '#6b4226', 0, 0.95 + r * 0.5, 0.0, vit);
+    for (let i = 0; i < 6; i++) {
+      const x = -0.55 + i * 0.22;
+      if (i % 2) sph(0.06, mat('#f4f4f4', { roughness: 0.15 }), x, 1.05 + r * 0.5, 0.05, vit, 14).scale.y = 1.2;
+      else cyl(0.04, 0.05, 0.14, mat(i % 4 ? '#2a5aa0' : '#f4f4f4', { roughness: 0.15 }), x, 1.04 + r * 0.5, 0.05, vit, 14);
+    }
+  }
+  box(1.3, 0.55, 0.02, '#4a2e18', 0, 0.35, 0.23, vit);
+  // tüplü televizyon
+  const tvg = new THREE.Group(); tvg.position.set(3.6, 0, -2.45); tvg.rotation.y = -0.5; g.add(tvg);
+  box(0.9, 0.55, 0.5, '#4a2e18', 0, 0.275, 0, tvg);
+  box(0.72, 0.56, 0.55, '#2b2b2b', 0, 0.83, 0, tvg);
+  const scr = box(0.56, 0.42, 0.01, mat('#1a2a3a', { emissive: '#2a4a6a', emissiveIntensity: 0.25, roughness: 0.1 }), 0, 0.84, 0.28, tvg); scr.castShadow = false;
+  const doily2 = new THREE.Mesh(new THREE.CircleGeometry(0.22, 24), mat('#ffffff', { map: lace, transparent: true }));
+  doily2.rotation.x = -Math.PI / 2; doily2.position.set(0, 1.115, 0); tvg.add(doily2);
+  // Yılmaz Bey'in modemi (yanıp sönen ışıklar)
+  const shelf = new THREE.Group(); shelf.position.set(-1.6, 1.25, -2.92); g.add(shelf);
+  box(0.6, 0.03, 0.2, '#6b4226', 0, 0, 0.08, shelf);
+  box(0.24, 0.05, 0.15, '#f2f2f2', 0, 0.04, 0.08, shelf);
+  sets.modemLeds = [];
+  for (let i = 0; i < 4; i++) sets.modemLeds.push(sph(0.007, mat('#22c55e', { emissive: '#22c55e', emissiveIntensity: 2 }), -0.08 + i * 0.05, 0.05, 0.158, shelf, 8));
+  sticky(shelf, 0.2, 0.08, 0.17, -0.2);
+  // matkap ve tava (konsolda, etiketli)
+  const side = new THREE.Group(); side.position.set(-3.9, 0, 0.0); side.rotation.y = Math.PI / 2; g.add(side);
+  box(1.4, 0.8, 0.45, '#6b4226', 0, 0.4, 0, side);
+  const drill = new THREE.Group(); drill.position.set(-0.3, 0.86, 0.02); side.add(drill);
+  box(0.22, 0.08, 0.07, '#1d4ed8', 0, 0.02, 0, drill); box(0.06, 0.14, 0.06, '#1d4ed8', -0.06, -0.06, 0, drill);
+  cyl(0.008, 0.008, 0.08, mat('#999', { metalness: 0.9, roughness: 0.3 }), 0.15, 0.02, 0, drill, 8).rotation.z = Math.PI / 2;
+  sticky(drill, 0.0, 0.1, 0.04, 0, 0);
+  cyl(0.13, 0.11, 0.05, mat('#2b2b2b', { metalness: 0.4, roughness: 0.5 }), 0.35, 0.83, 0.0, side, 24);
+  sticky(side, 0.35, 0.87, 0.14, 0, -0.6);
+  // duvar saati
+  const clock = new THREE.Group(); clock.position.set(-0.2, 2.35, -2.96); g.add(clock);
+  cyl(0.22, 0.22, 0.05, '#5a3820', 0, 0, 0, clock, 32).rotation.x = Math.PI / 2;
+  const face = textPlane(0.38, 0.38, (c, w, h) => {
+    c.fillStyle = '#fbf6e6'; c.beginPath(); c.arc(w / 2, h / 2, w / 2, 0, 7); c.fill();
+    c.fillStyle = '#222'; c.font = `bold ${h * 0.09}px DejaVu Serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    for (let i = 1; i <= 12; i++) { const a = i / 12 * Math.PI * 2; c.fillText(String(i), w / 2 + Math.sin(a) * w * 0.38, h / 2 - Math.cos(a) * h * 0.38); }
+  }, 128);
+  face.position.z = 0.027; clock.add(face);
+  sets.clockHands = [];
+  for (const [len, wdt] of [[0.1, 0.012], [0.15, 0.007], [0.16, 0.003]]) {
+    const hp = new THREE.Group(); hp.position.z = 0.032 + sets.clockHands.length * 0.002; clock.add(hp);
+    box(wdt, len, 0.004, wdt < 0.005 ? '#b91c1c' : '#111', 0, len / 2 - 0.02, 0, hp, { cast: false });
+    sets.clockHands.push(hp);
+  }
+  for (const [x, y, wdt] of [[2.9, 2.0, 0.35], [3.4, 1.62, 0.3], [-2.4, 2.1, 0.32]]) {
+    framePic(g, wdt, wdt * 1.25, x, y, -2.97, (c, w, h) => {
+      c.fillStyle = '#c9b48a'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#6b5a40'; c.beginPath(); c.arc(w / 2, h * 0.4, w * 0.2, 0, 7); c.fill(); c.fillRect(w * 0.25, h * 0.6, w * 0.5, h * 0.4);
+      c.fillStyle = 'rgba(255,240,210,0.25)'; c.fillRect(0, 0, w, h);
+    });
+  }
+  box(0.14, 0.1, 1.2, '#5a3d25', -4.5, 2.15, 0.6, g);
+  box(0.14, 2.15, 0.08, '#5a3d25', -4.5, 1.07, 0.06, g);
+  box(0.14, 2.15, 0.08, '#5a3d25', -4.5, 1.07, 1.14, g);
+  box(0.05, 2.4, 1.6, '#4e5a48', -5.6, 1.2, 0.6, g, { cast: false });
+  for (const [x, col] of [[-4.0, '#7a2e2e'], [-3.8, '#2e4a7a']]) for (const s2 of [-0.05, 0.05]) box(0.08, 0.04, 0.22, col, x + s2, 0.02, 1.7, g);
+  plant(g, 3.8, 0.8, 1.2);
+  // avize + lambader
+  const chd = new THREE.Group(); chd.position.set(0, 2.75, -0.85); g.add(chd);
+  cyl(0.01, 0.01, 0.45, '#8a6a3a', 0, 0.22, 0, chd, 6);
+  for (let i = 0; i < 5; i++) {
+    const a = i / 5 * Math.PI * 2;
+    const sh = cyl(0.06, 0.09, 0.12, mat('#f6e7c8', { emissive: '#ffcf8a', emissiveIntensity: 1.2 }), Math.cos(a) * 0.25, -0.02, Math.sin(a) * 0.25, chd, 14); sh.castShadow = false;
+  }
+  ceilingLight(g, sets, 'G', 0, 2.5, -0.85, true, 7, '#ffcf96');
+  floorLamp(g, 3.95, -0.3, sets, 'G');
+  return g;
 }
 
 function ceilingLight(g, sets, key, x, y, z, always = false, power = 6, color = '#fff1d0') {
@@ -928,7 +1132,34 @@ export function keyMesh() {
 }
 
 // Zaman dilimine göre gökyüzü/lamba ayarı
+const PBR_TIME = {
+  night: { sky: '#0f1830', hemi: 0.18, sun: 0.12, sunColor: '#7d93d6', lamp: 9, tv: '#5d86c4', env: 0.12, exposure: 1.25 },
+  morning: { sky: '#d6ebff', hemi: 0.75, sun: 2.4, sunColor: '#ffe9c8', lamp: 0, tv: '#20262f', env: 0.3, exposure: 0.95 },
+  day: { sky: '#bfe0ff', hemi: 0.8, sun: 2.6, sunColor: '#fff6ea', lamp: 0, tv: '#20262f', env: 0.32, exposure: 0.92 },
+  evening: { sky: '#f3a86b', hemi: 0.55, sun: 1.6, sunColor: '#ffb27a', lamp: 0, tv: '#20262f', street: '#ffc49a', env: 0.22, exposure: 1.0 },
+};
 export function applyTimeOfDay(sets, setId, time, lights) {
+  if (lights.engine >= 2) {
+    const cfg = PBR_TIME[time || 'day'];
+    if (sets.streetSky) sets.streetSky.material.color.set(cfg.street || '#ffffff');
+    for (const s of sets.skies) if (!s.bright) s.mesh.material.color.set(cfg.sky);
+    for (const l of sets.lamps) {
+      const on = l.key === setId && (cfg.lamp > 0 || l.always);
+      // fiziksel ışık birimleri: toon değerlerinin kabaca 1.6 katı
+      l.light.intensity = on ? (l.power || cfg.lamp || 6) * 1.6 : 0;
+      l.light.castShadow = false;
+      // kapalı ışıklar gölgelendiriciden tamamen çıkarılsın (CPU'da her ışık pahalı)
+      l.light.visible = on;
+      if (l.shade) { l.shade.material.emissive?.set('#ffb766'); l.shade.material.emissiveIntensity = on ? 1.6 : 0.05; }
+    }
+    lights.hemi.intensity = cfg.hemi;
+    lights.sun.intensity = cfg.sun;
+    lights.sun.color.set(cfg.sunColor);
+    if (lights.scene) lights.scene.environmentIntensity = cfg.env;
+    if (lights.post) lights.post.setExposure(cfg.exposure);
+    if (sets.tv) sets.tv.material.color.set(cfg.tv);
+    return;
+  }
   const cfg = {
     night: { sky: '#1b2848', hemi: 0.55, sun: 0.25, sunColor: '#8fa6ff', lamp: 9, tv: '#5d86c4' },
     morning: { sky: '#cfe6ff', hemi: 1.15, sun: 1.6, sunColor: '#fff1d6', lamp: 0, tv: '#20262f' },

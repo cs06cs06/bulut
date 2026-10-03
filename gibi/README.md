@@ -7,8 +7,11 @@ senaryolardan **three.js** ile kare kare üretilmiş animasyon videoları.
 |---|---|---|---|---|
 | 1 | **Yedek Anahtar** | [`senaryolar/yedek-anahtar.md`](senaryolar/yedek-anahtar.md) | `dist/yedek-anahtar.mp4` | 12:23 |
 | 2 | **Şifre** | [`senaryolar/sifre.md`](senaryolar/sifre.md) | `dist/sifre.mp4` | 10:10 |
+| 3 | **Yönetim** | [`senaryolar/yonetim.md`](senaryolar/yonetim.md) | `dist/yonetim.mp4` | 12:21 |
 
-Videolar 1280×720, 24 fps; Türkçe ses ve gömülü altyazı içerir.
+1. ve 2. bölüm "motor 1" ile (çizgi film görünümü, 720p, piper sesleri), 3. bölüm
+"motor 2" ile (fiziksel tabanlı ışık, 1080p, neural sesler) üretildi. Hepsi 24 fps,
+Türkçe ses ve gömülü altyazı içerir.
 
 ### 1 · Yedek Anahtar
 
@@ -26,6 +29,33 @@ apartmanda herkesin bildiği ama kimsenin söylemediği şey.* Kapıcı Remzi'ni
 tahminleri ("aidat", "asansör yok"), Bakkal Şükrü'nün veresiye defteri ve dört yüz
 on liralık bir borç devri, ikisini ilk bölümün en çok bilinen ama hiç söylenmeyen
 lafına götürür. Ekranda geri sayım: *maça 18… 13… 9… 5… 1 dakika.*
+
+### 3 · Yönetim
+
+Koridora asılan ilan, Huzur Apartmanı'nı olağanüstü toplantıya çağırır: gündem
+aidatlar, ödünç alınan eşyalar ve yönetici seçimidir; üç maddenin üçünün de konusu
+Yılmaz'dır. Takım elbisesini giyen Yılmaz, avukatı İlkkan'la prova yapar; toplantı
+her eşyasında "Yılmaz Bey" etiketi olan Necmi Bey'in salonunda, Yılmaz'ın
+sandalyelerinde yapılır. Sevim Hanım istifa eder ve oylama sonunda İlkkan, oturmadığı
+bir apartmanın yöneticisi olur. Yönetimin ilk günü: matkap talebi, zam talebi,
+otomat şikâyeti… ve Yılmaz'ın beklenmedik peşin ödemesi.
+
+## Motor 2 (3. bölüm)
+
+| Alan | Motor 1 | Motor 2 |
+|---|---|---|
+| Ses | piper `tr_TR-dfki` (tek ses, perde kaydırma) | **Microsoft neural sesler** (Edge TTS): her karaktere ayrı ses, duyguya göre hız/perde |
+| Karakter | ilkel şekiller, eldiven eller | torna profilli gövde, **beş parmaklı eller**, göz kapakları, iris/göz bebeği, kaş eğrileri, dudak + diş + dil, giyim ayrıntıları (yaka, kravat, düğmeler) |
+| Dudak senkronu | ses genliği | genlik + **ağız şekli** (o/u yuvarlak, i/e geniş — sesin spektrumundan) |
+| Işık | toon gölgelendirme | **PBR** malzemeler, yumuşak gölge, ortam ışığı (PMREM), ACES ton eşleme |
+| Kamera | – | yakın planlarda **alan derinliği**, sinematik renk, vinyet, ince film greni, FXAA |
+| Görüntü | 1280×720 | **1920×1080** (3D 1280×720'de çizilip ölçeklenir, yazılar 1080p) |
+| Müzik | basit sentez | **caz kombosu**: Karplus-Strong kontrbas, Rhodes, klarnet, fırçalı davul (swing) |
+| Efekt | sabit efektler | + yürüyüş izlerinden **otomatik ayak sesleri** (zemine göre) |
+| Yazı tipi | DejaVu | Inter, Archivo Black, Fraunces (Google Fonts, OFL) |
+
+Sesler, kullanılan neural seslerin Türkçe telaffuzunu ölçmek için Whisper
+(`faster-whisper small`) ile yazıya döküldü; seçilen tüm seslerde kelime hata oranı ~%0.
 
 ## Nasıl çalışır?
 
@@ -62,7 +92,7 @@ episodes/<bölüm>.js ──► tools/export-lines.mjs ──► tools/tts.py  (
 Gereken: Node 18+, Python 3.10+, ffmpeg.
 
 ```bash
-pip install piper-tts numpy scipy
+pip install piper-tts edge-tts numpy scipy
 ./build.sh yedek-anahtar   # 1. bölümü baştan üretir (render 4 çekirdekte ~45 dk)
 ./build.sh sifre           # 2. bölüm
 ```

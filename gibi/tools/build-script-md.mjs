@@ -22,6 +22,7 @@ const desc = {
   rem: 'Huzur Apartmanı\'nın kapıcısı. Bütün dairelerin anahtarı ondadır — biri hariç.',
   hus: 'Mahallenin çilingiri. Kapıyı iki buçuk saniyede açar, muhabbeti ayrıca ücretlendirir.',
   suk: 'Mahallenin bakkalı. Ekmeği biter, yumurtası bitmez; veresiye defteri mahallenin hafızasıdır.',
+  sev: 'Huzur Apartmanı\'nın yöneticisi. Dosyası, masa zili ve yönetmeliğiyle düzenin son savunucusu.',
 };
 for (const [id, c] of Object.entries(cast)) L.push(`- **${c.name}** — ${desc[id]}`);
 L.push('', '---', '');
@@ -43,6 +44,7 @@ scenes.forEach((sc, si) => {
     else if (b.type === 'card') L.push(`> **EKRANDA:** ${b.text}`, '');
     else if (b.type === 'insert') {
       if (b.kind === 'wifi') L.push(`> **ARA GÖRÜNTÜ — ${b.text}** ${b.rows.map((r) => '`' + r[0] + '`').join(' · ')}`, '');
+      else if (b.kind === 'notice') L.push(`> **ARA GÖRÜNTÜ — ilan:** **${b.title}** — ${b.lines.filter(Boolean).join(' · ')} — *${b.sign}*`, '');
       else if (b.kind === 'pass') L.push(`> **ARA GÖRÜNTÜ — telefon:** \`${b.input}\` → *${b.ok ? b.okText || 'Bağlandı' : 'Yanlış şifre'}*`, '');
       else L.push(`> **ARA GÖRÜNTÜ — ${b.text}**  `, `> ${b.title}: ${b.lines.filter(Boolean).join(' · ')} **${b.last}**`, '');
     }

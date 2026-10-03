@@ -8,6 +8,10 @@ const episode = await loadEpisode();
 const meta = JSON.parse(fs.readFileSync(`${BUILD}/audio-meta.json`, 'utf8'));
 const tl = buildTimeline(episode, meta, layout);
 tl.env = Object.fromEntries(Object.entries(meta).map(([k, v]) => [k, v.env]));
+if (Object.values(meta).some((v) => v.rnd)) {
+  tl.rnd = Object.fromEntries(Object.entries(meta).map(([k, v]) => [k, v.rnd || []]));
+  tl.wid = Object.fromEntries(Object.entries(meta).map(([k, v]) => [k, v.wid || []]));
+}
 tl.meta = episode.meta;
 fs.writeFileSync(`${BUILD}/timeline.json`, JSON.stringify(tl));
 const m = Math.floor(tl.duration / 60), s = Math.round(tl.duration % 60);

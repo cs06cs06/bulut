@@ -39,6 +39,9 @@ export function listLines(episode) {
           who: w,
           text: speechText(b.text),
           voice: episode.cast[w].voice,
+          e: b.e || 'neutral',
+          p: b.p || null,
+          os: !!b.os,
         });
       }
     });

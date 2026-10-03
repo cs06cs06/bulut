@@ -16,14 +16,15 @@
   #play { background: var(--accent); color: #111; border: 0; border-radius: 4px; font-size: 18px; width: 48px; height: 36px; cursor: pointer; }
   #time { font-variant-numeric: tabular-nums; min-width: 110px; text-align: right; }
 </style>
+<link rel="stylesheet" href="fonts/fonts.css">
 <script type="importmap">
-{ "imports": { "three": "./node_modules/three/build/three.module.js" } }
+{ "imports": { "three": "./node_modules/three/build/three.module.js", "three/addons/": "./node_modules/three/examples/jsm/" } }
 </script>
 </head>
 <body>
 <div id="wrap">
   <h1>GİBİ · <span id="eptitle"></span> <small style="color:#999;font-weight:normal">(hayran bölümü)</small></h1>
-  <nav id="eps" style="margin:-4px 0 12px;font-size:14px"><a href="?ep=yedek-anahtar" style="color:#ccc">1 · Yedek Anahtar</a> · <a href="?ep=sifre" style="color:#ccc">2 · Şifre</a></nav>
+  <nav id="eps" style="margin:-4px 0 12px;font-size:14px"><a href="?ep=yedek-anahtar" style="color:#ccc">1 · Yedek Anahtar</a> · <a href="?ep=sifre" style="color:#ccc">2 · Şifre</a> · <a href="?ep=yonetim" style="color:#ccc">3 · Yönetim</a></nav>
   <div id="stage"></div>
   <div id="bar">
     <button id="play" title="Oynat / duraklat">▶</button>
@@ -35,7 +36,7 @@
 <script>
   const ep = new URLSearchParams(location.search).get('ep') || 'yedek-anahtar';
   document.getElementById('audio').src = `build/${ep}/episode.m4a`;
-  document.getElementById('eptitle').textContent = ep === 'sifre' ? 'Şifre' : 'Yedek Anahtar';
+  document.getElementById('eptitle').textContent = { sifre: 'Şifre', yonetim: 'Yönetim' }[ep] || 'Yedek Anahtar';
   if (new URLSearchParams(location.search).get('mode') === 'render') {
     document.body.className = 'render';
     document.getElementById('wrap').style.display = 'none';

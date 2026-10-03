@@ -12,7 +12,7 @@ const browser = await chromium.launch({ args: CHROME_ARGS });
 const page = await browser.newPage({ viewport: { width: 1280, height: 720 } });
 page.on('console', (m) => console.log('[sayfa]', m.text()));
 page.on('pageerror', (e) => console.log('[hata]', e.message));
-await page.goto(`${url}/index.html?mode=render&ep=${EP}`);
+await page.goto(`${url}/index.html?mode=render&ep=${EP}${process.env.QS || ""}`);
 await page.waitForFunction(() => window.READY === true, null, { timeout: 120000 });
 for (const t of times) {
   const t0 = Date.now();

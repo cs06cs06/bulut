@@ -2,11 +2,12 @@
 // kamerayı yönetir ve altyazı/jenerik katmanını çizer.
 // ?mode=render → kare kare dışa aktarma (tools/render.mjs kullanır)
 import * as THREE from 'three';
-import { buildSets, applyTimeOfDay } from './sets.js';
-import { Character, LOOKS } from './characters.js';
+import { buildSets, applyTimeOfDay, setStyle } from './sets.js';
 import { layout } from './layout.js';
 import { evalPos, evalStep, evalTween, lastKey } from './timeline.js';
+import { createPost } from './post.js';
 
+// W×H: katman (altyazı/jenerik) için mantıksal çözünürlük; çıktı RW×RH
 const W = 1280, H = 720;
 const params = new URLSearchParams(location.search);
 const MODE = params.get('mode') || 'preview';
@@ -22,14 +23,29 @@ const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const tl = await (await fetch(`build/${EP}/timeline.json`)).json();
 const META = tl.meta || { title: 'Yedek Anahtar' };
 const FPS = tl.fps;
+// motor 1: çizgi film (toon) görünümü, 720p · motor 2: PBR + ışık + son işleme, 1080p
+const ENGINE = Number(params.get('engine') || META.engine || 1);
+// motor 2: 3D 1600×900'de çizilir, katman (yazılar) 1920×1080'de net çizilir
+const RW = ENGINE >= 2 ? Number(params.get('rw') || 1280) : W, RH = ENGINE >= 2 ? Math.round(RW * 9 / 16) : H;
+const OW = ENGINE >= 2 ? 1920 : W, OH = ENGINE >= 2 ? 1080 : H;
+if (ENGINE >= 2) setStyle('pbr');
+const SANS = ENGINE >= 2 ? '"Inter", "DejaVu Sans", sans-serif' : '"DejaVu Sans", sans-serif';
+const SERIF = ENGINE >= 2 ? '"Fraunces", "DejaVu Serif", serif' : '"DejaVu Serif", serif';
+const DISPLAY = ENGINE >= 2 ? '"Archivo Black", "DejaVu Sans", sans-serif' : '"DejaVu Sans", sans-serif';
+if (ENGINE >= 2) await Promise.all(['600 30px Inter', '800 30px Inter', '30px "Archivo Black"', 'italic 500 30px Fraunces'].map((f) => document.fonts.load(f, 'GİBİ şğüöçı')));
+const { Character, LOOKS } = ENGINE >= 2 ? await import('./characters2.js') : await import('./characters.js');
 
 // --- three.js ----------------------------------------------------------------
-const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+const renderer = new THREE.WebGLRenderer({ antialias: ENGINE < 2, preserveDrawingBuffer: true });
 renderer.setPixelRatio(1);
-renderer.setSize(W, H, false);
+renderer.setSize(RW, RH, false);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFShadowMap;
+renderer.shadowMap.type = ENGINE >= 2 ? THREE.PCFSoftShadowMap : THREE.PCFShadowMap;
 renderer.outputColorSpace = THREE.SRGBColorSpace;
+if (ENGINE >= 2) {
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.0;
+}
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#151515');
@@ -46,7 +62,10 @@ sun.shadow.normalBias = 0.02;
 scene.add(sun, sun.target);
 const fill = new THREE.DirectionalLight('#dfe8ff', 0.45);
 scene.add(fill, fill.target);
-const lights = { hemi, sun };
+const lights = { hemi, sun, engine: ENGINE };
+const post = ENGINE >= 2 ? createPost(renderer, scene, camera, RW, RH) : null;
+window.__post = post;
+lights.scene = scene; lights.post = post;
 
 const sets = buildSets(scene);
 const chars = {};
@@ -124,6 +143,12 @@ function charState(id, t) {
     const i0 = Math.floor(f);
     const a = env[i0] || 0, c = env[i0 + 1] || 0;
     st.mouth = lerp(a, c, f - i0) / 100;
+    st.mouthD = Math.max(0, ((env[i0 + 1] || 0) - (env[i0 - 1] || 0)) / 100);
+    if (tl.rnd) {
+      const r = tl.rnd[C.talk[ti].id] || [], w = tl.wid[C.talk[ti].id] || [];
+      st.rnd = lerp(r[i0] || 0, r[i0 + 1] || 0, f - i0) / 100;
+      st.wid = lerp(w[i0] || 0, w[i0 + 1] || 0, f - i0) / 100;
+    }
     st.talking = true;
   }
   if (st.sleep) st.mouth = 0.15;
@@ -160,6 +185,7 @@ const WIDE = {
   D: { pos: [0.2, 1.85, 5.6], look: [-0.4, 1.0, -1.2], fov: 50 },
   E: { pos: [-0.4, 1.8, 10.5], look: [-0.8, 1.9, 0.0], fov: 46 },
   F: { pos: [-0.6, 1.8, 5.4], look: [0.3, 1.1, -1.0], fov: 50 },
+  G: { pos: [0.4, 1.75, 4.4], look: [0.0, 0.95, -1.0], fov: 50 },
 };
 const toWorld = (setId, p) => { const o = layout[setId].origin; return V(o[0] + p[0], o[1] + p[1], o[2] + p[2]); };
 
@@ -353,13 +379,15 @@ function computeCamera(t, sc) {
   const push = spec.kind === 'crash' ? 0 : 0.06 * prog;
   pos.lerp(look, push);
   pos.x += Math.sin(t * 0.7) * 0.006; pos.y += Math.sin(t * 0.9 + 1) * 0.005;
-  return { pos, look, fov };
+  return { pos, look, fov, kind: spec.kind };
 }
 
 // --- katman (altyazı, kartlar, jenerik) -----------------------------------
 const out = document.createElement('canvas');
-out.width = W; out.height = H;
+out.width = OW; out.height = OH;
 const g2 = out.getContext('2d');
+g2.scale(OW / W, OH / H);
+g2.imageSmoothingQuality = 'high';
 
 function wrap(text, maxW, font) {
   g2.font = font;
@@ -382,7 +410,7 @@ function drawSubtitle(t) {
     if (t >= l.start && t <= l.start + l.dur + 0.25) { ln = l; break; }
   }
   if (!ln) return;
-  const font = `${ln.os ? 'italic ' : ''}600 33px "DejaVu Sans", "Segoe UI", sans-serif`;
+  const font = `${ln.os ? 'italic ' : ''}600 ${ENGINE >= 2 ? 34 : 33}px ${SANS}`;
   const lines = wrap(ln.text, 1020, font);
   g2.font = font;
   g2.textAlign = 'center';
@@ -391,9 +419,14 @@ function drawSubtitle(t) {
   const base = H - 46 - (lines.length - 1) * 42;
   lines.forEach((s, i) => {
     const y = base + i * 42;
-    g2.lineWidth = 7;
-    g2.strokeStyle = 'rgba(0,0,0,0.92)';
-    g2.strokeText(s, W / 2, y);
+    if (ENGINE >= 2) {
+      g2.save(); g2.shadowColor = 'rgba(0,0,0,0.85)'; g2.shadowBlur = 10; g2.shadowOffsetY = 2;
+      g2.lineWidth = 4.5; g2.strokeStyle = 'rgba(0,0,0,0.8)'; g2.strokeText(s, W / 2, y); g2.restore();
+    } else {
+      g2.lineWidth = 7;
+      g2.strokeStyle = 'rgba(0,0,0,0.92)';
+      g2.strokeText(s, W / 2, y);
+    }
     g2.fillStyle = ln.who.length > 1 ? '#ffe58a' : '#ffffff';
     g2.fillText(s, W / 2, y);
   });
@@ -406,7 +439,7 @@ function drawCard(text, local, dur) {
   g2.fillRect(0, 0, W, H);
   g2.globalAlpha = a;
   g2.fillStyle = '#f3efe2';
-  g2.font = 'italic 44px "DejaVu Serif", Georgia, serif';
+  g2.font = `italic 44px ${SERIF}`;
   g2.textAlign = 'center';
   g2.textBaseline = 'middle';
   g2.fillText(text, W / 2, H / 2);
@@ -428,7 +461,7 @@ function drawTitle(local, dur) {
   }
   g2.restore();
   const letters = ['G', 'İ', 'B', 'İ'];
-  g2.font = '900 210px "DejaVu Sans", Impact, sans-serif';
+  g2.font = ENGINE >= 2 ? `200px ${DISPLAY}` : `900 210px ${DISPLAY}`;
   g2.textAlign = 'center'; g2.textBaseline = 'alphabetic';
   const total = letters.reduce((s, c) => s + g2.measureText(c).width + 18, -18);
   let x = W / 2 - total / 2;
@@ -453,11 +486,11 @@ function drawTitle(local, dur) {
   g2.fillStyle = '#1a1a1a';
   g2.fillRect(W / 2 - 230 + (1 - sp) * 80, 430, 460, 70);
   g2.fillStyle = '#f2b705';
-  g2.font = 'bold 42px "DejaVu Sans", sans-serif';
+  g2.font = `bold 42px ${SANS}`;
   g2.textBaseline = 'middle';
   g2.fillText(META.title, W / 2 + (1 - sp) * 80, 467);
   g2.fillStyle = '#1a1a1a';
-  g2.font = 'italic 24px "DejaVu Serif", serif';
+  g2.font = `italic 24px ${SERIF}`;
   g2.globalAlpha = smooth((local - 2.4) / 0.6);
   g2.fillText(`— ${(META.tag || 'hayran bölümü').toLocaleLowerCase('tr')} —`, W / 2, 540);
   g2.globalAlpha = 1;
@@ -486,13 +519,13 @@ function drawCredits(local, dur) {
   let y = H + 40 - local * ((H + 1150) / dur);
   for (const [a, b] of CREDITS) {
     if (b === 'gap') { y += 36; continue; }
-    if (b === 'big') { g2.font = '900 96px "DejaVu Sans", sans-serif'; g2.fillStyle = '#f2b705'; g2.fillText(a, W / 2, y); y += 100; continue; }
-    if (b === 'mid') { g2.font = 'bold 40px "DejaVu Sans", sans-serif'; g2.fillStyle = '#f3efe2'; g2.fillText(a, W / 2, y); y += 54; continue; }
-    if (b === 'small') { g2.font = '28px "DejaVu Sans", sans-serif'; g2.fillStyle = '#cfcabb'; g2.fillText(a, W / 2, y); y += 40; continue; }
-    if (b === 'head') { g2.font = 'bold 24px "DejaVu Sans", sans-serif'; g2.fillStyle = '#f2b705'; g2.fillText(a, W / 2, y); y += 42; continue; }
-    g2.font = 'bold 30px "DejaVu Sans", sans-serif'; g2.fillStyle = '#f3efe2';
+    if (b === 'big') { g2.font = `900 96px ${SANS}`; g2.fillStyle = '#f2b705'; g2.fillText(a, W / 2, y); y += 100; continue; }
+    if (b === 'mid') { g2.font = `bold 40px ${SANS}`; g2.fillStyle = '#f3efe2'; g2.fillText(a, W / 2, y); y += 54; continue; }
+    if (b === 'small') { g2.font = `28px ${SANS}`; g2.fillStyle = '#cfcabb'; g2.fillText(a, W / 2, y); y += 40; continue; }
+    if (b === 'head') { g2.font = `bold 24px ${SANS}`; g2.fillStyle = '#f2b705'; g2.fillText(a, W / 2, y); y += 42; continue; }
+    g2.font = `bold 30px ${SANS}`; g2.fillStyle = '#f3efe2';
     g2.textAlign = 'right'; g2.fillText(a, W / 2 - 20, y);
-    g2.font = 'italic 28px "DejaVu Serif", serif'; g2.fillStyle = '#a9a496';
+    g2.font = `italic 28px ${SERIF}`; g2.fillStyle = '#a9a496';
     g2.textAlign = 'left'; g2.fillText(b, W / 2 + 20, y);
     g2.textAlign = 'center';
     y += 44;
@@ -515,7 +548,33 @@ function wifiIcon(x, y, bars, col) {
 function drawInsert(b, local) {
   const ins = b.insert;
   const a = smooth(local / 0.25) * smooth((b.dur - local) / 0.25);
-  if (ins.kind === 'note') {
+  if (ins.kind === 'notice') {
+    // koridor duvarında raptiyeli ilan
+    const wg = g2.createLinearGradient(0, 0, 0, H);
+    wg.addColorStop(0, '#dfe6d2'); wg.addColorStop(0.62, '#dfe6d2'); wg.addColorStop(0.62, '#7f9a76'); wg.addColorStop(1, '#6f8a66');
+    g2.fillStyle = wg; g2.fillRect(0, 0, W, H);
+    g2.save();
+    g2.translate(W / 2 + (1 - a) * 30, H / 2 + 6); g2.rotate(0.012);
+    g2.fillStyle = 'rgba(0,0,0,0.25)'; g2.fillRect(-312, -322, 640, 660);
+    g2.fillStyle = '#fdfcf7'; g2.fillRect(-320, -330, 640, 660);
+    g2.fillStyle = '#c8a24a'; g2.beginPath(); g2.arc(0, -308, 11, 0, 7); g2.fill();
+    g2.fillStyle = '#555'; g2.font = `700 18px ${SANS}`; g2.textAlign = 'center'; g2.textBaseline = 'alphabetic';
+    g2.fillText(ins.head, 0, -250);
+    g2.fillStyle = '#b91c1c'; g2.font = `30px ${DISPLAY}`;
+    const tl2 = wrap(ins.title, 560, g2.font);
+    tl2.forEach((ln, i) => g2.fillText(ln, 0, -196 + i * 40));
+    g2.fillStyle = '#222'; g2.textAlign = 'left';
+    ins.lines.forEach((ln, i) => {
+      const p = clamp((local - 0.5 - i * 0.28) / 0.3, 0, 1);
+      g2.globalAlpha = p;
+      g2.font = ln === 'GÜNDEM' ? `800 22px ${SANS}` : `500 22px ${SANS}`;
+      g2.fillText(ln, -270, -100 + i * 38);
+      g2.globalAlpha = 1;
+    });
+    g2.font = `italic 500 24px ${SERIF}`; g2.textAlign = 'right'; g2.fillStyle = '#1e3a8a';
+    g2.fillText(ins.sign, 270, 290);
+    g2.restore();
+  } else if (ins.kind === 'note') {
     // tezgâh ahşabı üstünde açık defter
     g2.fillStyle = '#6b4226'; g2.fillRect(0, 0, W, H);
     g2.fillStyle = 'rgba(0,0,0,0.12)';
@@ -523,20 +582,20 @@ function drawInsert(b, local) {
     g2.save();
     g2.translate(W / 2, H / 2 + (1 - a) * 40); g2.rotate(-0.03);
     g2.fillStyle = 'rgba(0,0,0,0.35)'; g2.fillRect(-418, -288, 846, 590);
-    g2.fillStyle = '#f7f1dc'; g2.fillRect(-424, -296, 846, 590);
+    g2.fillStyle = ins.paper === 'white' ? '#fbfbf8' : '#f7f1dc'; g2.fillRect(-424, -296, 846, 590);
     g2.strokeStyle = '#9ec5e8'; g2.lineWidth = 2;
     for (let i = 0; i < 12; i++) { g2.beginPath(); g2.moveTo(-424, -210 + i * 44); g2.lineTo(422, -210 + i * 44); g2.stroke(); }
     g2.strokeStyle = '#e0787a'; g2.beginPath(); g2.moveTo(-330, -296); g2.lineTo(-330, 294); g2.stroke();
-    g2.fillStyle = '#1e3a8a'; g2.font = 'italic bold 34px "DejaVu Serif", serif'; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
+    g2.fillStyle = '#1e3a8a'; g2.font = `italic bold 34px ${SERIF}`; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
     g2.fillText(ins.title, -300, -230);
-    g2.font = 'italic 30px "DejaVu Serif", serif';
+    g2.font = `italic 30px ${SERIF}`;
     ins.lines.forEach((ln, i) => {
       const p = clamp((local - 0.3 - i * 0.25) / 0.3, 0, 1);
       g2.globalAlpha = p; g2.fillText(ln, -300, -168 + i * 44); g2.globalAlpha = 1;
     });
     const p = clamp((local - 0.4 - ins.lines.length * 0.25) / 0.5, 0, 1);
     g2.globalAlpha = p;
-    g2.fillStyle = '#b91c1c'; g2.font = 'italic bold 40px "DejaVu Serif", serif';
+    g2.fillStyle = '#b91c1c'; g2.font = `italic bold 40px ${SERIF}`;
     g2.fillText(ins.last, -300, -168 + ins.lines.length * 44 + 6);
     g2.strokeStyle = '#b91c1c'; g2.lineWidth = 4;
     g2.beginPath(); g2.ellipse(-300 + g2.measureText(ins.last).width / 2, -180 + ins.lines.length * 44, g2.measureText(ins.last).width / 2 + 24, 34, -0.02, 0, 7); g2.stroke();
@@ -551,12 +610,12 @@ function drawInsert(b, local) {
     g2.fillStyle = '#f5f6f8'; roundRect(px, py, pw, ph, 34); g2.fill();
     g2.save(); roundRect(px, py, pw, ph, 34); g2.clip();
     g2.fillStyle = '#e9ecf1'; g2.fillRect(px, py, pw, 92);
-    g2.fillStyle = '#111'; g2.font = '600 17px "DejaVu Sans", sans-serif'; g2.textAlign = 'left'; g2.textBaseline = 'middle';
+    g2.fillStyle = '#111'; g2.font = `600 17px ${SANS}`; g2.textAlign = 'left'; g2.textBaseline = 'middle';
     g2.fillText(ins.kind === 'wifi' ? '20.39' : '20.5' + (b.start % 10 | 0), px + 26, py + 24);
-    g2.font = 'bold 28px "DejaVu Sans", sans-serif';
+    g2.font = `bold 28px ${SANS}`;
     g2.fillText(ins.kind === 'wifi' ? 'Wi-Fi' : 'Şifre girin', px + 24, py + 64);
     if (ins.kind === 'wifi') {
-      g2.font = '15px "DejaVu Sans", sans-serif'; g2.fillStyle = '#667';
+      g2.font = `15px ${SANS}`; g2.fillStyle = '#667';
       g2.fillText('KULLANILABİLİR AĞLAR', px + 24, py + 122);
       ins.rows.forEach(([name, bars], i) => {
         const p = clamp((local - 0.2 - i * 0.18) / 0.25, 0, 1);
@@ -565,7 +624,7 @@ function drawInsert(b, local) {
         g2.fillStyle = i === 0 ? '#e7f0ff' : '#ffffff'; g2.fillRect(px + 12, y - 28, pw - 24, 58);
         g2.fillStyle = '#111'; g2.font = `${i === 0 ? 'bold ' : ''}21px "DejaVu Sans", sans-serif`;
         g2.fillText(name, px + 28, y);
-        g2.font = '17px "DejaVu Sans"'; g2.fillText('🔒', px + pw - 102, y);
+        g2.font = `17px ${SANS}`; g2.fillText('🔒', px + pw - 102, y);
         wifiIcon(px + pw - 72, y + 8, bars, '#1d4ed8');
         g2.globalAlpha = 1;
       });
@@ -575,19 +634,19 @@ function drawInsert(b, local) {
         g2.strokeStyle = `rgba(242,183,5,${hp})`; g2.lineWidth = 5; roundRect(px + 10, py + 130, pw - 20, 62, 12); g2.stroke();
       }
     } else {
-      g2.fillStyle = '#556'; g2.font = '18px "DejaVu Sans", sans-serif';
+      g2.fillStyle = '#556'; g2.font = `18px ${SANS}`;
       g2.fillText(`Ağ: ${ins.net}`, px + 24, py + 130);
       g2.fillStyle = '#fff'; g2.strokeStyle = '#c5cad3'; g2.lineWidth = 2;
       roundRect(px + 20, py + 160, pw - 40, 64, 12); g2.fill(); g2.stroke();
       const typeEnd = b.dur * 0.6;
       const n = Math.round(ins.input.length * clamp((local - 0.35) / (typeEnd - 0.35), 0, 1));
-      g2.fillStyle = '#111'; g2.font = '26px "DejaVu Sans Mono", monospace';
+      g2.fillStyle = '#111'; g2.font = `26px "DejaVu Sans Mono", monospace`;
       const shown = ins.input.slice(0, n) + ((local * 2 | 0) % 2 && local < typeEnd ? '|' : '');
       g2.fillText(shown, px + 36, py + 193);
       // klavye
       g2.fillStyle = '#d6d9df'; g2.fillRect(px, py + ph - 250, pw, 250);
       const rows = ['qwertyuıopğü', 'asdfghjklşi', 'zxcvbnmöç'];
-      g2.font = '17px "DejaVu Sans", sans-serif'; g2.textAlign = 'center';
+      g2.font = `17px ${SANS}`; g2.textAlign = 'center';
       const curCh = ins.input[n - 1];
       rows.forEach((r, ri) => {
         const kw = (pw - 20) / 12;
@@ -604,7 +663,7 @@ function drawInsert(b, local) {
         const ok = ins.ok;
         g2.fillStyle = ok ? '#15803d' : '#b91c1c';
         roundRect(px + 20, py + 250, pw - 40, 64, 12); g2.fill();
-        g2.fillStyle = '#fff'; g2.font = 'bold 22px "DejaVu Sans", sans-serif'; g2.textAlign = 'center';
+        g2.fillStyle = '#fff'; g2.font = `bold 22px ${SANS}`; g2.textAlign = 'center';
         g2.fillText(ok ? `✓ ${ins.okText || 'Bağlandı'}` : '✕ Yanlış şifre', px + pw / 2, py + 282);
         g2.textAlign = 'left';
       }
@@ -617,7 +676,7 @@ function drawInsert(b, local) {
 function drawBug() {
   g2.save();
   g2.globalAlpha = 0.78;
-  g2.font = '900 26px "DejaVu Sans", sans-serif';
+  g2.font = `900 26px ${SANS}`;
   g2.textAlign = 'left'; g2.textBaseline = 'top';
   g2.lineWidth = 4; g2.strokeStyle = 'rgba(0,0,0,0.6)';
   g2.strokeText('GİBİ', 28, 22);
@@ -691,6 +750,15 @@ function renderAt(t) {
     sets.van.position.x = x;
     sets.van.children.forEach((c) => { if (c.geometry && c.geometry.type === 'CylinderGeometry' && c.rotation.x) c.rotation.y = x * 2.6; });
   }
+  // Necmi Bey'in saati (20.00'den başlar) ve modem ışıkları
+  if (sets.clockHands && sc.set === 'G') {
+    const sec = (t - sc.start) + 20 * 3600 + 5;
+    const [hh, mm, ss] = sets.clockHands;
+    hh.rotation.z = -((sec / 3600) % 12) / 12 * Math.PI * 2;
+    mm.rotation.z = -((sec / 60) % 60) / 60 * Math.PI * 2;
+    ss.rotation.z = -Math.floor(sec % 60) / 60 * Math.PI * 2;
+    sets.modemLeds.forEach((l, i) => { l.visible = i === 0 || Math.sin(t * (7 + i * 3.1) + i) > -0.2; });
+  }
   // TV titreşimi
   if (sets.tv && sc.time === 'night') {
     const f = 0.8 + 0.2 * Math.sin(t * 13) * Math.sin(t * 3.1);
@@ -714,7 +782,7 @@ function renderAt(t) {
   camera.fov = cam.fov;
   camera.updateProjectionMatrix();
   camera.lookAt(cam.look);
-  renderer.render(scene, camera);
+  if (post) post.render(t, cam); else renderer.render(scene, camera);
 
   g2.drawImage(renderer.domElement, 0, 0, W, H);
   drawBug();
