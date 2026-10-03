@@ -1,10 +1,12 @@
 // episode.js → SENARYO.md (okunabilir senaryo metni)
 import fs from 'node:fs';
-import * as episode from '../src/episode.js';
+import { BUILD, EP, loadEpisode } from './ep.mjs';
+
+const episode = await loadEpisode();
 
 const { meta, cast, scenes } = episode;
 let tl = null;
-try { tl = JSON.parse(fs.readFileSync('build/timeline.json', 'utf8')); } catch { /* süreler opsiyonel */ }
+try { tl = JSON.parse(fs.readFileSync(`${BUILD}/timeline.json`, 'utf8')); } catch { /* süreler opsiyonel */ }
 const fmt = (s) => `${Math.floor(s / 60)} dk ${String(Math.round(s % 60)).padStart(2, '0')} sn`;
 
 const L = [];
@@ -19,6 +21,7 @@ const desc = {
   nec: 'Sekiz numaradaki emekli komşu. Her sabah kapı dürbününden bakar, her sabah "bir şey isteyecektir".',
   rem: 'Huzur Apartmanı\'nın kapıcısı. Bütün dairelerin anahtarı ondadır — biri hariç.',
   hus: 'Mahallenin çilingiri. Kapıyı iki buçuk saniyede açar, muhabbeti ayrıca ücretlendirir.',
+  suk: 'Mahallenin bakkalı. Ekmeği biter, yumurtası bitmez; veresiye defteri mahallenin hafızasıdır.',
 };
 for (const [id, c] of Object.entries(cast)) L.push(`- **${c.name}** — ${desc[id]}`);
 L.push('', '---', '');
@@ -27,7 +30,7 @@ scenes.forEach((sc, si) => {
   const ts = tl && tl.scenes[si];
   L.push(`## ${sc.label}`, '');
   if (sc.title) {
-    L.push('*Jenerik müziği girer. Ekranda harfler tek tek düşer:* **GİBİ** — *altında:* **Yedek Anahtar**', '', '---', '');
+    L.push('*Jenerik müziği girer. Ekranda harfler tek tek düşer:* **GİBİ** — *altında:* **${meta.title}**', '', '---', '');
     return;
   }
   if (sc.credits) {
@@ -38,6 +41,11 @@ scenes.forEach((sc, si) => {
   for (const b of sc.beats) {
     if (b.type === 'act') L.push(`*${b.text}*`, '');
     else if (b.type === 'card') L.push(`> **EKRANDA:** ${b.text}`, '');
+    else if (b.type === 'insert') {
+      if (b.kind === 'wifi') L.push(`> **ARA GÖRÜNTÜ — ${b.text}** ${b.rows.map((r) => '`' + r[0] + '`').join(' · ')}`, '');
+      else if (b.kind === 'pass') L.push(`> **ARA GÖRÜNTÜ — telefon:** \`${b.input}\` → *${b.ok ? b.okText || 'Bağlandı' : 'Yanlış şifre'}*`, '');
+      else L.push(`> **ARA GÖRÜNTÜ — ${b.text}**  `, `> ${b.title}: ${b.lines.filter(Boolean).join(' · ')} **${b.last}**`, '');
+    }
     else if (b.type === 'say') {
       const who = Array.isArray(b.who) ? b.who.map((w) => cast[w].name).join(' VE ') : cast[b.who].name;
       const paren = b.p || (b.os ? (sc.id === 'tag' ? 'kapının arkasından' : 'içeriden') : null);
@@ -47,5 +55,6 @@ scenes.forEach((sc, si) => {
   L.push('---', '');
 });
 L.push('*Bu senaryo, Gibi dizisine duyulan sevgiyle yazılmış resmi olmayan bir hayran bölümüdür.*', '');
-fs.writeFileSync('SENARYO.md', L.join('\n'));
-console.log('SENARYO.md yazıldı');
+fs.mkdirSync('senaryolar', { recursive: true });
+fs.writeFileSync(`senaryolar/${EP}.md`, L.join('\n'));
+console.log(`senaryolar/${EP}.md yazıldı`);

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Bölümü baştan üretir: senaryo → seslendirme → zaman çizelgesi → miks → video
+# Bir bölümü baştan üretir: senaryo → seslendirme → zaman çizelgesi → miks → video
+#   ./build.sh sifre          (varsayılan: yedek-anahtar)
 set -euo pipefail
+export EP="${1:-${EP:-yedek-anahtar}}"
 cd "$(dirname "$0")"
 
 MODEL=voices/tr_TR-dfki-medium.onnx
@@ -17,4 +19,4 @@ python3 tools/tts.py             # piper ile seslendirme (önbellekli)
 node tools/make-timeline.mjs     # zamanlama + animasyon izleri
 node tools/build-script-md.mjs   # SENARYO.md
 python3 tools/mix.py             # efekt + müzik + ortam sesi miksajı
-node tools/render.mjs --workers "${WORKERS:-4}" --crf "${CRF:-23}" --out dist/gibi-yedek-anahtar.mp4
+node tools/render.mjs --workers "${WORKERS:-4}" --crf "${CRF:-23}"

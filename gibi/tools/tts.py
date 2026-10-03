@@ -11,7 +11,8 @@ from piper import PiperVoice, SynthesisConfig
 FPS = 24
 SR = 44100
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD = os.path.join(ROOT, 'build')
+EP = sys.argv[sys.argv.index('--ep') + 1] if '--ep' in sys.argv else os.environ.get('EP', 'yedek-anahtar')
+BUILD = os.path.join(ROOT, 'build', EP)
 AUD = os.path.join(BUILD, 'audio')
 MODEL = os.environ.get('PIPER_MODEL', os.path.join(ROOT, 'voices', 'tr_TR-dfki-medium.onnx'))
 

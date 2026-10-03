@@ -31,6 +31,11 @@ export const LOOKS = {
     hair: { style: 'short', color: '#1b1b1b' }, mustache: { color: '#1b1b1b', size: 1.6 }, brows: '#1b1b1b',
     outfits: { normal: { torso: '#4b4b4f', arms: '#e3dfd3', legs: '#3d3a36', shoes: '#1c1c1c', collar: '#e3dfd3' } },
   },
+  suk: {
+    height: 1.72, build: 1.15, belly: 0.8, skin: '#d8a27c',
+    hair: { style: 'sides', color: '#6b6b6b' }, mustache: { color: '#3a3a3a', size: 1.45 }, brows: '#3a3a3a',
+    outfits: { normal: { torso: '#2f6b45', arms: '#efe9da', legs: '#4a4038', shoes: '#2a2018', collar: '#efe9da' } },
+  },
   hus: {
     height: 1.8, build: 1.05, belly: 0.25, skin: '#d29a70',
     hair: { style: 'short', color: '#2b2017' }, stubble: '#4a3a2c', brows: '#2b2017',
@@ -116,6 +121,9 @@ const HOLD_POSE = {
   paper: { R: A(-0.95, 0.4, -0.05, -1.35), L: A(-0.95, 0.4, -0.05, -1.35), pitch: 0.12 },
   coat: { R: A(-0.8, 0.35, 0.05, -1.0), L: A(-0.8, 0.35, 0.05, -1.0) },
   toolbox: { R: A(0.0, 0, -0.18, -0.05) },
+  phone: { R: A(-0.75, 0.35, -0.05, -1.45), pitch: 0.12 },
+  remote: { R: A(-0.35, 0.2, -0.05, -1.1) },
+  notebook: { R: A(-0.8, 0.45, 0.0, -1.3), L: A(-0.8, 0.45, 0.0, -1.3), pitch: 0.15 },
   phoneItem: {},
 };
 
@@ -164,6 +172,15 @@ function makeItem(kind) {
       break;
     }
     case 'coat': box(0.2, 0.18, 0.45, '#6b4a2e', 0.1, 0, 0.12, g); break;
+    case 'remote': box(0.045, 0.02, 0.17, '#1c1c1c', 0, -0.01, 0.06, g); break;
+    case 'notebook': {
+      const pg = mat('#f6f0dc');
+      const l = box(0.2, 0.012, 0.27, pg, 0.11, 0, 0.1, g); l.rotation.z = 0.12;
+      const r = box(0.2, 0.012, 0.27, pg, -0.09, 0, 0.1, g); r.rotation.z = -0.12;
+      box(0.42, 0.006, 0.29, '#7a2a2a', 0.01, -0.012, 0.1, g);
+      g.position.set(0.05, -0.02, 0.05);
+      break;
+    }
     case 'toolbox': {
       box(0.36, 0.2, 0.16, '#c62828', 0, -0.14, 0, g);
       box(0.2, 0.03, 0.03, '#333', 0, -0.02, 0, g);
@@ -271,7 +288,7 @@ export class Character {
 
     // el eşyaları
     this.items = {};
-    for (const k of ['key', 'gift', 'tea', 'phone', 'pan', 'card', 'paper', 'coat', 'toolbox']) {
+    for (const k of ['key', 'gift', 'tea', 'phone', 'pan', 'card', 'paper', 'coat', 'toolbox', 'remote', 'notebook']) {
       const it = makeItem(k);
       it.visible = false;
       this.arms.R.anchor.add(it);

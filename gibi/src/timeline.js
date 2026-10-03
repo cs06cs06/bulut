@@ -317,9 +317,17 @@ export function buildTimeline(episode, audio, sets) {
 
     sc.beats.forEach((b, bi) => {
       const beat = { scene: si, idx: bi, type: b.type, start: t, cam: b.cam };
-      if (b.type === 'title' || b.type === 'credits' || b.type === 'card') {
+      if (b.type === 'title' || b.type === 'credits' || b.type === 'card' || b.type === 'insert') {
         beat.dur = b.dur;
         beat.text = b.text;
+        if (b.type === 'insert') {
+          beat.insert = b;
+          if (b.kind === 'pass') {
+            tl.sfx.push({ t: t + 0.35, name: 'typing' });
+            tl.sfx.push({ t: t + b.dur * 0.68, name: b.ok ? 'ok' : 'error' });
+          } else if (b.kind === 'note') tl.sfx.push({ t: t + 0.1, name: 'page' });
+          else tl.sfx.push({ t: t + 0.1, name: 'tap' });
+        }
         t += b.dur;
       } else if (b.type === 'act') {
         const d = runOps(b.ops, t);

@@ -3,13 +3,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { serve, CHROME_ARGS } from './server.mjs';
-const tl = JSON.parse(fs.readFileSync('build/timeline.json', 'utf8'));
+import { BUILD, EP } from './ep.mjs';
+const tl = JSON.parse(fs.readFileSync(`${BUILD}/timeline.json`, 'utf8'));
 const { srv, url } = await serve(path.resolve('.'));
 const browser = await chromium.launch({ args: CHROME_ARGS });
 const page = await browser.newPage();
 let bad = 0;
 page.on('console', (m) => { if (m.type() === 'warning' || m.type() === 'error') { bad++; console.log('[sayfa]', m.text()); } });
-await page.goto(`${url}/index.html?mode=render`);
+await page.goto(`${url}/index.html?mode=render&ep=${EP}`);
 await page.waitForFunction(() => window.READY === true);
 const times = tl.beats.flatMap((b) => [b.start + 0.05, b.start + b.dur / 2]);
 const errs = await page.evaluate((ts) => {

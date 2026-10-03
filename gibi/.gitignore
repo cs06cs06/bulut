@@ -1,0 +1,7 @@
+node_modules/
+voices/
+build/*/audio/
+build/*/chunks/
+build/*/episode.wav
+build/*/lines.json
+build/*/*.log

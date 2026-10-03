@@ -204,7 +204,7 @@ Olur. Kalbin anahtarlığıysa.
 
 ## JENERİK
 
-*Jenerik müziği girer. Ekranda harfler tek tek düşer:* **GİBİ** — *altında:* **Yedek Anahtar**
+*Jenerik müziği girer. Ekranda harfler tek tek düşer:* **GİBİ** — *altında:* **${meta.title}**
 
 ---
 

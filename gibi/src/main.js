@@ -6,11 +6,11 @@ import { buildSets, applyTimeOfDay } from './sets.js';
 import { Character, LOOKS } from './characters.js';
 import { layout } from './layout.js';
 import { evalPos, evalStep, evalTween, lastKey } from './timeline.js';
-import * as episode from './episode.js';
 
 const W = 1280, H = 720;
 const params = new URLSearchParams(location.search);
 const MODE = params.get('mode') || 'preview';
+const EP = params.get('ep') || 'yedek-anahtar';
 
 const smooth = (x) => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
@@ -19,7 +19,8 @@ const angN = (a) => Math.atan2(Math.sin(a), Math.cos(a));
 const hash = (s) => { let h = 2166136261; for (const c of s) h = Math.imul(h ^ c.charCodeAt(0), 16777619); return Math.abs(h); };
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
-const tl = await (await fetch('build/timeline.json')).json();
+const tl = await (await fetch(`build/${EP}/timeline.json`)).json();
+const META = tl.meta || { title: 'Yedek Anahtar' };
 const FPS = tl.fps;
 
 // --- three.js ----------------------------------------------------------------
@@ -49,7 +50,7 @@ const lights = { hemi, sun };
 
 const sets = buildSets(scene);
 const chars = {};
-for (const id of Object.keys(LOOKS)) {
+for (const id of Object.keys(tl.chars)) {
   chars[id] = new Character(id);
   scene.add(chars[id].root);
 }
@@ -158,6 +159,7 @@ const WIDE = {
   C: { pos: [0.0, 1.65, 3.9], look: [-0.2, 1.2, -1.6], fov: 52 },
   D: { pos: [0.2, 1.85, 5.6], look: [-0.4, 1.0, -1.2], fov: 50 },
   E: { pos: [-0.4, 1.8, 10.5], look: [-0.8, 1.9, 0.0], fov: 46 },
+  F: { pos: [-0.6, 1.8, 5.4], look: [0.3, 1.1, -1.0], fov: 50 },
 };
 const toWorld = (setId, p) => { const o = layout[setId].origin; return V(o[0] + p[0], o[1] + p[1], o[2] + p[2]); };
 
@@ -168,7 +170,7 @@ const shots = [];
   tl.beats.forEach((b, i) => {
     const sc = tl.scenes[b.scene];
     let spec;
-    if (!sc.set || b.type === 'card' || b.type === 'title' || b.type === 'credits') spec = { kind: 'none' };
+    if (!sc.set || ['card', 'title', 'credits', 'insert'].includes(b.type)) spec = { kind: 'none' };
     else if (b.cam) spec = parseCam(b.cam, b);
     else if (b.type === 'act') spec = { kind: 'wide' };
     else if (b.continueShot && shots[i - 1]) spec = { ...shots[i - 1], cont: true };
@@ -453,11 +455,11 @@ function drawTitle(local, dur) {
   g2.fillStyle = '#f2b705';
   g2.font = 'bold 42px "DejaVu Sans", sans-serif';
   g2.textBaseline = 'middle';
-  g2.fillText('Yedek Anahtar', W / 2 + (1 - sp) * 80, 467);
+  g2.fillText(META.title, W / 2 + (1 - sp) * 80, 467);
   g2.fillStyle = '#1a1a1a';
   g2.font = 'italic 24px "DejaVu Serif", serif';
   g2.globalAlpha = smooth((local - 2.4) / 0.6);
-  g2.fillText('— bir hayran bölümü —', W / 2, 540);
+  g2.fillText(`— ${(META.tag || 'hayran bölümü').toLocaleLowerCase('tr')} —`, W / 2, 540);
   g2.globalAlpha = 1;
   // çıkış
   const fo = smooth((local - (dur - 0.45)) / 0.45);
@@ -465,15 +467,18 @@ function drawTitle(local, dur) {
 }
 
 const CREDITS = [
-  ['GİBİ', 'big'], ['"Yedek Anahtar"', 'mid'], ['hayran bölümü', 'small'], ['', 'gap'],
+  ['GİBİ', 'big'], [`"${META.title}"`, 'mid'], [(META.tag || 'hayran bölümü').toLocaleLowerCase('tr'), 'small'], ['', 'gap'],
   ['OYNAYANLAR', 'head'],
-  ['Yılmaz', 'kendisi gibi'], ['İlkkan', 'kendisi gibi'], ['Necmi Bey', 'sekiz numara'],
-  ['Kapıcı Remzi', 'Huzur Apartmanı'], ['Çilingir Hüsnü', '7/24'], ['', 'gap'],
+  ...(META.credits || [['Yılmaz', 'kendisi gibi'], ['İlkkan', 'kendisi gibi'], ['Necmi Bey', 'sekiz numara'],
+    ['Kapıcı Remzi', 'Huzur Apartmanı'], ['Çilingir Hüsnü', '7/24']]),
+  ['', 'gap'],
   ['SENARYO', 'head'], ['Claude', 'small'], ['', 'gap'],
   ['GÖRÜNTÜ', 'head'], ['three.js ile kare kare çizildi', 'small'], ['', 'gap'],
   ['SESLER', 'head'], ['piper (tr_TR-dfki) sentetik seslendirme', 'small'], ['', 'gap'],
   ['Bu çalışma resmi bir Gibi bölümü değildir;', 'small'], ['diziye duyulan sevgiyle yapılmış bir hayran işidir.', 'small'],
-  ['', 'gap'], ['Kapıyı kapatmayı unutmayın.', 'mid'], ['Ya da unutun. Acil durum o zaman.', 'small'],
+  ['', 'gap'],
+  [(META.outro || ['Kapıyı kapatmayı unutmayın.'])[0], 'mid'],
+  [(META.outro || [null, 'Ya da unutun. Acil durum o zaman.'])[1], 'small'],
 ];
 function drawCredits(local, dur) {
   g2.fillStyle = '#101010'; g2.fillRect(0, 0, W, H);
@@ -494,6 +499,119 @@ function drawCredits(local, dur) {
   }
   const fo = smooth((local - (dur - 1.0)) / 1.0);
   if (fo > 0) { g2.fillStyle = `rgba(0,0,0,${fo})`; g2.fillRect(0, 0, W, H); }
+}
+
+// --- ara görüntüler: telefon ekranı ve veresiye defteri -----------------------
+function roundRect(x, y, w, h, r) {
+  g2.beginPath(); g2.moveTo(x + r, y); g2.arcTo(x + w, y, x + w, y + h, r); g2.arcTo(x + w, y + h, x, y + h, r);
+  g2.arcTo(x, y + h, x, y, r); g2.arcTo(x, y, x + w, y, r); g2.closePath();
+}
+function wifiIcon(x, y, bars, col) {
+  for (let i = 0; i < 4; i++) {
+    g2.fillStyle = i < bars ? col : 'rgba(0,0,0,0.15)';
+    g2.fillRect(x + i * 9, y - 6 - i * 6, 6, 8 + i * 6);
+  }
+}
+function drawInsert(b, local) {
+  const ins = b.insert;
+  const a = smooth(local / 0.25) * smooth((b.dur - local) / 0.25);
+  if (ins.kind === 'note') {
+    // tezgâh ahşabı üstünde açık defter
+    g2.fillStyle = '#6b4226'; g2.fillRect(0, 0, W, H);
+    g2.fillStyle = 'rgba(0,0,0,0.12)';
+    for (let i = 0; i < 14; i++) g2.fillRect(0, i * 56 + 20, W, 3);
+    g2.save();
+    g2.translate(W / 2, H / 2 + (1 - a) * 40); g2.rotate(-0.03);
+    g2.fillStyle = 'rgba(0,0,0,0.35)'; g2.fillRect(-418, -288, 846, 590);
+    g2.fillStyle = '#f7f1dc'; g2.fillRect(-424, -296, 846, 590);
+    g2.strokeStyle = '#9ec5e8'; g2.lineWidth = 2;
+    for (let i = 0; i < 12; i++) { g2.beginPath(); g2.moveTo(-424, -210 + i * 44); g2.lineTo(422, -210 + i * 44); g2.stroke(); }
+    g2.strokeStyle = '#e0787a'; g2.beginPath(); g2.moveTo(-330, -296); g2.lineTo(-330, 294); g2.stroke();
+    g2.fillStyle = '#1e3a8a'; g2.font = 'italic bold 34px "DejaVu Serif", serif'; g2.textAlign = 'left'; g2.textBaseline = 'alphabetic';
+    g2.fillText(ins.title, -300, -230);
+    g2.font = 'italic 30px "DejaVu Serif", serif';
+    ins.lines.forEach((ln, i) => {
+      const p = clamp((local - 0.3 - i * 0.25) / 0.3, 0, 1);
+      g2.globalAlpha = p; g2.fillText(ln, -300, -168 + i * 44); g2.globalAlpha = 1;
+    });
+    const p = clamp((local - 0.4 - ins.lines.length * 0.25) / 0.5, 0, 1);
+    g2.globalAlpha = p;
+    g2.fillStyle = '#b91c1c'; g2.font = 'italic bold 40px "DejaVu Serif", serif';
+    g2.fillText(ins.last, -300, -168 + ins.lines.length * 44 + 6);
+    g2.strokeStyle = '#b91c1c'; g2.lineWidth = 4;
+    g2.beginPath(); g2.ellipse(-300 + g2.measureText(ins.last).width / 2, -180 + ins.lines.length * 44, g2.measureText(ins.last).width / 2 + 24, 34, -0.02, 0, 7); g2.stroke();
+    g2.restore();
+  } else {
+    // telefon
+    const bg = g2.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, 700);
+    bg.addColorStop(0, '#3b4252'); bg.addColorStop(1, '#0f1115');
+    g2.fillStyle = bg; g2.fillRect(0, 0, W, H);
+    const pw = 360, ph = 640, px = W / 2 - pw / 2, py = H / 2 - ph / 2 + (1 - a) * 60;
+    g2.fillStyle = '#111'; roundRect(px - 14, py - 14, pw + 28, ph + 28, 46); g2.fill();
+    g2.fillStyle = '#f5f6f8'; roundRect(px, py, pw, ph, 34); g2.fill();
+    g2.save(); roundRect(px, py, pw, ph, 34); g2.clip();
+    g2.fillStyle = '#e9ecf1'; g2.fillRect(px, py, pw, 92);
+    g2.fillStyle = '#111'; g2.font = '600 17px "DejaVu Sans", sans-serif'; g2.textAlign = 'left'; g2.textBaseline = 'middle';
+    g2.fillText(ins.kind === 'wifi' ? '20.39' : '20.5' + (b.start % 10 | 0), px + 26, py + 24);
+    g2.font = 'bold 28px "DejaVu Sans", sans-serif';
+    g2.fillText(ins.kind === 'wifi' ? 'Wi-Fi' : 'Şifre girin', px + 24, py + 64);
+    if (ins.kind === 'wifi') {
+      g2.font = '15px "DejaVu Sans", sans-serif'; g2.fillStyle = '#667';
+      g2.fillText('KULLANILABİLİR AĞLAR', px + 24, py + 122);
+      ins.rows.forEach(([name, bars], i) => {
+        const p = clamp((local - 0.2 - i * 0.18) / 0.25, 0, 1);
+        const y = py + 160 + i * 66;
+        g2.globalAlpha = p;
+        g2.fillStyle = i === 0 ? '#e7f0ff' : '#ffffff'; g2.fillRect(px + 12, y - 28, pw - 24, 58);
+        g2.fillStyle = '#111'; g2.font = `${i === 0 ? 'bold ' : ''}21px "DejaVu Sans", sans-serif`;
+        g2.fillText(name, px + 28, y);
+        g2.font = '17px "DejaVu Sans"'; g2.fillText('🔒', px + pw - 102, y);
+        wifiIcon(px + pw - 72, y + 8, bars, '#1d4ed8');
+        g2.globalAlpha = 1;
+      });
+      // vurgu
+      const hp = clamp((local - 1.6) / 0.4, 0, 1);
+      if (hp > 0) {
+        g2.strokeStyle = `rgba(242,183,5,${hp})`; g2.lineWidth = 5; roundRect(px + 10, py + 130, pw - 20, 62, 12); g2.stroke();
+      }
+    } else {
+      g2.fillStyle = '#556'; g2.font = '18px "DejaVu Sans", sans-serif';
+      g2.fillText(`Ağ: ${ins.net}`, px + 24, py + 130);
+      g2.fillStyle = '#fff'; g2.strokeStyle = '#c5cad3'; g2.lineWidth = 2;
+      roundRect(px + 20, py + 160, pw - 40, 64, 12); g2.fill(); g2.stroke();
+      const typeEnd = b.dur * 0.6;
+      const n = Math.round(ins.input.length * clamp((local - 0.35) / (typeEnd - 0.35), 0, 1));
+      g2.fillStyle = '#111'; g2.font = '26px "DejaVu Sans Mono", monospace';
+      const shown = ins.input.slice(0, n) + ((local * 2 | 0) % 2 && local < typeEnd ? '|' : '');
+      g2.fillText(shown, px + 36, py + 193);
+      // klavye
+      g2.fillStyle = '#d6d9df'; g2.fillRect(px, py + ph - 250, pw, 250);
+      const rows = ['qwertyuıopğü', 'asdfghjklşi', 'zxcvbnmöç'];
+      g2.font = '17px "DejaVu Sans", sans-serif'; g2.textAlign = 'center';
+      const curCh = ins.input[n - 1];
+      rows.forEach((r, ri) => {
+        const kw = (pw - 20) / 12;
+        const off = (12 - r.length) * kw / 2;
+        [...r].forEach((ch, ci) => {
+          const x = px + 10 + off + ci * kw, y = py + ph - 232 + ri * 58;
+          const hit = local < typeEnd && ch === curCh;
+          g2.fillStyle = hit ? '#9fb7ff' : '#fff'; roundRect(x + 2, y, kw - 4, 46, 6); g2.fill();
+          g2.fillStyle = '#111'; g2.fillText(ch, x + kw / 2, y + 23);
+        });
+      });
+      g2.textAlign = 'left';
+      if (local >= b.dur * 0.68) {
+        const ok = ins.ok;
+        g2.fillStyle = ok ? '#15803d' : '#b91c1c';
+        roundRect(px + 20, py + 250, pw - 40, 64, 12); g2.fill();
+        g2.fillStyle = '#fff'; g2.font = 'bold 22px "DejaVu Sans", sans-serif'; g2.textAlign = 'center';
+        g2.fillText(ok ? `✓ ${ins.okText || 'Bağlandı'}` : '✕ Yanlış şifre', px + pw / 2, py + 282);
+        g2.textAlign = 'left';
+      }
+    }
+    g2.restore();
+  }
+  if (a < 1) { g2.fillStyle = `rgba(0,0,0,${1 - a})`; g2.fillRect(0, 0, W, H); }
 }
 
 function drawBug() {
@@ -526,6 +644,12 @@ function renderAt(t) {
     drawCard(beat.text, local, beat.dur);
     return out;
   }
+  if (beat && beat.type === 'insert') {
+    drawInsert(beat, local);
+    drawBug();
+    drawSubtitle(t);
+    return out;
+  }
 
   const key = sc.id;
   if (key !== lastSceneKey) {
@@ -556,7 +680,10 @@ function renderAt(t) {
   // bayraklar
   for (const [k, f] of Object.entries(sets.flags)) {
     const arr = tl.flags[k];
-    f.obj.visible = arr ? !!evalStep(arr, t, f.def) : f.def;
+    const v = arr ? evalStep(arr, t, f.def) : f.def;
+    if (f.screen) {
+      if (k === 'B.tv' && sets.tvB.cur !== v) { sets.tvB.cur = v; sets.tvB.mesh.material.map = sets.tvB.tex[v] || sets.tvB.tex.off; sets.tvB.mesh.material.needsUpdate = true; }
+    } else f.obj.visible = !!v;
   }
   // minibüs
   if (sets.van) {

@@ -4,13 +4,14 @@ Girdi : build/timeline.json, build/audio/*.wav
 Çıktı : build/episode.wav (44.1 kHz stereo) ve build/episode.m4a
 Bütün efektler ve müzik burada numpy ile sıfırdan üretilir (dış ses dosyası yok).
 """
-import json, os, subprocess, wave
+import json, os, sys, subprocess, wave
 import numpy as np
 from scipy.signal import butter, sosfilt, fftconvolve
 
 SR = 44100
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BUILD = os.path.join(ROOT, 'build')
+EP = sys.argv[sys.argv.index('--ep') + 1] if '--ep' in sys.argv else os.environ.get('EP', 'yedek-anahtar')
+BUILD = os.path.join(ROOT, 'build', EP)
 rng = np.random.default_rng(7)
 
 
@@ -137,6 +138,50 @@ def sfx_bank():
     B['vanDoor'] = vd
     sc = bp(noise(0.7), 1500, 6000) * (0.5 + 0.5 * np.sin(2 * np.pi * 14 * tt(0.7))) * 0.25
     B['scratch'] = sc.astype(np.float32)
+    # telefon tuşları
+    ty = np.zeros(int(1.8 * SR), np.float32)
+    for i in range(13):
+        place(ty, click(0.02, rng.uniform(2500, 4000)) * 0.35, 0.05 + i * 0.12 + rng.uniform(0, 0.03))
+    B['typing'] = ty
+    er = np.zeros(int(0.6 * SR), np.float32)
+    for i in range(2):
+        tone = np.sign(np.sin(2 * np.pi * 220 * tt(0.14))) * 0.12
+        place(er, lp(tone, 2000).astype(np.float32), i * 0.18)
+    B['error'] = er
+    okk = np.zeros(int(0.9 * SR), np.float32)
+    for i, f in enumerate([784, 988, 1319]):
+        place(okk, marimba(f, 0.4, 0.45), i * 0.09)
+    B['ok'] = okk
+    B['tap'] = marimba(1568, 0.15, 0.25)
+    bell = np.zeros(int(1.2 * SR), np.float32)
+    for k in range(3):
+        tb = tt(1.0)
+        ding = (np.sin(2 * np.pi * 2093 * tb) + 0.5 * np.sin(2 * np.pi * 3136 * tb)) * np.exp(-tb / 0.25) * 0.25
+        place(bell, ding.astype(np.float32), k * 0.07)
+    B['bell'] = bell
+    cash = np.zeros(int(1.0 * SR), np.float32)
+    place(cash, thump(160, 0.12, 0.02, 0.8, 3000), 0)
+    place(cash, jingle(0.3, 6), 0.08)
+    tb = tt(0.8)
+    place(cash, ((np.sin(2 * np.pi * 2637 * tb) + np.sin(2 * np.pi * 3520 * tb)) * np.exp(-tb / 0.2) * 0.22).astype(np.float32), 0.15)
+    B['cash'] = cash
+    pg = bp(noise(0.35), 1000, 7000) * np.sin(np.pi * tt(0.35) / 0.35) ** 3 * 0.35
+    B['page'] = pg.astype(np.float32)
+    tw = tt(0.9)
+    trill = 1 + 0.5 * (np.sin(2 * np.pi * 28 * tw) > 0)
+    wh = (np.sin(2 * np.pi * 2900 * tw) * trill * 0.5 + bp(noise(0.9), 2500, 4000) * 0.3) * np.clip(np.minimum(tw / 0.02, (0.9 - tw) / 0.08), 0, 1) * 0.35
+    B['whistle'] = wh.astype(np.float32)
+    tc = tt(6.0)
+    crowd = bp(noise(6.0), 300, 2500) * (0.5 + 0.2 * np.sin(2 * np.pi * 0.4 * tc)) * np.clip(np.minimum(tc / 0.6, (6 - tc) / 1.5), 0, 1) * 0.35
+    B['crowd'] = crowd.astype(np.float32)
+    bub = np.zeros(int(3.0 * SR), np.float32)
+    for k in range(18):
+        tb = tt(0.12)
+        f0 = rng.uniform(400, 1100)
+        place(bub, (np.sin(2 * np.pi * (f0 + 2500 * tb) * tb) * np.exp(-tb / 0.03) * 0.18).astype(np.float32), rng.uniform(0, 2.7))
+    for i, n in enumerate([60, 64, 67, 72, 67, 64]):
+        place(bub, marimba(440 * 2 ** ((n - 69) / 12), 0.5, 0.18), i * 0.4)
+    B['bubbles'] = bub
     return B
 
 
@@ -231,6 +276,10 @@ def ambience(name, d):
         sz = hp(rng.standard_normal(n), 3000) * 0.05
         pops = (rng.random(n) > 0.9993) * rng.standard_normal(n) * 0.6
         return (base + sz + hp(pops, 2000)).astype(np.float32)
+    if name == 'shop':
+        t = np.arange(n) / SR
+        hum = (np.sin(2 * np.pi * 100 * t) * 0.012 + np.sin(2 * np.pi * 200 * t) * 0.004)
+        return (base + hum + hp(rng.standard_normal(n), 5000) * 0.004).astype(np.float32)
     if name == 'hall':
         hum = np.sin(2 * np.pi * 50 * np.arange(n) / SR) * 0.01
         return (base * 1.2 + hum).astype(np.float32)
@@ -314,7 +363,7 @@ def main():
         w.writeframes((np.clip(st, -1, 1) * 32767).astype(np.int16).tobytes())
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', out, '-c:a', 'aac', '-b:a', '160k',
                     os.path.join(BUILD, 'episode.m4a')], check=True)
-    print(f'miks tamam: {dur:.1f} sn -> build/episode.wav, build/episode.m4a')
+    print(f'miks tamam: {dur:.1f} sn -> {BUILD}/episode.m4a')
 
 
 if __name__ == '__main__':

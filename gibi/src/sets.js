@@ -488,7 +488,16 @@ export function buildSets(scene) {
       c.fillRect(w * 0.25, h * 0.62, w * 0.5, h * 0.4);
     });
     floorLamp(g, -1.6, -2.65, sets, 'B');
-    plant(g, 3.0, 0.9, 0.9);
+    plant(g, 3.6, 2.6, 0.9);
+    // televizyon (sağ duvar, önde) — ekranı bölüme göre değişir
+    box(0.55, 0.5, 1.6, '#4a3424', 4.15, 0.25, 1.3, g);
+    box(0.08, 0.8, 1.36, '#111', 4.22, 0.95, 1.3, g);
+    const tvB = new THREE.Mesh(new THREE.PlaneGeometry(1.24, 0.7), basic('#ffffff'));
+    tvB.position.set(4.17, 0.95, 1.3); tvB.rotation.y = -Math.PI / 2; g.add(tvB);
+    sets.tvB = { mesh: tvB, tex: tvScreens(), cur: null };
+    sets.flags['B.tv'] = { screen: true, def: 'off' };
+    // modem rafı boş (modem Necmi Bey'de)
+    box(0.35, 0.03, 0.25, '#7a5a3a', 3.0, 1.2, -2.85, g);
     sets.doors.B = doorLeaf('#6e4a30');
     g.add(sets.doors.B);
     box(0.14, 0.1, 1.2, '#4a3424', -4.5, 2.15, 0.6, g);
@@ -562,6 +571,7 @@ export function buildSets(scene) {
     box(0.08, 0.12, 0.03, '#f5f5f5', -0.9, 1.25, -2.48, g);
     sph(0.025, mat('#ff6a3d', { emissive: '#ff3d00', emissiveIntensity: 0.8 }), -0.9, 1.25, -2.46, g, 8);
     const cl = sph(0.16, mat('#fff7e0', { emissive: '#fff1c0', emissiveIntensity: 0.9 }), 0, 3.38, -0.8, g);
+    ceilingLight(g, sets, 'C', 0, 3.1, -0.6);
     cl.scale.y = 0.5; cl.castShadow = false;
     plant(g, 3.3, -2.0, 0.9);
     // ayakkabılık
@@ -636,6 +646,7 @@ export function buildSets(scene) {
     plant(g, -1.6, -2.6, 1.0);
     // asma lamba
     const cl = sph(0.18, mat('#fff7e0', { emissive: '#fff1c0', emissiveIntensity: 0.9 }), 0, 3.55, -0.8, g);
+    ceilingLight(g, sets, 'D', 0, 3.2, -0.6);
     cl.scale.y = 0.5; cl.castShadow = false;
   }
 
@@ -696,7 +707,7 @@ export function buildSets(scene) {
       }
     }
     // sokak lambası
-    const lamp = new THREE.Group(); lamp.position.set(-3.4, 0.12, 1.2); g.add(lamp);
+    const lamp = new THREE.Group(); lamp.position.set(-12.5, 0.12, 1.2); g.add(lamp);
     cyl(0.07, 0.1, 4.6, '#2f3a40', 0, 2.3, 0, lamp, 10);
     box(0.9, 0.08, 0.08, '#2f3a40', 0.4, 4.55, 0, lamp);
     box(0.4, 0.15, 0.25, '#2f3a40', 0.8, 4.48, 0, lamp);
@@ -714,6 +725,7 @@ export function buildSets(scene) {
       }),
     }));
     skyBg.position.set(0, 20, -30); g.add(skyBg);
+    sets.streetSky = skyBg;
     // minibüs
     const van = new THREE.Group(); van.position.set(-30, 0, 3.6); g.add(van);
     box(4.2, 1.9, 1.9, '#f2f2f2', 0, 1.35, 0, van);
@@ -742,7 +754,163 @@ export function buildSets(scene) {
     sets.van = van;
   }
 
+  // ---------------------------------------------------------------- F: Bakkal
+  {
+    const g = new THREE.Group(); g.position.set(...O('F')); scene.add(g); sets.groups.F = g;
+    const fm = mat('#ffffff', { map: tileTex('#d6d6cc', '#b9b9ad', 10) }); fm.map.repeat.set(3, 3);
+    const wtex = twoToneTex('#f1e3b5', '#c98f4a', 0.3);
+    const wm = mat('#ffffff', { map: wtex });
+    const r = room(g, { w: 9, d: 6, h: 3.4, floorMat: fm, wallMat: wm, backHoles: [[-1.2, 1.2, 0.0, 2.4]], leftHoles: [[0.1, 1.1, 0, 2.15]], skirt: '#6b4a2e', ceil: '#efefe8' });
+    r.children.forEach((m) => {
+      if (m.geometry && m.geometry.type === 'ShapeGeometry') {
+        const uv = m.geometry.attributes.uv;
+        for (let i = 0; i < uv.count; i++) uv.setY(i, uv.getY(i) * 2 / 3.4);
+      }
+    });
+    // vitrin camı + dışarısı
+    const out = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.0), basic('#1b2848'));
+    out.position.set(0, 1.3, -3.5); g.add(out);
+    sets.skies.push({ mesh: out, set: 'F' });
+    box(0.06, 2.4, 0.08, '#2b2b2b', 0, 1.2, -3.0, g);
+    box(2.5, 0.08, 0.1, '#2b2b2b', 0, 2.4, -3.0, g);
+    const glass = box(2.4, 2.4, 0.02, mat('#a7c8dd', { transparent: true, opacity: 0.25 }), 0, 1.2, -3.0, g); glass.castShadow = false;
+    // vitrin yazısı (içeriden ters okunur — o yüzden içeriye dönük ikinci tabela)
+    const sign = textPlane(3.4, 0.55, (c, w, h) => {
+      c.fillStyle = '#1f6b3a'; c.fillRect(0, 0, w, h);
+      c.strokeStyle = '#f2d16b'; c.lineWidth = 6; c.strokeRect(6, 6, w - 12, h - 12);
+      c.fillStyle = '#fff8e0'; c.font = `bold ${h * 0.5}px DejaVu Serif, serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText("ŞÜKRÜ'NÜN YERİ", w / 2, h * 0.54);
+    });
+    sign.position.set(0, 2.85, -2.97); g.add(sign);
+    // raflar (sol arka ve sol duvar)
+    const prodCols = ['#e63946', '#f1c40f', '#2a9d8f', '#e76f51', '#457b9d', '#8ac926', '#ffffff', '#ff8fab', '#6a4c93'];
+    const shelfUnit = (x, z, yaw, wdt) => {
+      const u = new THREE.Group(); u.position.set(x, 0, z); u.rotation.y = yaw; g.add(u);
+      box(wdt, 2.2, 0.08, '#8a6a45', 0, 1.1, -0.2, u);
+      for (let rI = 0; rI < 5; rI++) {
+        const y = 0.3 + rI * 0.45;
+        box(wdt, 0.04, 0.4, '#a07d52', 0, y, 0, u);
+        let px = -wdt / 2 + 0.08;
+        for (let i = 0; px < wdt / 2 - 0.1; i++) {
+          const kind = (i + rI) % 3;
+          const col = prodCols[(i * 3 + rI * 5) % prodCols.length];
+          if (kind === 0) { box(0.16, 0.24, 0.12, col, px + 0.08, y + 0.14, 0.02, u); px += 0.19; }
+          else if (kind === 1) { cyl(0.05, 0.05, 0.22, col, px + 0.05, y + 0.13, 0.04, u, 10); px += 0.12; }
+          else { box(0.12, 0.16, 0.16, col, px + 0.06, y + 0.1, 0.0, u); px += 0.15; }
+        }
+      }
+    };
+    shelfUnit(-2.9, -2.72, 0, 2.6);
+    shelfUnit(-4.22, -1.3, Math.PI / 2, 1.9);
+    shelfUnit(2.75, -2.72, 0, 1.2);
+    // içecek dolabı (sağ arka)
+    const fr = new THREE.Group(); fr.position.set(3.85, 0, -2.4); fr.rotation.y = -Math.PI / 2; g.add(fr);
+    box(1.0, 2.0, 0.6, '#c62828', 0, 1.0, 0, fr);
+    const frGlass = box(0.86, 1.6, 0.02, mat('#d8f0ff', { emissive: '#9fd8ff', emissiveIntensity: 0.5 }), 0, 1.05, 0.31, fr); frGlass.castShadow = false;
+    for (let rI = 0; rI < 4; rI++) for (let i = 0; i < 6; i++) cyl(0.04, 0.04, 0.24, ['#2e7d32', '#ff9800', '#c62828', '#6d4c41'][(i + rI) % 4], -0.34 + i * 0.135, 0.4 + rI * 0.38, 0.2, fr, 8);
+    const frLogo = textPlane(0.9, 0.22, (c, w, h) => { c.fillStyle = '#c62828'; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = `bold ${h * 0.6}px DejaVu Sans`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SOĞUK İÇECEK', w / 2, h / 2); });
+    frLogo.position.set(0, 1.9, 0.32); fr.add(frLogo);
+    // tezgâh (sağda, z boyunca) — Şükrü arkasında x≈3.1
+    const ct = new THREE.Group(); ct.position.set(2.3, 0, -0.9); g.add(ct);
+    box(0.7, 1.0, 2.6, '#b5651d', 0, 0.5, 0, ct);
+    box(0.8, 0.05, 2.7, '#e8d9b0', 0, 1.02, 0, ct);
+    box(0.02, 0.6, 2.4, '#9a5418', -0.36, 0.5, 0, ct);
+    // yazar kasa
+    const reg = new THREE.Group(); reg.position.set(0.1, 1.05, -0.8); ct.add(reg);
+    box(0.4, 0.18, 0.35, '#3a3a3a', 0, 0.09, 0, reg);
+    const disp = box(0.3, 0.14, 0.04, '#222', 0, 0.26, -0.05, reg); disp.rotation.x = -0.3;
+    box(0.2, 0.05, 0.02, mat('#7cff7c', { emissive: '#3aff3a', emissiveIntensity: 0.8 }), 0, 0.27, -0.025, reg);
+    // terazi, sakız kutusu, gazete
+    box(0.3, 0.06, 0.3, '#ddd', 0.05, 1.08, 0.75, ct);
+    box(0.24, 0.02, 0.24, '#aaa', 0.05, 1.12, 0.75, ct);
+    for (let i = 0; i < 4; i++) box(0.1, 0.12, 0.1, prodCols[i + 2], -0.15 + (i % 2) * 0.12, 1.11, 0.15 + Math.floor(i / 2) * 0.12, ct);
+    // ekmek sepeti (boş — "ekmek bitti")
+    const bs = cyl(0.3, 0.22, 0.25, '#b8864b', -0.9, 0.12, 0.9, ct, 14); bs.scale.z = 0.6;
+    // meyve kasaları (ön sol)
+    for (const [x, col] of [[-3.3, '#e63946'], [-2.4, '#f4a261'], [-1.5, '#8ac926']]) {
+      box(0.75, 0.3, 0.5, '#a07d52', x, 0.45, 1.6, g);
+      box(0.06, 0.45, 0.06, '#7a5a3a', x - 0.33, 0.22, 1.4, g); box(0.06, 0.45, 0.06, '#7a5a3a', x + 0.33, 0.22, 1.4, g);
+      for (let i = 0; i < 8; i++) sph(0.07, col, x - 0.26 + (i % 4) * 0.17, 0.66, 1.5 + Math.floor(i / 4) * 0.18, g, 8);
+    }
+    // duvar yazıları
+    framePic(g, 0.9, 0.45, -0.1, 2.75, -1.0 + 0.0, (c, w, h) => {
+      c.fillStyle = '#fffbea'; c.fillRect(0, 0, w, h);
+      c.fillStyle = '#b22222'; c.font = `bold ${h * 0.26}px DejaVu Serif, serif`; c.textAlign = 'center';
+      c.fillText('Bugün peşin,', w / 2, h * 0.42); c.fillText('yarın veresiye.', w / 2, h * 0.8);
+    }, 0).position.set(4.47, 2.0, 0.4);
+    g.children[g.children.length - 1].rotation.y = -Math.PI / 2;
+    // kapı kasası (sol) + zil
+    box(0.14, 0.1, 1.2, '#5a3d25', -4.5, 2.2, 0.6, g);
+    box(0.14, 2.2, 0.08, '#5a3d25', -4.5, 1.1, 0.06, g);
+    box(0.14, 2.2, 0.08, '#5a3d25', -4.5, 1.1, 1.14, g);
+    box(0.05, 2.4, 1.6, '#2a3046', -5.6, 1.2, 0.6, g, { cast: false });
+    sph(0.05, '#d4af37', -4.4, 2.05, 0.3, g, 8);
+    // floresanlar
+    for (const z of [-1.6, 0.6]) {
+      const tube = box(1.4, 0.06, 0.18, mat('#ffffff', { emissive: '#f4fbff', emissiveIntensity: 1.0 }), -0.5, 3.36, z, g, { cast: false });
+      tube.castShadow = false;
+    }
+    ceilingLight(g, sets, 'F', -0.5, 3.1, -0.5, true, 7, '#f4fbff');
+    ceilingLight(g, sets, 'F', 2.0, 3.0, -0.8, true, 4, '#fff3dc');
+  }
+
   return sets;
+}
+
+function ceilingLight(g, sets, key, x, y, z, always = false, power = 6, color = '#fff1d0') {
+  const L = new THREE.PointLight(color, 0, 9, 1.4);
+  L.position.set(x, y, z);
+  g.add(L);
+  sets.lamps.push({ light: L, key, shade: null, always, power });
+}
+
+// Yılmaz'ın televizyonunun ekran durumları
+function tvScreens() {
+  const W = 512, H = 288;
+  const mk = (draw) => canvasTex(W, H, draw);
+  const centerText = (c, txt, size, col, y) => { c.fillStyle = col; c.font = `bold ${size}px DejaVu Sans, sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, W / 2, y); };
+  const pitch = (c) => {
+    for (let i = 0; i < 8; i++) { c.fillStyle = i % 2 ? '#2f8f3a' : '#37a043'; c.fillRect(i * W / 8, 0, W / 8, H); }
+    c.strokeStyle = '#e8ffe8'; c.lineWidth = 3; c.strokeRect(20, 20, W - 40, H - 40);
+    c.beginPath(); c.moveTo(W / 2, 20); c.lineTo(W / 2, H - 20); c.stroke();
+    c.beginPath(); c.arc(W / 2, H / 2, 40, 0, 7); c.stroke();
+    const pl = [[150, 120, '#d62828'], [200, 180, '#d62828'], [260, 140, '#f2f2f2'], [330, 110, '#f2f2f2'], [300, 200, '#d62828'], [380, 160, '#f2f2f2']];
+    for (const [x, y, col] of pl) { c.fillStyle = col; c.beginPath(); c.arc(x, y, 7, 0, 7); c.fill(); }
+    c.fillStyle = '#fff'; c.beginPath(); c.arc(270, 150, 4, 0, 7); c.fill();
+  };
+  const score = (c, s, time) => {
+    c.fillStyle = 'rgba(0,0,0,0.75)'; c.fillRect(14, 12, 300, 34);
+    c.fillStyle = '#fff'; c.font = 'bold 20px DejaVu Sans'; c.textAlign = 'left'; c.textBaseline = 'middle';
+    c.fillText(`DERBİ  ${s}`, 24, 29); c.fillStyle = '#f2b705'; c.fillText(time, 178, 29);
+  };
+  return {
+    off: mk((c) => { c.fillStyle = '#15181d'; c.fillRect(0, 0, W, H); }),
+    nosignal: mk((c) => {
+      c.fillStyle = '#1d4ed8'; c.fillRect(0, 0, W, H);
+      centerText(c, '⚠', 64, '#fff', H * 0.36);
+      centerText(c, 'İnternet bağlantısı yok', 28, '#fff', H * 0.62);
+      centerText(c, 'Modeminizi kontrol edin', 18, '#c7d7ff', H * 0.76);
+    }),
+    loading: mk((c) => {
+      c.fillStyle = '#0d1117'; c.fillRect(0, 0, W, H);
+      c.strokeStyle = '#f2b705'; c.lineWidth = 8; c.beginPath(); c.arc(W / 2, H * 0.42, 34, 0.3, 4.6); c.stroke();
+      centerText(c, 'Bağlanıyor...', 24, '#fff', H * 0.75);
+    }),
+    match: mk((c) => { pitch(c); score(c, '0-0', "00:12"); }),
+    match2: mk((c) => { pitch(c); score(c, '2-1', "MAÇ SONU"); c.fillStyle = 'rgba(0,0,0,0.55)'; c.fillRect(0, H - 60, W, 44); centerText(c, 'MAÇ SONA ERDİ', 26, '#fff', H - 38); }),
+    fish: mk((c) => {
+      const gr = c.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, '#1e88c7'); gr.addColorStop(1, '#0a3a5c');
+      c.fillStyle = gr; c.fillRect(0, 0, W, H);
+      for (const [x, y, s, col] of [[150, 130, 1.3, '#ffb703'], [320, 90, 0.9, '#fb8500'], [380, 190, 1.1, '#ffd166'], [230, 210, 0.7, '#8ecae6']]) {
+        c.fillStyle = col; c.beginPath(); c.ellipse(x, y, 34 * s, 16 * s, 0, 0, 7); c.fill();
+        c.beginPath(); c.moveTo(x - 30 * s, y); c.lineTo(x - 52 * s, y - 16 * s); c.lineTo(x - 52 * s, y + 16 * s); c.fill();
+        c.fillStyle = '#000'; c.beginPath(); c.arc(x + 18 * s, y - 4 * s, 3, 0, 7); c.fill();
+      }
+      c.fillStyle = 'rgba(255,255,255,0.5)'; for (let i = 0; i < 14; i++) { c.beginPath(); c.arc(40 + i * 33, 260 - (i * 37) % 200, 4, 0, 7); c.fill(); }
+      c.fillStyle = 'rgba(0,0,0,0.5)'; c.fillRect(0, H - 50, W, 36);
+      centerText(c, 'BALIKLARIN GİZLİ DÜNYASI', 22, '#fff', H - 32);
+    }),
+  };
 }
 
 // Anahtar modeli (karakterlerin elinde ve kâsede)
@@ -765,15 +933,17 @@ export function applyTimeOfDay(sets, setId, time, lights) {
     night: { sky: '#1b2848', hemi: 0.55, sun: 0.25, sunColor: '#8fa6ff', lamp: 9, tv: '#5d86c4' },
     morning: { sky: '#cfe6ff', hemi: 1.15, sun: 1.6, sunColor: '#fff1d6', lamp: 0, tv: '#20262f' },
     day: { sky: '#a9d6ff', hemi: 1.25, sun: 2.0, sunColor: '#ffffff', lamp: 0, tv: '#20262f' },
+    evening: { sky: '#f3a86b', hemi: 0.9, sun: 1.2, sunColor: '#ffb27a', lamp: 0, tv: '#20262f', street: '#ffc49a' },
   }[time || 'day'];
+  if (sets.streetSky) sets.streetSky.material.color.set(cfg.street || '#ffffff');
   for (const s of sets.skies) {
     if (s.bright) continue;
     s.mesh.material.color.set(cfg.sky);
   }
   for (const l of sets.lamps) {
-    const on = l.key === setId && cfg.lamp > 0;
-    l.light.intensity = on ? cfg.lamp : 0;
-    l.shade.material.emissiveIntensity = on ? 0.9 : 0.15;
+    const on = l.key === setId && (cfg.lamp > 0 || l.always);
+    l.light.intensity = on ? (l.power || cfg.lamp || 6) : 0;
+    if (l.shade) l.shade.material.emissiveIntensity = on ? 0.9 : 0.15;
   }
   lights.hemi.intensity = cfg.hemi;
   lights.sun.intensity = cfg.sun;

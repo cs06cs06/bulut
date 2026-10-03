@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Gibi — Yedek Anahtar</title>
+<title>Gibi — Hayran Bölümleri</title>
 <style>
   :root { --bg: #111; --fg: #f3efe2; --accent: #f2b705; }
   html, body { margin: 0; background: var(--bg); color: var(--fg); font-family: "DejaVu Sans", system-ui, sans-serif; }
@@ -22,16 +22,20 @@
 </head>
 <body>
 <div id="wrap">
-  <h1>GİBİ · Yedek Anahtar <small style="color:#999;font-weight:normal">(hayran bölümü)</small></h1>
+  <h1>GİBİ · <span id="eptitle"></span> <small style="color:#999;font-weight:normal">(hayran bölümü)</small></h1>
+  <nav id="eps" style="margin:-4px 0 12px;font-size:14px"><a href="?ep=yedek-anahtar" style="color:#ccc">1 · Yedek Anahtar</a> · <a href="?ep=sifre" style="color:#ccc">2 · Şifre</a></nav>
   <div id="stage"></div>
   <div id="bar">
     <button id="play" title="Oynat / duraklat">▶</button>
     <input id="seek" type="range" min="0" step="0.01" value="0">
     <span id="time">0:00</span>
   </div>
-  <audio id="audio" src="build/episode.m4a" preload="auto"></audio>
+  <audio id="audio" preload="auto"></audio>
 </div>
 <script>
+  const ep = new URLSearchParams(location.search).get('ep') || 'yedek-anahtar';
+  document.getElementById('audio').src = `build/${ep}/episode.m4a`;
+  document.getElementById('eptitle').textContent = ep === 'sifre' ? 'Şifre' : 'Yedek Anahtar';
   if (new URLSearchParams(location.search).get('mode') === 'render') {
     document.body.className = 'render';
     document.getElementById('wrap').style.display = 'none';
