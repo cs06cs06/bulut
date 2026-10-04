@@ -2,7 +2,9 @@
 
 Stilize, açık dünya bir **country offroad** sürüş oyunu. Pikabınla Washington eyaletindeki gerçek **Palouse tepeleri** ve **Steptoe Butte** arazisinde (3,3 × 3,3 km oynanabilir alan + 6,6 km ufuk) buğday tarlaları, toprak yollar ve çiftlikler arasında keşfe çıkıyorsun.
 
-Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2).
+Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayarda ve mobilde oynanır.**
+
+▶ **Oyna:** https://cs06cs06.github.io/bulut/tozlu-yollar/
 
 ## Özellikler
 - **Gerçek arazi:** AWS Terrain Tiles yükseklik verisinden üretilmiş heightfield, çok seviyeli (LOD) arazi parçaları ve Rapier heightfield çarpışması.
@@ -40,6 +42,16 @@ npm run preview
 | Tab / Esc | Harita ve duraklatma menüsü |
 | Fare | Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır |
 | Gamepad | RT gaz, LT fren, A el freni, Y düzelt, RB kamera, sol çubuk direksiyon, sağ çubuk kamera |
+
+## Mobil
+- Telefon/tabletler otomatik algılanır: daha hafif arazi ızgarası (1025²), seyrek bitki örtüsü ve “Düşük” grafik ayarı.
+- Dokunmatik kontroller: sol altta analog direksiyon çubuğu, sağ altta GAZ / FREN / EL FRENİ / TURBO, üstte harita · kamera · düzelt · korna · şarkı; boş ekranı sürüklemek kamerayı döndürür. Görev bayrağı yanında çıkan uyarıya dokunarak görev başlar.
+- Oyuna başlarken tam ekran ve yatay yön kilidi istenir (Android). iPhone'da tam ekran için Paylaş → “Ana Ekrana Ekle” (PWA manifest'i hazır).
+- Ogg Vorbis desteklemeyen tarayıcılar (eski iOS Safari) için AAC (.m4a) ses dosyaları yüklenir.
+- Test için masaüstünde `?mobile` parametresiyle mobil mod zorlanabilir.
+
+## Yayınlama (GitHub Pages)
+`.github/workflows/pages.yml` her push'ta oyunu derler ve `gh-pages` dalına `tozlu-yollar/` klasörü olarak yayınlar (`pages/index.html` site ana sayfasıdır). Depo ayarlarında **Settings → Pages → Source: Deploy from a branch → `gh-pages` / root** seçili olmalıdır.
 
 ## Proje yapısı
 ```

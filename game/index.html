@@ -2,7 +2,14 @@
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2c1b10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tozlu Yollar" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Tozlu Yollar — Palouse Offroad</title>
   <meta name="description" content="Stilize, açık dünya bir country offroad sürüş oyunu. Gerçek Palouse (Washington) arazisinde pikabınla keşfe çık." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%BB%3C/text%3E%3C/svg%3E" />
@@ -63,12 +70,22 @@
     <div id="hint" class="hint"></div>
     <div id="prompt" class="prompt hidden"></div>
     <div id="touch" class="touch hidden">
-      <div class="t-left"><button data-t="left">◀</button><button data-t="right">▶</button></div>
-      <div class="t-right">
-        <button data-t="hb" class="small">EL FRENİ</button>
-        <button data-t="brake">▼</button><button data-t="gas" class="gas">▲</button>
+      <div id="t-stick" class="t-stick"><div class="t-track"></div><div class="t-knob">⟷</div></div>
+      <div class="t-pedals">
+        <div class="t-col">
+          <button data-t="boost" class="t-small">TURBO</button>
+          <button data-t="hb" class="t-small">EL FRENİ</button>
+        </div>
+        <button data-t="brake" class="t-brake">FREN</button>
+        <button data-t="gas" class="t-gas">GAZ</button>
       </div>
-      <div class="t-top"><button data-k="KeyR">⟲</button><button data-k="KeyC">🎥</button><button data-k="KeyF">⚑</button><button data-k="Escape">☰</button></div>
+      <div class="t-top">
+        <button data-k="Escape" title="Harita">☰</button>
+        <button data-k="KeyC" title="Kamera">◉</button>
+        <button data-k="KeyR" title="Düzelt">⟲</button>
+        <button data-t="horn" title="Korna">♫</button>
+        <button data-k="KeyN" title="Sonraki şarkı">♪</button>
+      </div>
     </div>
   </div>
 
@@ -133,6 +150,7 @@
           <div><kbd>Tab</kbd> <kbd>Esc</kbd></div><div>Harita / Duraklat</div>
           <div><kbd>Fare</kbd></div><div>Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır</div>
           <div><kbd>🎮</kbd></div><div>Gamepad: RT gaz, LT fren, A el freni, Y düzelt, RB kamera</div>
+          <div><kbd>📱</kbd></div><div>Dokunmatik: sol çubuk direksiyon, sağda GAZ / FREN / EL FRENİ / TURBO, boş ekranı sürükle: kamera, üstte harita · kamera · düzelt · korna · şarkı</div>
         </div>
       </div>
       <div class="tab-body hidden" data-body="credits">
@@ -145,6 +163,7 @@
     </div>
   </div>
 
+  <div id="rotate"><div class="rotate-ico">⟳</div><div>Daha iyi bir deneyim için<br>telefonunu yatay çevir</div></div>
   <div id="fade"></div>
   <script type="module" src="/src/main.js"></script>
 </body>

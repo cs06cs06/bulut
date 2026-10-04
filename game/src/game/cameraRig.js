@@ -20,12 +20,19 @@ export class CameraRig {
     this.shake = 0;
     this.initialized = false;
     this.dragging = false;
-    dom.addEventListener('pointerdown', (e) => { if (e.button === 0 || e.button === 2) { this.dragging = true; dom.setPointerCapture?.(e.pointerId); } });
-    addEventListener('pointerup', () => { this.dragging = false; });
+    let pid = null, lx = 0, ly = 0;
+    dom.addEventListener('pointerdown', (e) => {
+      if (pid !== null || !(e.button === 0 || e.button === 2)) return;
+      pid = e.pointerId; lx = e.clientX; ly = e.clientY; this.dragging = true; dom.setPointerCapture?.(e.pointerId);
+    });
+    const up = (e) => { if (e.pointerId === pid) { pid = null; this.dragging = false; } };
+    addEventListener('pointerup', up); addEventListener('pointercancel', up);
     addEventListener('pointermove', (e) => {
-      if (!this.dragging && document.pointerLockElement !== dom) return;
-      this.orbitYaw -= e.movementX * 0.005;
-      this.orbitPitch = THREE.MathUtils.clamp(this.orbitPitch + e.movementY * 0.004, -0.35, 0.9);
+      if (e.pointerId !== pid) return;
+      const k = e.pointerType === 'touch' ? 1.6 : 1;
+      this.orbitYaw -= (e.clientX - lx) * 0.005 * k;
+      this.orbitPitch = THREE.MathUtils.clamp(this.orbitPitch + (e.clientY - ly) * 0.004 * k, -0.35, 0.9);
+      lx = e.clientX; ly = e.clientY;
       this.idle = 0;
     });
     dom.addEventListener('contextmenu', (e) => e.preventDefault());

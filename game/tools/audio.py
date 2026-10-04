@@ -35,3 +35,8 @@ for d, s in sfx.items():
 for f in ['hillbilly_swing','still_pickin','river_valley_breakdown','fireflies_and_stardust','bama_country','guts_and_bourbon','cc0_gone_fishin_memoraphile','cc0_komiku_down_the_river']:
     conv(f'{A}/music/{f}.mp3', f'public/assets/music/{f.replace("cc0_","")}.mp3', mono=False, target=-1.5)
 print('done')
+
+# AAC fallbacks for browsers without Ogg Vorbis (older Safari / iOS)
+for f in os.listdir(OUT):
+    if f.endswith('.ogg'):
+        subprocess.run(['ffmpeg', '-y', '-hide_banner', '-loglevel', 'error', '-i', f'{OUT}/{f}', '-c:a', 'aac', '-b:a', '112k', f'{OUT}/{f[:-4]}.m4a'], check=True)

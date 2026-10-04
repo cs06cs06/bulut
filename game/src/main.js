@@ -34,6 +34,8 @@ const TIPS = [
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
+// phones/tablets: lighter terrain grid, sparser vegetation, touch UI
+const MOBILE = new URLSearchParams(location.search).has('mobile') || (matchMedia('(pointer: coarse)').matches && navigator.maxTouchPoints > 0);
 const SPAWN = { x: 431, z: 338, heading: Math.PI };
 const SETTINGS_KEY = 'tozlu-yollar-settings-v1';
 
@@ -58,7 +60,7 @@ class Game {
 
   _loadSettings() {
     const def = { quality: 'high', master: 0.9, music: 0.5, sfx: 0.9, amb: 0.7, units: 'kmh', time: 'noon', paint: 'green' };
-    if (matchMedia('(pointer: coarse)').matches) def.quality = 'low';
+    if (MOBILE) def.quality = 'low';
     try { return Object.assign(def, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { return def; }
   }
   _saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings)); } catch { /* ignore */ } }
@@ -98,7 +100,9 @@ class Game {
     const metaP = track(fetch('assets/terrain/terrain.json').then((r) => r.json()), 1);
     const hP = track(fetch('assets/terrain/height.bin').then((r) => r.arrayBuffer()), 3);
     const hoP = track(fetch('assets/terrain/height_outer.bin').then((r) => r.arrayBuffer()), 1);
-    const audioPs = SFX_FILES.map((n) => track(this.audio.load(n, `assets/audio/${n}.ogg`).catch((e) => console.warn('audio', n, e)), 0.5));
+    // Ogg Vorbis where supported (gapless loops), AAC fallback for older Safari/iOS
+    const ext = new Audio().canPlayType('audio/ogg; codecs="vorbis"') ? 'ogg' : 'm4a';
+    const audioPs = SFX_FILES.map((n) => track(this.audio.load(n, `assets/audio/${n}.${ext}`).catch((e) => console.warn('audio', n, e)), 0.5));
 
     await Promise.all([physicsP, ...modelPs, ...texPs, hdrP, metaP, hP, hoP, ...audioPs]);
     const [meta, hBuf, hoBuf, hdr] = await Promise.all([metaP, hP, hoP, hdrP]);
@@ -115,7 +119,7 @@ class Game {
     ] };
     let tm = performance.now();
     const mark = (label) => { const n = performance.now(); console.info(`[load] ${label}: ${(n - tm).toFixed(0)} ms`); tm = n; };
-    this.terrain = new Terrain({ meta, inner: new Uint16Array(hBuf), outer: new Uint16Array(hoBuf), layout, textures: tex });
+    this.terrain = new Terrain({ meta, inner: new Uint16Array(hBuf), outer: new Uint16Array(hoBuf), layout, textures: tex, resolution: MOBILE ? 1025 : 2049 });
     rs.scene.add(this.terrain.group);
     mark('terrain');
 
@@ -128,7 +132,7 @@ class Game {
 
     this.progress(0.9, 'Çiftlikler ve ağaçlar yerleştiriliyor…');
     await nextFrame();
-    this.world = new World({ scene: rs.scene, terrain: this.terrain, lib, RAPIER, physics: this.physics, renderer: rs.renderer, sunDir: rs.sunDir });
+    this.world = new World({ scene: rs.scene, terrain: this.terrain, lib, RAPIER, physics: this.physics, renderer: rs.renderer, sunDir: rs.sunDir, density: MOBILE ? 0.55 : 1 });
     this.world.build();
     mark('world');
     this.grass = new GroundCover({ lib, terrain: this.terrain, scene: rs.scene, quality: 'high' });
@@ -237,6 +241,7 @@ class Game {
         this.audio.play('ui_switch', { bus: 'ui', volume: 0.6 });
       });
     });
+    $('prompt').addEventListener('pointerdown', (e) => { e.preventDefault(); this.input.pressed.add('KeyF'); });
     $('bigmap').addEventListener('click', (e) => {
       const [x, z] = this.hud.bigMapToWorld(e);
       const near = LAYOUT.POIS.find((p) => this.gameplay.isFound(p.id) && Math.hypot(p.x - x, p.z - z) < 90);
@@ -264,12 +269,23 @@ class Game {
       this.cameraRig.initialized = false;
       $('fade').classList.remove('on');
       if (first) {
+        if (MOBILE) this._goFullscreen();
         this.audio.startVehicle(); this.audio.startAmbience();
         this.audio.play('engine_start', { volume: 0.8 });
         setTimeout(() => this.audio.playMusic(), 1800);
-        this.hud.hint('<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> sür · <kbd>Boşluk</kbd> el freni · <kbd>Tab</kbd> harita · <kbd>R</kbd> düzelt', 7);
+        if (this.input.touchEnabled) this.hud.hint('Sol: direksiyon · Sağ: gaz / fren · Ekranı sürükle: kamera', 6);
+        else this.hud.hint('<kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> sür · <kbd>Boşluk</kbd> el freni · <kbd>Tab</kbd> harita · <kbd>R</kbd> düzelt', 7);
       }
     }, 550);
+  }
+
+  _goFullscreen() {
+    const el = document.documentElement;
+    const req = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!req) return;
+    Promise.resolve(req.call(el, { navigationUI: 'hide' }))
+      .then(() => screen.orientation?.lock?.('landscape'))
+      .catch(() => {});
   }
 
   openOverlay(tab = 'map', fromMenu = false) {
@@ -368,7 +384,7 @@ class Game {
       this._effects(dt);
       this.hud.update(dt, v, this.gameplay, v.heading());
       const near = this.gameplay.nearChallenge(v.position);
-      this.hud.prompt(near ? `<kbd>F</kbd> ${near.name}` : null);
+      this.hud.prompt(near ? (this.input.touchEnabled ? `⚑ ${near.name} — başlamak için dokun` : `<kbd>F</kbd> ${near.name}`) : null);
       if (v.lastLandingImpact > 0) {
         const k = v.lastLandingImpact;
         this.audio.play('land_thud', { volume: 0.3 + k * 0.7, rate: 0.9 + Math.random() * 0.2 });
@@ -410,7 +426,7 @@ class Game {
       if (this.gameplay.active) this.gameplay.cancelChallenge();
       else { const c = this.gameplay.nearChallenge(v.position); if (c) { this.gameplay.startChallenge(c, v); this.cameraRig.initialized = false; this.hud.toast('Görev', c.name, c.desc); } }
     }
-    const horn = inp.keys.has('KeyH') || inp.keys.has('PadKeyH');
+    const horn = inp.keys.has('KeyH') || inp.keys.has('PadKeyH') || inp.touch.horn;
     if (horn && !this.hornLoop) this.hornLoop = this.audio.loop('horn', 'sfx', { volume: 0.55, offset: 0.02 });
     if (!horn && this.hornLoop) { this.hornLoop.set(0, 1, 0.03); const h = this.hornLoop; setTimeout(() => h.stop(), 150); this.hornLoop = null; }
   }
@@ -471,6 +487,7 @@ class Game {
   }
 }
 
+if (MOBILE) document.documentElement.classList.add('mobile');
 const game = new Game();
 game.load().catch((e) => {
   console.error(e);

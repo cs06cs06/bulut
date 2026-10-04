@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bulut — oyunlar</title>
+  <style>
+    :root { --cream: #f6ead2; --red: #b5372a; --gold: #e8b04a; }
+    * { box-sizing: border-box; margin: 0; }
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px 16px;
+      background: radial-gradient(ellipse at 50% 20%, #6d4a2c 0%, #2c1b10 65%, #140c07 100%); color: var(--cream);
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; }
+    main { width: min(560px, 100%); text-align: center; }
+    h1 { font-size: 15px; letter-spacing: .4em; text-transform: uppercase; color: var(--gold); margin-bottom: 22px; }
+    a.card { display: block; text-decoration: none; color: inherit; border-radius: 14px; overflow: hidden; background: rgba(0,0,0,.35);
+      border: 2px solid rgba(246,234,210,.25); transition: transform .15s, border-color .15s; }
+    a.card:hover { transform: translateY(-3px); border-color: var(--gold); }
+    a.card img { width: 100%; display: block; aspect-ratio: 1; object-fit: cover; max-height: 300px; }
+    .body { padding: 16px 18px 20px; }
+    h2 { font-size: 30px; margin-bottom: 6px; }
+    p { opacity: .8; line-height: 1.45; }
+    .play { display: inline-block; margin-top: 14px; background: var(--red); padding: 10px 26px; border-radius: 8px; font-weight: 700; letter-spacing: .12em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>bulut · oyunlar</h1>
+    <a class="card" href="tozlu-yollar/">
+      <img src="tozlu-yollar/icon-512.png" alt="Tozlu Yollar ekran görüntüsü" />
+      <div class="body">
+        <h2>Tozlu Yollar</h2>
+        <p>Gerçek Palouse tepelerinde stilize, açık dünya country offroad sürüşü. Bilgisayarda ve mobilde oynanır.</p>
+        <span class="play">OYNA</span>
+      </div>
+    </a>
+  </main>
+</body>
+</html>

@@ -37,7 +37,7 @@ function horizonColor(img) {
 }
 
 export const QUALITY = {
-  low: { pixelRatio: 0.75, shadow: 1024, ao: false, bloom: false, smaa: false, grass: 'low', shadowRange: 60 },
+  low: { pixelRatio: 1, shadow: 1024, ao: false, bloom: false, smaa: false, grass: 'low', shadowRange: 50 },
   medium: { pixelRatio: 1, shadow: 2048, ao: false, bloom: true, smaa: true, grass: 'medium', shadowRange: 80 },
   high: { pixelRatio: 1.25, shadow: 2048, ao: true, aoHalf: true, bloom: true, smaa: true, grass: 'high', shadowRange: 95 },
   ultra: { pixelRatio: 2, shadow: 4096, ao: true, aoHalf: false, bloom: true, smaa: true, grass: 'ultra', shadowRange: 120 },

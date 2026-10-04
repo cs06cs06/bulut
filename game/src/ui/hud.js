@@ -161,7 +161,10 @@ export class HUD {
     // north marker position
     const n = document.querySelector('.mm-n');
     const na = rot - Math.PI / 2;
-    if (n) { n.style.left = (110 + Math.cos(na) * 96) + 'px'; n.style.top = (110 + Math.sin(na) * 96 - 9) + 'px'; }
+    if (n) {
+      const k = (this.mm.canvas.clientWidth || 220) / 220;
+      n.style.left = (110 + Math.cos(na) * 96) * k + 'px'; n.style.top = ((110 + Math.sin(na) * 96) * k - 9) + 'px';
+    }
   }
 
   drawBigMap(pos, heading, gp) {

@@ -30,6 +30,24 @@ export class Input {
       b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
     });
     root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('pointerdown', (e) => { e.preventDefault(); this.pressed.add(b.dataset.k); }));
+    // analog steering stick: horizontal drag inside the pad
+    const stick = document.getElementById('t-stick'), knob = stick?.querySelector('.t-knob');
+    if (!stick) return;
+    let id = null, cx = 0;
+    const move = (e) => {
+      if (e.pointerId !== id) return;
+      const r = stick.getBoundingClientRect(), max = r.width * 0.38;
+      const dx = Math.max(-max, Math.min(max, e.clientX - cx));
+      this.touchSteer = -dx / max;
+      knob.style.transform = `translate(${dx}px, 0)`;
+    };
+    stick.addEventListener('pointerdown', (e) => {
+      e.preventDefault(); id = e.pointerId; try { stick.setPointerCapture(e.pointerId); } catch { /* synthetic or lost pointer */ }
+      const r = stick.getBoundingClientRect(); cx = r.left + r.width / 2; stick.classList.add('on'); move(e);
+    });
+    stick.addEventListener('pointermove', move);
+    const end = (e) => { if (e.pointerId !== id) return; id = null; this.touchSteer = 0; knob.style.transform = ''; stick.classList.remove('on'); };
+    stick.addEventListener('pointerup', end); stick.addEventListener('pointercancel', end);
   }
 
   wasPressed(code) { return this.pressed.has(code); }
@@ -43,7 +61,7 @@ export class Input {
     const t = this.touch;
     if (t.gas) thr = 1;
     if (t.brake) brk = 1;
-    if (t.left || t.right) st = (t.left ? 1 : 0) - (t.right ? 1 : 0);
+    if (this.touchSteer) st = this.touchSteer;
     if (t.hb) hb = true;
     let lookX = 0, lookY = 0;
 
@@ -70,13 +88,13 @@ export class Input {
       break;
     }
     // keyboard steering is smoothed, gamepad is direct
-    const steerRate = this.usingGamepad ? 12 : (st === 0 ? 5 : 3.2);
+    const steerRate = this.usingGamepad || this.touchSteer ? 12 : (st === 0 ? 5 : 3.2);
     this.steer += (st - this.steer) * Math.min(1, steerRate * dt);
     this.throttle += (thr - this.throttle) * Math.min(1, 10 * dt);
     this.brake += (brk - this.brake) * Math.min(1, 12 * dt);
     this.handbrake = hb;
     this.lookX = lookX; this.lookY = lookY;
-    this.boost = k.has('ShiftLeft') || k.has('ShiftRight') || k.has('PadKeyB');
+    this.boost = k.has('ShiftLeft') || k.has('ShiftRight') || k.has('PadKeyB') || !!this.touch.boost;
   }
 
   endFrame() { this.pressed.clear(); }

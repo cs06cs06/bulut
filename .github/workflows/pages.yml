@@ -1,0 +1,56 @@
+# Builds the browser games and publishes them to the gh-pages branch (GitHub Pages).
+name: GitHub Pages
+
+on:
+  push:
+    branches: [main, ccr-2677a1ea-ujkcut]
+    paths: ['game/**', 'pages/**', '.github/workflows/pages.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: game/package-lock.json
+
+      - name: Build Tozlu Yollar
+        working-directory: game
+        run: |
+          npm ci --no-audit --no-fund
+          npx vite build
+
+      - name: Publish to gh-pages
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            git fetch --depth 1 origin gh-pages
+            git worktree add site origin/gh-pages
+            git -C site checkout -B gh-pages
+          else
+            git worktree add --orphan -b gh-pages site
+          fi
+          rm -rf site/tozlu-yollar
+          cp -r game/dist site/tozlu-yollar
+          cp pages/index.html site/index.html
+          touch site/.nojekyll
+          cd site
+          git add -A
+          git diff --cached --quiet && { echo "No changes"; exit 0; }
+          git commit -m "Deploy ${GITHUB_SHA::7}"
+          git push origin gh-pages

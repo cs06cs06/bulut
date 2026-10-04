@@ -9,11 +9,11 @@ export const BASE_HEIGHT = 740;
 const CHUNK = 256;
 
 export class Terrain {
-  constructor({ meta, inner, outer, layout, textures }) {
+  constructor({ meta, inner, outer, layout, textures, resolution = 2049 }) {
     this.meta = meta;
     this.size = meta.size;
     this.half = meta.size / 2;
-    this.G = 2049;                       // final grid samples per side
+    this.G = resolution;                 // final grid samples per side (2049 desktop, 1025 mobile)
     this.cells = this.G - 1;
     this.sp = this.size / this.cells;    // ~1.62 m
     this.noise = createNoise2D(1337);
@@ -166,7 +166,7 @@ export class Terrain {
   }
 
   _buildSplat() {
-    const R = 2048;
+    const R = this.G - 1;                // one splat texel per height cell
     const a = new Uint8Array(R * R * 4), b = new Uint8Array(R * R * 4);
     const f = {};
     const farms = this.layout.farmyards || [];
@@ -178,7 +178,7 @@ export class Terrain {
       for (let i = 0; i < R; i++) {
         const x = (i + 0.5) / R * this.size - this.half;
         const o = (j * R + i) * 4;
-        // texel (i, j) sits on grid sample (i, j) of the 2049² height grid
+        // texel (i, j) sits on grid sample (i, j) of the height grid
         const G = this.G, H = this.H, gi = i < 1 ? 1 : i > G - 2 ? G - 2 : i, gj = j < 1 ? 1 : j > G - 2 ? G - 2 : j, go = gj * G + gi;
         const ddx = (H[go + 1] - H[go - 1]) * inv2sp, ddz = (H[go + G] - H[go - G]) * inv2sp;
         const slope = 1 - 1 / Math.sqrt(1 + ddx * ddx + ddz * ddz);

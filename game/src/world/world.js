@@ -11,7 +11,8 @@ const DYNAMIC_PROPS = new Set(['haybale', 'barrel', 'hay_cube', 'crate_pumpkin']
 
 // Populates the terrain with farms, fences, vegetation, physics props and animals.
 export class World {
-  constructor({ scene, terrain, lib, RAPIER, physics, renderer, sunDir }) {
+  constructor({ scene, terrain, lib, RAPIER, physics, renderer, sunDir, density = 1 }) {
+    this.density = density;
     this.renderer = renderer; this.sunDir = sunDir;
     this.scene = scene; this.terrain = terrain; this.lib = lib; this.R = RAPIER; this.physics = physics;
     this.root = new THREE.Group(); this.root.name = 'world'; scene.add(this.root);
@@ -274,7 +275,7 @@ export class World {
     const colliders = [];
 
     // trees: jittered grid, density from groves + valley moisture + elevation
-    const step = 13;
+    const step = 13 / Math.sqrt(this.density);
     for (let gz = -half; gz < half; gz += step) for (let gx = -half; gx < half; gx += step) {
       const x = gx + (this.rand() - 0.5) * step, z = gz + (this.rand() - 0.5) * step;
       const s = T.splatAt(x, z);
@@ -309,7 +310,7 @@ export class World {
       }
     }
     // field-edge bushes & rocks
-    for (let i = 0; i < 9000; i++) {
+    for (let i = 0; i < 9000 * this.density; i++) {
       const x = (this.rand() * 2 - 1) * half, z = (this.rand() * 2 - 1) * half;
       const s = T.splatAt(x, z);
       if (s.road > 0.05 || s.yard > 0.1 || !farAway(x, z, -6)) continue;
