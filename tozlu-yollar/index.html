@@ -13,8 +13,8 @@
   <title>Tozlu Yollar — Palouse Offroad</title>
   <meta name="description" content="Stilize, açık dünya bir country offroad sürüş oyunu. Gerçek Palouse (Washington) arazisinde pikabınla keşfe çık." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%BB%3C/text%3E%3C/svg%3E" />
-  <script type="module" crossorigin src="./assets/index-B1S6_j2-.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-BZOeADWp.css">
+  <script type="module" crossorigin src="./assets/index-DlmFixrk.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DJlDnp6r.css">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -52,6 +52,10 @@
   </div>
 
   <!-- HUD -->
+  <div id="skill" class="skill hidden"><div class="sk-top"><span id="sk-score">0</span><span id="sk-mult">×1.0</span></div><div class="sk-bar"><i id="sk-bar"></i></div><div id="sk-list" class="sk-list"></div></div>
+  <div id="pace" class="pace hidden"></div>
+  <div id="rewind-tag" class="rewind-tag">⏪ GERİ SARILIYOR</div>
+  <div id="dialogue" class="dialogue hidden"><div class="dl-portrait" id="dl-portrait">✉</div><div class="dl-body"><div class="dl-name" id="dl-name"></div><div class="dl-text" id="dl-text"></div><div class="dl-hint">Devam ▸ <kbd>F</kbd> · dokun</div></div></div>
   <div id="hud" class="hidden">
     <div class="hud-top-left">
       <div class="chip money"><span class="chip-ico">$</span><span id="hud-money">0</span></div>
@@ -86,6 +90,11 @@
         </div>
         <button data-t="brake" class="t-brake">FREN</button>
         <button data-t="gas" class="t-gas">GAZ</button>
+      </div>
+      <div class="t-tools">
+        <button data-t="rewind" title="Geri sar">⏪</button>
+        <button data-k="KeyX" title="Vinç">⚓</button>
+        <button data-k="KeyQ" title="4x4 düşük vites">4L</button>
       </div>
       <div class="t-top">
         <button data-k="Escape" title="Harita">☰</button>
@@ -173,16 +182,19 @@
           <div><kbd>Boşluk</kbd></div><div>El freni (drift)</div>
           <div><kbd>Shift</kbd></div><div>Nitro (depo dolunca)</div>
           <div><kbd>R</kbd></div><div>Aracı düzelt</div>
-          <div><kbd>C</kbd></div><div>Kamera değiştir</div>
+          <div><kbd>C</kbd></div><div>Kamera değiştir (takip / uzak / kaput / sinematik)</div>
           <div><kbd>H</kbd></div><div>Korna</div>
-          <div><kbd>F</kbd></div><div>İlan panosu ($) / görev başlat (bayrak)</div>
+          <div><kbd>F</kbd></div><div>İlan panosu ($) / görev ya da yarış başlat / posta turu / benzinlik servisi / diyaloğu ilerlet</div>
+          <div><kbd>T</kbd> (basılı tut)</div><div>Geri sar (son 10 saniye)</div>
+          <div><kbd>X</kbd></div><div>Vinç: en yakın ağaca, direğe ya da binaya bağla / bırak</div>
+          <div><kbd>Q</kbd></div><div>4x4 düşük vites (dik yokuş ve çamur için)</div>
           <div><kbd>M</kbd> / <kbd>N</kbd></div><div>Müzik aç-kapa / sonraki parça</div>
           <div><kbd>L</kbd></div><div>Farlar</div>
           <div><kbd>P</kbd></div><div>Fotoğraf modu</div>
           <div><kbd>Tab</kbd> <kbd>Esc</kbd></div><div>Harita / Duraklat</div>
           <div><kbd>Fare</kbd></div><div>Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır</div>
           <div><kbd>🎮</kbd></div><div>Gamepad: RT gaz, LT fren, A el freni, Y düzelt, RB kamera</div>
-          <div><kbd>📱</kbd></div><div>Dokunmatik: sol çubuk direksiyon, sağda GAZ / FREN / EL FRENİ / TURBO, boş ekranı sürükle: kamera, üstte harita · kamera · düzelt · korna · şarkı</div>
+          <div><kbd>📱</kbd></div><div>Dokunmatik: sol çubuk direksiyon, sağda GAZ / FREN / EL FRENİ / TURBO, boş ekranı sürükle: kamera, üstte harita · kamera · düzelt · korna · şarkı · fotoğraf · geri sar · vinç · 4L</div>
         </div>
       </div>
       <div class="tab-body hidden" data-body="credits">
@@ -213,6 +225,8 @@
       <button class="btn" id="ph-exit">Çıkış</button>
     </div>
     <div class="photo-hint">Sürükle: kamerayı döndür · Tekerlek / kaydırıcı: uzaklık</div>
+    <div id="ph-bounties" class="ph-bounties"></div>
+    <div id="ph-msg" class="ph-msg"></div>
   </div>
 
   <div id="rotate"><div class="rotate-ico">⟳</div><div>Daha iyi bir deneyim için<br>telefonunu yatay çevir</div></div>
