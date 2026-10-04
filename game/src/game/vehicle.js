@@ -11,19 +11,19 @@ const REF_RADIUS = 0.41; // gearing is normalised to this wheel radius so big ty
 export const VEHICLES = {
   pickup: {
     name: 'Pikap', model: 'pickup', price: 0, desc: 'Çiftliğin emektarı. Kasası yük taşır, her işe koşar.',
-    mass: 1650, power: 1.0, grip: 1.0, maxSteer: 0.62, top: 3,
+    mass: 1650, power: 1.0, grip: 1.0, maxSteer: 0.62, top: 3, pitch: 1,
     suspensionRest: 0.5, suspensionTravel: 0.4, stiffness: 30, compression: 3.4, relaxation: 4.2,
     bed: { floorY: 0.92, rimY: 1.5, zMin: -2.36, zMax: -0.55, halfX: 1.0 }, paint: /body dark green/i,
   },
   suv: {
     name: 'Arazi SUV', model: 'suv', price: 2200, desc: 'Daha güçlü motor, daha iyi tutuş. Yük taşıyamaz.',
-    mass: 1720, power: 1.22, grip: 1.12, maxSteer: 0.6, top: 4,
+    mass: 1720, power: 1.22, grip: 1.12, maxSteer: 0.6, top: 4, pitch: 1.08,
     suspensionRest: 0.46, suspensionTravel: 0.34, stiffness: 33, compression: 3.6, relaxation: 4.4,
     bed: null, paint: /body dark purple/i,
   },
   monster: {
     name: 'Canavar Kamyon', model: 'monster', price: 6000, desc: 'Dev tekerler, uzun süspansiyon. Her tepeye çıkar, kasası da var.',
-    mass: 2500, power: 1.6, grip: 1.15, maxSteer: 0.55, top: 5,
+    mass: 2500, power: 1.6, grip: 1.15, maxSteer: 0.55, top: 5, pitch: 0.78,
     suspensionRest: 0.85, suspensionTravel: 0.7, stiffness: 21, compression: 2.8, relaxation: 3.4,
     bed: { floorY: 1.6, rimY: 2.1, zMin: -2.62, zMax: -0.62, halfX: 1.0 }, paint: /body light blue/i,
   },

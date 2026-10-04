@@ -32,6 +32,7 @@ export class World {
     this._farms();
     this._paddocks();
     this._poiProps();
+    this._kickerProps();
     this._vegetation();
     this._herds();
     this._bounds();
@@ -293,6 +294,19 @@ export class World {
     // dead trees + rocks around the forgotten tractor
     const t = POIS.find(p => p.id === 'tractor');
     this._extraTrees = [this._treeMatrix('dead_1', t.x + 9, t.z - 6, 1), this._treeMatrix('dead_2', t.x - 12, t.z + 3, 0.9)];
+  }
+
+  // hay bales flanking the lip of each dirt kicker
+  _kickerProps() {
+    for (const k of this.terrain.kickers || []) {
+      for (const side of [-1, 1]) {
+        const off = (k.hw + 1.8) * side;
+        const x = k.x - k.dx * 2 + k.dz * off, z = k.z - k.dz * 2 - k.dx * off;
+        const rot = Math.atan2(k.dx, k.dz) * 180 / Math.PI;
+        this.place('haybale', x, z, rot, 1);
+        this.place('haybale', x - k.dx * 2.4, z - k.dz * 2.4, rot, 1);
+      }
+    }
   }
 
   // ------------------------------------------------------------ vegetation

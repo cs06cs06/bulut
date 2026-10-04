@@ -28,7 +28,10 @@ export class Terrain {
     this.roads = new RoadNetwork(layout.roads);
     this.roads.computeProfiles((x, z) => this.baseHeight(x, z));
     // resolve kickers onto the nearest road segment direction
-    this.kickers = (layout.jumps || []).map(([x, z, ax, az]) => {
+    this.kickers = (layout.jumps || []).map(([x0, z0, ax, az]) => {
+      // snap onto the nearest densified road point
+      let x = x0, z = z0, bd = Infinity;
+      for (const r of this.roads.roads) for (const p of r.points) { const d = (p[0] - x0) ** 2 + (p[1] - z0) ** 2; if (d < bd) { bd = d; x = p[0]; z = p[1]; } }
       const q = this.roads.query(x, z, {}) || { dirX: ax, dirZ: az, halfWidth: 3 };
       let dx = q.dirX, dz = q.dirZ;
       if (dx * ax + dz * az < 0) { dx = -dx; dz = -dz; }

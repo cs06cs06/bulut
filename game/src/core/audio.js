@@ -119,11 +119,12 @@ export class AudioSystem {
     const x = THREE.MathUtils.clamp((rpm - 850) / (6200 - 850), 0, 1);
     const bell = (c, w) => Math.max(0, 1 - Math.abs(x - c) / w);
     const load = 0.55 + thr * 0.45;
-    L.idle.set(bell(0, 0.22) * 0.55, 0.85 + x * 2.4);
-    L.diesel.set(bell(0.18, 0.3) * 0.45 * load, 0.75 + x * 1.6);
-    L.low.set(bell(0.32, 0.32) * 0.7 * load, 0.7 + x * 1.3);
-    L.mid.set(bell(0.62, 0.3) * 0.42 * load, 0.62 + x * 0.75);
-    L.high.set(bell(0.95, 0.32) * 0.36 * load, 0.62 + x * 0.55);
+    const pm = v.cfg?.pitch || 1; // per-vehicle engine character
+    L.idle.set(bell(0, 0.22) * 0.55, (0.85 + x * 2.4) * pm);
+    L.diesel.set(bell(0.18, 0.3) * 0.45 * load, (0.75 + x * 1.6) * pm);
+    L.low.set(bell(0.32, 0.32) * 0.7 * load, (0.7 + x * 1.3) * pm);
+    L.mid.set(bell(0.62, 0.3) * 0.42 * load, (0.62 + x * 0.75) * pm);
+    L.high.set(bell(0.95, 0.32) * 0.36 * load, (0.62 + x * 0.55) * pm);
     this.engineFilter.frequency.setTargetAtTime(900 + thr * 5200 + x * 1500, this.ctx.currentTime, 0.08);
 
     // surfaces
