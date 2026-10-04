@@ -8,7 +8,7 @@ export const MODEL_SCALE = {
   pickup: 1.0, tractor: 1.55,
   barn: 1.15, barn_big: 1.2, barn_small: 1.1, barn_open: 1.1, silo: 1.25, silo_house: 1.25, windmill: 1.15, water_tower: 1.35,
   chicken_coop: 1.1, well: 1.2, fence: 1.0, fence2: 1.0, mill_tower: 1.0, farm_barn: 1.35, cistern: 1.2,
-  mailbox: 1.4, hay_round: 0.75, hay_cube: 1.0, cart: 0.6, barrel: 1.1, pond: 7, haybale: 0.55, fence_rail: 1.0, crate_pumpkin: 0.5, pumpkin: 0.3,
+  mailbox: 1.4, hay_round: 0.75, hay_cube: 1.0, cart: 0.6, barrel: 1.1, pond: 3.2, haybale: 0.55, fence_rail: 1.0, crate_pumpkin: 0.5, pumpkin: 0.3,
   farmhouse_a: 7.5, farmhouse_c: 7.5, farmhouse_e: 7.5, farmhouse_g: 7.5, farmhouse_h: 7.5, farmhouse_k: 7.5, farmhouse_o: 7.5, farmhouse_r: 7.5,
   flag: 4.5, sign: 3.2, arrow: 3.2, billboard: 2.4,
   cow: 0.33, bull: 0.34, horse: 0.36, horse_white: 0.36, donkey: 0.3, alpaca: 0.32, deer: 0.33, chicken: 1.0,
@@ -88,7 +88,7 @@ export const POIS = [
 // Extra props placed at POIs [poiId, model, dx, dz, rotDeg, scaleMul]
 export const POI_PROPS = [
   ['windmill', 'windmill', 0, 0, 20, 1.15], ['windmill', 'barrel', 4, 3, 0, 1],
-  ['pond', 'pond', 0, 0, 30, 1], ['pond', 'cart', 14, 8, 120, 1],
+  ['pond', 'pond', 0, 0, 30, 1], ['pond', 'cart', 9, 7, 120, 1],
   ['tractor', 'tractor', 0, 0, 65, 1], ['tractor', 'barrel', 4, -3, 0, 1], ['tractor', 'hay_round', -6, 5, 0, 0.8],
   ['haystack', 'haybale', 0, 0, 0, 1], ['haystack', 'haybale', 1.2, 0, 0, 1], ['haystack', 'haybale', 0.6, 0, 0, 1, 1.1],
   ['haystack', 'haybale', 6, 4, 90, 1], ['haystack', 'haybale', 6, 5.2, 90, 1], ['haystack', 'hay_round', -6, 6, 0, 1], ['haystack', 'hay_round', -9, -2, 50, 1],
@@ -107,6 +107,9 @@ export const CHALLENGES = [
     route: [[700, 200], [950, -50], [1120, -290], [980, -470], [780, -620], [650, -950], [420, -650], [300, -300], [380, 0], [440, 240]],
   },
 ];
+
+// Small flattened pads under POI props
+export const POI_FLATTEN = [['pond', 14], ['haystack', 14], ['tractor', 10], ['windmill', 8], ['summit', 12]];
 
 // Wild animals
 export const HERDS = [

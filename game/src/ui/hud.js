@@ -21,22 +21,24 @@ export class HUD {
   // Pre-render a stylised map texture from the terrain splat + hillshade
   buildMap(terrain) {
     const R = 768, c = document.createElement('canvas'); c.width = c.height = R;
-    const ctx = c.getContext('2d'), img = ctx.createImageData(R, R);
-    const size = terrain.size, half = terrain.half;
+    const ctx = c.getContext('2d', { willReadFrequently: true }), img = ctx.createImageData(R, R);
+    const { a, b, R: SR } = terrain.splatData, H = terrain.H, G = terrain.G, sp = terrain.sp;
     for (let j = 0; j < R; j++) for (let i = 0; i < R; i++) {
-      const x = (i + 0.5) / R * size - half, z = (j + 0.5) / R * size - half;
-      const s = terrain.splatAt(x, z);
-      const n = terrain.normalAt(x, z);
-      const shade = Math.max(0.45, Math.min(1.25, 0.75 + (-n.x * 0.6 + n.z * 0.6) * 1.8 + n.y * 0.25));
-      let r = 108, g = 150, b = 70;                                // meadow
-      const mix = (w, cr, cg, cb) => { r += (cr - r) * w; g += (cg - g) * w; b += (cb - b) * w; };
-      mix(s.wheat, 222, 188, 102); mix(s.green, 120, 170, 64); mix(s.plowed, 128, 94, 66); mix(s.fallow, 196, 186, 120);
-      mix(s.yard, 170, 140, 100); mix(s.rock, 140, 134, 124); mix(Math.min(1, s.road * 1.5), 236, 214, 166);
+      const si = Math.min(SR - 1, Math.floor((i + 0.5) / R * SR)), sj = Math.min(SR - 1, Math.floor((j + 0.5) / R * SR));
+      const o = (sj * SR + si) * 4;
+      const gi = Math.min(G - 2, Math.max(1, Math.round((i + 0.5) / R * (G - 1)))), gj = Math.min(G - 2, Math.max(1, Math.round((j + 0.5) / R * (G - 1))));
+      const go = gj * G + gi;
+      const nx = (H[go - 1] - H[go + 1]) / (2 * sp), nz = (H[go - G] - H[go + G]) / (2 * sp), inv = 1 / Math.sqrt(nx * nx + 1 + nz * nz);
+      const shade = Math.max(0.45, Math.min(1.25, 0.75 + (-nx * 0.6 + nz * 0.6) * inv * 1.8 + inv * 0.25));
+      let r = 108, g = 150, bl = 70;                                // meadow
+      const mix = (w, cr, cg, cb) => { r += (cr - r) * w; g += (cg - g) * w; bl += (cb - bl) * w; };
+      mix(a[o + 2] / 255, 222, 188, 102); mix(b[o] / 255, 120, 170, 64); mix(a[o + 3] / 255, 128, 94, 66); mix(b[o + 3] / 255, 196, 186, 120);
+      mix(b[o + 2] / 255, 170, 140, 100); mix(a[o + 1] / 255, 140, 134, 124); mix(Math.min(1, a[o] / 255 * 1.5), 236, 214, 166);
       const k = (j * R + i) * 4;
-      img.data[k] = Math.min(255, r * shade); img.data[k + 1] = Math.min(255, g * shade); img.data[k + 2] = Math.min(255, b * shade); img.data[k + 3] = 255;
+      img.data[k] = Math.min(255, r * shade); img.data[k + 1] = Math.min(255, g * shade); img.data[k + 2] = Math.min(255, bl * shade); img.data[k + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
-    this.mapCanvas = c; this.mapSize = size; this.mapHalf = half;
+    this.mapCanvas = c; this.mapSize = terrain.size; this.mapHalf = terrain.half;
   }
 
   updateCounts(gp) {

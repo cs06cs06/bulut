@@ -13,7 +13,23 @@ export class Input {
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.code)) e.preventDefault();
     });
     addEventListener('keyup', (e) => this.keys.delete(e.code));
+    this.touch = {};
+    this._initTouch();
     addEventListener('blur', () => this.keys.clear());
+  }
+
+  // on-screen buttons for phones/tablets
+  _initTouch() {
+    const root = document.getElementById('touch');
+    if (!root) return;
+    const coarse = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    this.touchEnabled = coarse;
+    root.querySelectorAll('[data-t]').forEach((b) => {
+      const on = (e) => { e.preventDefault(); this.touch[b.dataset.t] = true; b.classList.add('on'); };
+      const off = (e) => { e.preventDefault(); this.touch[b.dataset.t] = false; b.classList.remove('on'); };
+      b.addEventListener('pointerdown', on); b.addEventListener('pointerup', off); b.addEventListener('pointercancel', off); b.addEventListener('pointerleave', off);
+    });
+    root.querySelectorAll('[data-k]').forEach((b) => b.addEventListener('pointerdown', (e) => { e.preventDefault(); this.pressed.add(b.dataset.k); }));
   }
 
   wasPressed(code) { return this.pressed.has(code); }
@@ -24,6 +40,11 @@ export class Input {
     let brk = (k.has('KeyS') || k.has('ArrowDown')) ? 1 : 0;
     let st = ((k.has('KeyA') || k.has('ArrowLeft')) ? 1 : 0) - ((k.has('KeyD') || k.has('ArrowRight')) ? 1 : 0);
     let hb = k.has('Space');
+    const t = this.touch;
+    if (t.gas) thr = 1;
+    if (t.brake) brk = 1;
+    if (t.left || t.right) st = (t.left ? 1 : 0) - (t.right ? 1 : 0);
+    if (t.hb) hb = true;
     let lookX = 0, lookY = 0;
 
     const pads = navigator.getGamepads ? navigator.getGamepads() : [];

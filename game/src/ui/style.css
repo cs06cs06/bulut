@@ -152,3 +152,21 @@ kbd { background: var(--cream); color: var(--ink); border-radius: 5px; padding: 
   #minimap-wrap { transform: scale(.7); transform-origin: bottom left; }
   .map-layout { flex-direction: column; }
 }
+
+.swatches { display: flex; gap: 8px; }
+.swatch { width: 30px; height: 30px; border-radius: 50%; background: var(--c); border: 3px solid rgba(246,234,210,.35); cursor: pointer; transition: transform .12s; }
+.swatch:hover { transform: scale(1.12); }
+.swatch.active { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(232,176,74,.4); }
+
+/* ---------- touch controls */
+.touch { position: absolute; inset: 0; pointer-events: none; }
+.touch button { pointer-events: auto; touch-action: none; background: rgba(34,22,14,.55); color: var(--cream); border: 2px solid rgba(246,234,210,.45);
+  border-radius: 50%; width: 76px; height: 76px; font-size: 30px; font-weight: 700; backdrop-filter: blur(4px); }
+.touch button.on { background: rgba(181,55,42,.85); }
+.touch button.small { width: 64px; height: 64px; font-size: 12px; letter-spacing: .05em; }
+.touch button.gas { width: 92px; height: 92px; }
+.t-left { position: absolute; left: 20px; bottom: 250px; display: flex; gap: 16px; }
+.t-right { position: absolute; right: 20px; bottom: 260px; display: flex; gap: 12px; align-items: flex-end; }
+.t-top { position: absolute; top: 120px; right: 16px; display: flex; flex-direction: column; gap: 10px; }
+.t-top button { width: 48px; height: 48px; font-size: 20px; }
+@media (max-width: 760px) { .t-left { bottom: 170px; } .t-right { bottom: 180px; } }

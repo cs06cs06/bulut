@@ -124,6 +124,26 @@ export class Vehicle {
     this.ctrl = ctrl;
   }
 
+  // repaint the body (materials whose name contains "body" and the main colour)
+  setPaint(name) {
+    const colors = { green: 0x1f6b2e, red: 0xa3241c, blue: 0x24508f, cream: 0xe6d7b0, black: 0x23262b, orange: 0xd06a1c };
+    if (!this._paintMats) {
+      this._paintMats = new Set();
+      this.object.traverse((o) => {
+        if (!o.isMesh) return;
+        for (const m of Array.isArray(o.material) ? o.material : [o.material]) if (/body.*(green|red|blue|main|paint)|dark green/i.test(m.name)) this._paintMats.add(m);
+      });
+      // own the materials so the clone does not affect the shared asset
+      this.object.traverse((o) => {
+        if (!o.isMesh || Array.isArray(o.material)) return;
+        if (this._paintMats.has(o.material)) { const c = o.material.clone(); c.userData.paint = true; o.material = c; }
+      });
+      this._paintMats = new Set();
+      this.object.traverse((o) => { if (o.isMesh && o.material.userData?.paint) this._paintMats.add(o.material); });
+    }
+    for (const m of this._paintMats) { m.color.set(colors[name] ?? colors.green); m.roughness = 0.45; m.metalness = 0.25; }
+  }
+
   get position() { return this.object.position; }
 
   reset(pos, heading) {

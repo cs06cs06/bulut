@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
   <title>Tozlu Yollar — Palouse Offroad</title>
   <meta name="description" content="Stilize, açık dünya bir country offroad sürüş oyunu. Gerçek Palouse (Washington) arazisinde pikabınla keşfe çık." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%BB%3C/text%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/src/ui/style.css" />
 </head>
 <body>
@@ -61,6 +62,14 @@
     <div id="toast" class="toast"></div>
     <div id="hint" class="hint"></div>
     <div id="prompt" class="prompt hidden"></div>
+    <div id="touch" class="touch hidden">
+      <div class="t-left"><button data-t="left">◀</button><button data-t="right">▶</button></div>
+      <div class="t-right">
+        <button data-t="hb" class="small">EL FRENİ</button>
+        <button data-t="brake">▼</button><button data-t="gas" class="gas">▲</button>
+      </div>
+      <div class="t-top"><button data-k="KeyR">⟲</button><button data-k="KeyC">🎥</button><button data-k="KeyF">⚑</button><button data-k="Escape">☰</button></div>
+    </div>
   </div>
 
   <!-- Pause / map / settings overlay -->
@@ -91,6 +100,19 @@
           <label>Müzik <input type="range" id="set-music" min="0" max="1" step="0.01" /></label>
           <label>Efektler <input type="range" id="set-sfx" min="0" max="1" step="0.01" /></label>
           <label>Ortam sesleri <input type="range" id="set-amb" min="0" max="1" step="0.01" /></label>
+          <label>Günün saati
+            <select id="set-time"><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option></select>
+          </label>
+          <label>Pikap rengi
+            <span class="swatches">
+              <button class="swatch" data-paint="green" style="--c:#1f6b2e" title="Orman yeşili"></button>
+              <button class="swatch" data-paint="red" style="--c:#a3241c" title="Ahır kırmızısı"></button>
+              <button class="swatch" data-paint="blue" style="--c:#24508f" title="Kot mavisi"></button>
+              <button class="swatch" data-paint="cream" style="--c:#e6d7b0" title="Krem"></button>
+              <button class="swatch" data-paint="orange" style="--c:#d06a1c" title="Balkabağı turuncusu"></button>
+              <button class="swatch" data-paint="black" style="--c:#23262b" title="Gece siyahı"></button>
+            </span>
+          </label>
           <label class="row">Ölçü birimi
             <select id="set-units"><option value="kmh">km/sa</option><option value="mph">mph</option></select>
           </label>

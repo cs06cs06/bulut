@@ -12,8 +12,8 @@ export class GroundCover {
     scene.add(this.group);
     this.setQuality(quality);
     this.types = [
-      { name: 'grass_short', where: 'grass', density: 2.4, scale: [0.45, 0.8], tint: 0x9aae6a },
-      { name: 'grass_tall', where: 'grass', density: 0.5, scale: [0.45, 0.75], tint: 0x9aae6a },
+      { name: 'grass_short', where: 'grass', density: 2.4, scale: [0.45, 0.8], tint: 0xb3c072 },
+      { name: 'grass_tall', where: 'grass', density: 0.5, scale: [0.45, 0.75], tint: 0xb3c072 },
       { name: 'grass_wispy', where: 'wheat', density: 1.6, scale: [0.7, 1.0], tint: 0xffe2a0 },
       { name: 'grass_wispy', where: 'edge', density: 0.35, scale: [0.5, 0.8] },
       { name: 'flower_3', where: 'grass', density: 0.12, scale: [0.4, 0.7] },

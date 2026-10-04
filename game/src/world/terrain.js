@@ -46,20 +46,22 @@ export class Terrain {
     for (let i = 0; i < m * m; i++) this.outerSrc[i] = outerU16[i] * k + mn - BASE_HEIGHT;
   }
 
-  // Bicubic sample of the source DEM (no detail, no roads)
+  // Bicubic sample of the source DEM (no detail, no roads). Hot path: no closures/allocations.
   baseHeight(x, z) {
-    const n = this.srcN;
-    const fx = clamp((x + this.half) / this.size, 0, 1) * (n - 1);
-    const fz = clamp((z + this.half) / this.size, 0, 1) * (n - 1);
+    const n = this.srcN, S = this.src, m = n - 1;
+    let fx = (x + this.half) / this.size, fz = (z + this.half) / this.size;
+    fx = (fx < 0 ? 0 : fx > 1 ? 1 : fx) * m; fz = (fz < 0 ? 0 : fz > 1 ? 1 : fz) * m;
     const ix = Math.floor(fx), iz = Math.floor(fz), tx = fx - ix, tz = fz - iz;
-    const S = this.src;
-    const at = (a, b) => S[clamp(b, 0, n - 1) * n + clamp(a, 0, n - 1)];
-    const cub = (p0, p1, p2, p3, t) => p1 + 0.5 * t * (p2 - p0 + t * (2 * p0 - 5 * p1 + 4 * p2 - p3 + t * (3 * (p1 - p2) + p3 - p0)));
-    const r0 = cub(at(ix - 1, iz - 1), at(ix, iz - 1), at(ix + 1, iz - 1), at(ix + 2, iz - 1), tx);
-    const r1 = cub(at(ix - 1, iz), at(ix, iz), at(ix + 1, iz), at(ix + 2, iz), tx);
-    const r2 = cub(at(ix - 1, iz + 1), at(ix, iz + 1), at(ix + 1, iz + 1), at(ix + 2, iz + 1), tx);
-    const r3 = cub(at(ix - 1, iz + 2), at(ix, iz + 2), at(ix + 1, iz + 2), at(ix + 2, iz + 2), tx);
-    return cub(r0, r1, r2, r3, tz);
+    const x0 = ix > 0 ? ix - 1 : 0, x1 = ix, x2 = ix + 1 > m ? m : ix + 1, x3 = ix + 2 > m ? m : ix + 2;
+    const rows = [iz > 0 ? iz - 1 : 0, iz, iz + 1 > m ? m : iz + 1, iz + 2 > m ? m : iz + 2];
+    let r0 = 0, r1 = 0, r2 = 0, r3 = 0;
+    for (let k = 0; k < 4; k++) {
+      const o = rows[k] * n;
+      const p0 = S[o + x0], p1 = S[o + x1], p2 = S[o + x2], p3 = S[o + x3];
+      const v = p1 + 0.5 * tx * (p2 - p0 + tx * (2 * p0 - 5 * p1 + 4 * p2 - p3 + tx * (3 * (p1 - p2) + p3 - p0)));
+      if (k === 0) r0 = v; else if (k === 1) r1 = v; else if (k === 2) r2 = v; else r3 = v;
+    }
+    return r1 + 0.5 * tz * (r2 - r0 + tz * (2 * r0 - 5 * r1 + 4 * r2 - r3 + tz * (3 * (r1 - r2) + r3 - r0)));
   }
 
   _buildHeights() {
@@ -79,14 +81,16 @@ export class Terrain {
         // flatten zones (farmyards)
         let flatW = 0;
         for (const f of flats) {
-          const d = Math.hypot(x - f.x, z - f.z);
-          if (d < f.r + f.falloff) {
+          const fdx = x - f.x, fdz = z - f.z;
+          if (fdx * fdx + fdz * fdz > (f.r + f.falloff) * (f.r + f.falloff)) continue;
+          const d = Math.sqrt(fdx * fdx + fdz * fdz);
+          {
             const w = 1 - smoothstep(f.r, f.r + f.falloff, d);
             h = lerp(h, f.h, w); flatW = Math.max(flatW, w);
           }
         }
         // offroad detail: rolling bumps and small ruts
-        const bumps = fbm(n, x * 0.03, z * 0.03, 3) * 0.55 + n(x * 0.14 + 31, z * 0.14) * 0.1 + nb(x * 0.6, z * 0.6) * 0.025;
+        const bumps = fbm(n, x * 0.03, z * 0.03, 2) * 0.55 + n(x * 0.14 + 31, z * 0.14) * 0.11;
         let detail = bumps;
         // roads carve the slope: flat across, smooth along
         let rw = 0;
@@ -149,7 +153,8 @@ export class Terrain {
       const gx = cx + a, gz = cz + b;
       const hsh = hash2(gx, gz);
       const px = (gx + 0.15 + 0.7 * hsh) * C, pz = (gz + 0.15 + 0.7 * hash2(gz + 17, gx - 9)) * C;
-      const d = Math.hypot(wx - px, wz - pz);
+      const ex = wx - px, ez = wz - pz;
+      const d = Math.sqrt(ex * ex + ez * ez);
       if (d < d1) { d2 = d1; d1 = d; id = hsh; } else if (d < d2) d2 = d;
     }
     const r = id;
@@ -166,22 +171,32 @@ export class Terrain {
     const f = {};
     const farms = this.layout.farmyards || [];
     const nn = this.noise;
+    const inv2sp = 1 / (2 * this.sp);
+    const fieldRow = [];
     for (let j = 0; j < R; j++) {
       const z = (j + 0.5) / R * this.size - this.half;
       for (let i = 0; i < R; i++) {
         const x = (i + 0.5) / R * this.size - this.half;
         const o = (j * R + i) * 4;
-        const slope = this.slopeAt(x, z);
-        const h = this.heightAt(x, z);
-        const road = this.roadWeight(x, z);
+        // texel (i, j) sits on grid sample (i, j) of the 2049² height grid
+        const G = this.G, H = this.H, gi = i < 1 ? 1 : i > G - 2 ? G - 2 : i, gj = j < 1 ? 1 : j > G - 2 ? G - 2 : j, go = gj * G + gi;
+        const ddx = (H[go + 1] - H[go - 1]) * inv2sp, ddz = (H[go + G] - H[go - G]) * inv2sp;
+        const slope = 1 - 1 / Math.sqrt(1 + ddx * ddx + ddz * ddz);
+        const h = H[go];
+        const road = this.roadW[go];
         let rock = smoothstep(0.16, 0.3, slope + nn(x * 0.05, z * 0.05) * 0.06);
         rock = Math.max(rock, smoothstep(300, 345, h) * 0.5);
-        this.fieldAt(x, z, f);
+        // fields vary slowly: evaluate once per 2×2 texel block
+        if ((i & 1) === 0 && (j & 1) === 0) this.fieldAt(x + this.size / R * 0.5, z + this.size / R * 0.5, f);
+        else if ((i & 1) === 0) { const c = fieldRow[i >> 1]; f.type = c.type; f.angle = c.angle; f.hue = c.hue; f.edge = c.edge; }
+        if ((j & 1) === 0) { const c = fieldRow[i >> 1] || (fieldRow[i >> 1] = {}); c.type = f.type; c.angle = f.angle; c.hue = f.hue; c.edge = f.edge; }
         // natural meadow on the butte and steep ground
         let farmable = (1 - smoothstep(0.07, 0.12, slope)) * (1 - smoothstep(95, 130, h));
         let yard = 0;
         for (const y of farms) {
-          const d = Math.hypot(x - y.x, z - y.z);
+          const dx = x - y.x, dz = z - y.z;
+          if (dx * dx + dz * dz > (y.r + 30) * (y.r + 30)) continue;
+          const d = Math.sqrt(dx * dx + dz * dz);
           yard = Math.max(yard, 1 - smoothstep(y.r * 0.6, y.r, d + nn(x * 0.08, z * 0.08) * 6));
           farmable *= smoothstep(y.r, y.r + 25, d);
         }
@@ -325,8 +340,11 @@ export class Terrain {
     mesh.receiveShadow = false;
     mesh.name = 'terrain_outer';
     this.outerMesh = mesh;
+    this.outerMaterial = mat;
     this.group.add(mesh);
   }
+
+  setTime(t) { this.material.userData.uniforms.uTime.value = t; this.outerMaterial.userData.uniforms.uTime.value = t; }
 
   // Rapier heightfield (column-major: index = xi * G + zi)
   createCollider(RAPIER, world) {

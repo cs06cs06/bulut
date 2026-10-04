@@ -2,7 +2,7 @@
 // (dedupe, prune, weld, WebP textures ≤1024px). Source packs: see CREDITS.md.
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import { dedup, prune, weld, textureCompress, resample } from '@gltf-transform/functions';
+import { dedup, prune, weld, textureCompress, resample, getBounds } from '@gltf-transform/functions';
 import sharp from 'sharp';
 import fs from 'fs';
 const M = process.argv[2], K = process.argv[3];
@@ -42,6 +42,15 @@ const L = {
   cow: 'ultimateanimatedanimals/glb/Cow.glb', bull: 'ultimateanimatedanimals/glb/Bull.glb', horse: 'ultimateanimatedanimals/glb/Horse.glb', horse_white: 'ultimateanimatedanimals/glb/Horse_White.glb',
   donkey: 'ultimateanimatedanimals/glb/Donkey.glb', alpaca: 'ultimateanimatedanimals/glb/Alpaca.glb', deer: 'ultimateanimatedanimals/glb/Deer.glb', chicken: 'oga_chicken_mess110/Chicken.glb',
 };
+// styloo's Cozy Farm props are authored far from their pivot; move them back to the origin
+const RECENTER = new Set(['barrel', 'billboard', 'cart', 'hay_cube', 'hay_round', 'mailbox', 'pond']);
+function recenter(doc) {
+  const scene = doc.getRoot().listScenes()[0];
+  const b = getBounds(scene);
+  const pivot = doc.createNode('recenter').setTranslation([-(b.min[0] + b.max[0]) / 2, -b.min[1], -(b.min[2] + b.max[2]) / 2]);
+  for (const c of scene.listChildren()) { scene.removeChild(c); pivot.addChild(c); }
+  scene.addChild(pivot);
+}
 const only = process.argv.slice(4);
 for (const [name, rel] of Object.entries(L)) {
   if (only.length && !only.includes(name)) continue;
@@ -50,6 +59,7 @@ for (const [name, rel] of Object.entries(L)) {
   const doc = await io.read(src);
   await doc.transform(dedup(), prune(), resample(), textureCompress({ encoder: sharp, targetFormat: 'webp', resize: [1024, 1024], quality: 88 }));
   if (name.startsWith('farmhouse_')) await recolorRoof(doc);
+  if (RECENTER.has(name)) recenter(doc);
   await io.write(OUT + name + '.glb', doc);
   console.log(name.padEnd(14), (fs.statSync(OUT + name + '.glb').size / 1024).toFixed(0) + 'KB');
 }

@@ -6,7 +6,7 @@ const out = process.argv[2]; fs.mkdirSync(out, { recursive: true });
 const W = +(process.env.W || 1280), H = +(process.env.H || 720);
 const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 const page = await browser.newPage({ viewport: { width: W, height: H } });
-page.on('console', (m) => { const t = `[${m.type()}] ${m.text().slice(0, 400)}`; if ((m.type() === 'error' || m.type() === 'warning') && !/Clock|parallel_shader|404/.test(t)) console.log(t); });
+page.on('console', (m) => { const t = `[${m.type()}] ${m.text().slice(0, 400)}`; if ((m.type() === 'error' || m.type() === 'warning' || /\[load\]/.test(t)) && !/Clock|parallel_shader|404/.test(t)) console.log(t); });
 page.on('pageerror', (e) => console.log('[pageerror]', e.message, e.stack?.split('\n').slice(0, 4).join(' | ')));
 const t0 = Date.now();
 await page.goto((process.env.URL || 'http://127.0.0.1:5173/') + '?manual' + (process.env.Q ? '&' + process.env.Q : ''));

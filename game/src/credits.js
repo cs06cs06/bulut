@@ -16,6 +16,7 @@ export const CREDITS = [
   { h: 'Dokular ve Gökyüzü', items: [
     ['2K Handpainted Style Textures (çimen, toprak, kaya)', 'rubberduck — CC0', 'https://opengameart.org/content/2k-handpainted-style-textures'],
     ['Kloofendal 48d Partly Cloudy (Pure Sky) HDRI', 'Poly Haven — CC0', 'https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky'],
+    ['Kloppenheim 06 (Pure Sky) HDRI — gün batımı', 'Poly Haven — CC0', 'https://polyhaven.com/a/kloppenheim_06_puresky'],
     ['Particle Pack (toz, parıltı), Racing Pack (lastik izi)', 'Kenney — CC0', 'https://kenney.nl'],
     ['Rye, Barlow Condensed yazı tipleri', 'Google Fonts — SIL OFL', 'https://fonts.google.com'],
   ] },

@@ -10,7 +10,7 @@ export function createTerrainMaterial(tex, splatA, splatB, origin, size, outer =
     tDirt: { value: tex.dirt }, tDirtN: { value: tex.dirt_n },
     tRock: { value: tex.rock }, tRockN: { value: tex.rock_n },
     tSplatA: { value: splatA }, tSplatB: { value: splatB },
-    uOrigin: { value: origin }, uSize: { value: size }, uOuter: { value: outer ? 1 : 0 },
+    uOrigin: { value: origin }, uSize: { value: size }, uOuter: { value: outer ? 1 : 0 }, uTime: { value: 0 }, uCloud: { value: 1 },
   };
   mat.userData.uniforms = uniforms;
   mat.onBeforeCompile = (shader) => {
@@ -22,7 +22,7 @@ export function createTerrainMaterial(tex, splatA, splatB, origin, size, outer =
       .replace('#include <common>', `#include <common>
 varying vec3 vWPos; varying vec3 vWNor;
 uniform sampler2D tGrass, tGrassN, tDirt, tDirtN, tRock, tRockN, tSplatA, tSplatB;
-uniform float uOrigin, uSize, uOuter;
+uniform float uOrigin, uSize, uOuter, uTime, uCloud;
 float th(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(th(i), th(i+vec2(1,0)), f.x), mix(th(i+vec2(0,1)), th(i+vec2(1,1)), f.x), f.y); }
@@ -62,7 +62,7 @@ float lG = pow(dot(rG, vec3(0.2126, 0.7152, 0.0722)), 1.25);
 float lD = pow(dot(rD, vec3(0.2126, 0.7152, 0.0722)), 1.15);
 float lR = dot(rR, vec3(0.333));
 lG = mix(1.0, lG, detailFade * 0.85 + 0.15); lD = mix(1.0, lD, detailFade * 0.85 + 0.15);
-vec3 grass = vec3(0.115, 0.19, 0.045) * mix(vec3(lG), rG, 0.18);
+vec3 grass = vec3(0.10, 0.175, 0.048) * mix(vec3(lG), rG, 0.18);
 grass = mix(grass, vec3(0.30, 0.26, 0.085) * lG, smoothstep(0.5, 0.82, macro) * 0.6);   // dry patches
 grass *= mix(0.85, 1.12, mid);
 vec3 dirt = vec3(0.40, 0.27, 0.14) * mix(vec3(lD), rD, 0.3);
@@ -75,7 +75,7 @@ float rows = sin(dot(vWPos.xz, rd) * 6.2831 / 1.7);
 float rowsFine = mix(rows, 0.0, 1.0 - detailFade);
 float hueVar = th(floor(vec2(sB.g * 97.0)));
 
-vec3 wheat = grassLum * vec3(0.62, 0.40, 0.10) * mix(0.9, 1.1, hueVar);
+vec3 wheat = grassLum * vec3(0.56, 0.38, 0.115) * mix(0.9, 1.1, hueVar);
 wheat = mix(wheat, wheat * vec3(1.1, 0.9, 0.62), smoothstep(0.3, 0.8, mid) * 0.5);
 wheat *= 1.0 + rowsFine * 0.06;
 vec3 green = grassLum * vec3(0.12, 0.25, 0.035) * mix(0.88, 1.12, hueVar);
@@ -93,6 +93,9 @@ col = mix(col, dirt * vec3(0.85, 0.82, 0.8), sB.b);
 col = mix(col, rock, sA.g);
 col = mix(col, dirt, sA.r);
 col *= mix(0.92, 1.06, macro);
+// drifting cloud shadows
+float cl = fbm3((vWPos.xz + vec2(uTime * 9.0, uTime * 4.0)) * 0.0022);
+col *= mix(1.0, 0.72, smoothstep(0.52, 0.68, cl) * uCloud);
 diffuseColor.rgb *= col;
 `)
       .replace('#include <normal_fragment_maps>', `

@@ -57,7 +57,8 @@ class Game {
   }
 
   _loadSettings() {
-    const def = { quality: 'high', master: 0.9, music: 0.5, sfx: 0.9, amb: 0.7, units: 'kmh' };
+    const def = { quality: 'high', master: 0.9, music: 0.5, sfx: 0.9, amb: 0.7, units: 'kmh', time: 'noon', paint: 'green' };
+    if (matchMedia('(pointer: coarse)').matches) def.quality = 'low';
     try { return Object.assign(def, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { return def; }
   }
   _saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings)); } catch { /* ignore */ } }
@@ -91,8 +92,9 @@ class Game {
       texP('smoke', 'assets/particles/smoke_04.png', true, false), texP('debris', 'assets/particles/dirt_01.png', true, false),
       texP('star', 'assets/particles/star_06.png', true, false), texP('glow', 'assets/particles/circle_05.png', true, false),
       texP('skid', 'assets/particles/skidmark.png', true, false), texP('sky', 'assets/sky/sky_4k.jpg', true, false),
+      texP('skySunset', 'assets/sky/sunset_4k.jpg', true, false),
     ];
-    const hdrP = track(new HDRLoader().loadAsync('assets/sky/sky_1k.hdr'), 2);
+    const hdrP = track(Promise.all([new HDRLoader().loadAsync('assets/sky/sky_1k.hdr'), new HDRLoader().loadAsync('assets/sky/sunset_1k.hdr')]), 3);
     const metaP = track(fetch('assets/terrain/terrain.json').then((r) => r.json()), 1);
     const hP = track(fetch('assets/terrain/height.bin').then((r) => r.arrayBuffer()), 3);
     const hoP = track(fetch('assets/terrain/height_outer.bin').then((r) => r.arrayBuffer()), 1);
@@ -105,11 +107,17 @@ class Game {
     this.progress(0.78, 'Palouse tepeleri şekilleniyor…');
     await nextFrame();
     const rs = this.rs;
-    rs.setupLighting(tex.sky, hdr);
+    rs.setupLighting({ noon: { sky: tex.sky, hdr: hdr[0] }, sunset: { sky: tex.skySunset, hdr: hdr[1] } });
     const roads = LAYOUT.ROADS.map((r) => ({ ...r }));
-    const layout = { roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r * 0.75, falloff: 30 })) };
+    const layout = { roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: [
+      ...LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r * 0.75, falloff: 30 })),
+      ...LAYOUT.POI_FLATTEN.map(([id, r]) => { const p = LAYOUT.POIS.find((pp) => pp.id === id); return { x: p.x, z: p.z, r, falloff: 12 }; }),
+    ] };
+    let tm = performance.now();
+    const mark = (label) => { const n = performance.now(); console.info(`[load] ${label}: ${(n - tm).toFixed(0)} ms`); tm = n; };
     this.terrain = new Terrain({ meta, inner: new Uint16Array(hBuf), outer: new Uint16Array(hoBuf), layout, textures: tex });
     rs.scene.add(this.terrain.group);
+    mark('terrain');
 
     this.progress(0.86, 'Fizik dünyası kuruluyor…');
     await nextFrame();
@@ -122,6 +130,7 @@ class Game {
     await nextFrame();
     this.world = new World({ scene: rs.scene, terrain: this.terrain, lib, RAPIER, physics: this.physics, renderer: rs.renderer, sunDir: rs.sunDir });
     this.world.build();
+    mark('world');
     this.grass = new GroundCover({ lib, terrain: this.terrain, scene: rs.scene, quality: 'high' });
 
     this.progress(0.95, 'Pikap hazırlanıyor…');
@@ -141,7 +150,9 @@ class Game {
     this.dust = new Dust(rs.scene, { smoke: tex.smoke, dirt: tex.debris });
     this.tracks = new TireTracks(rs.scene, tex.skid);
     this.gameplay = new Gameplay({ scene: rs.scene, terrain: this.terrain, lib, tex, hud: this.hud, audio: this.audio, roads: this.terrain.roads });
+    mark('vehicle+gameplay');
     this.hud.buildMap(this.terrain);
+    mark('map');
     this.hud.updateCounts(this.gameplay);
     this.audio.onTrack = (t) => this.hud.nowPlaying(t);
 
@@ -189,6 +200,11 @@ class Game {
     Object.assign(this.audio.volumes, { master: s.master, music: s.music, sfx: s.sfx, amb: s.amb });
     this.audio.applyVolumes();
     this.hud.units = s.units;
+    if (this.rs.timeOfDay !== s.time) {
+      this.rs.setTimeOfDay(s.time);
+      this.world.impostors.material.uniforms.uTint.value.copy(this.rs.impostorTint);
+    }
+    this.vehicle.setPaint(s.paint);
     $('speed-unit').textContent = s.units === 'mph' ? 'mph' : 'km/sa';
     this.dust?.setViewport(innerHeight * this.rs.renderer.getPixelRatio(), this.rs.camera.fov);
   }
@@ -211,6 +227,16 @@ class Game {
     q.addEventListener('change', () => { this.settings.quality = q.value; this.applySettings(); this._saveSettings(); });
     const u = $('set-units'); u.value = this.settings.units;
     u.addEventListener('change', () => { this.settings.units = u.value; this.applySettings(); this._saveSettings(); });
+    const tod = $('set-time'); tod.value = this.settings.time;
+    tod.addEventListener('change', () => { this.settings.time = tod.value; this.applySettings(); this._saveSettings(); });
+    document.querySelectorAll('.swatch').forEach((sw) => {
+      sw.classList.toggle('active', sw.dataset.paint === this.settings.paint);
+      sw.addEventListener('click', () => {
+        this.settings.paint = sw.dataset.paint; this.applySettings(); this._saveSettings();
+        document.querySelectorAll('.swatch').forEach((o) => o.classList.toggle('active', o === sw));
+        this.audio.play('ui_switch', { bus: 'ui', volume: 0.6 });
+      });
+    });
     $('bigmap').addEventListener('click', (e) => {
       const [x, z] = this.hud.bigMapToWorld(e);
       const near = LAYOUT.POIS.find((p) => this.gameplay.isFound(p.id) && Math.hypot(p.x - x, p.z - z) < 90);
@@ -233,6 +259,7 @@ class Game {
     setTimeout(() => {
       $('menu').classList.add('hidden');
       this.hud.show(true);
+      document.getElementById('touch').classList.toggle('hidden', !this.input.touchEnabled);
       this.state = 'play';
       this.cameraRig.initialized = false;
       $('fade').classList.remove('on');
@@ -365,6 +392,7 @@ class Game {
     this.grass.update(v.position);
     this.terrain.update(cam.position);
     this.lib.windUniform.value = this.time;
+    this.terrain.setTime(this.time);
     this.dust.update(dt, { x: 1.2, z: 0.4 });
     this.rs.updateSun(v.position);
     if (!skipRender) this.rs.render(dt);
