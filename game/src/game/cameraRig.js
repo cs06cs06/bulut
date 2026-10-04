@@ -7,6 +7,8 @@ const MODES = [
   { name: 'Kaput', dist: -0.6, height: 2.05, look: 1.9, fov: 72, hood: true },
 ];
 
+const _f1 = new THREE.Vector3(), _f2 = new THREE.Vector3();
+
 export class CameraRig {
   constructor(camera, dom) {
     this.camera = camera;
@@ -99,6 +101,7 @@ export class CameraRig {
     const off = this.pos.clone().sub(desired);
     if (off.length() > 6) this.pos.copy(desired).add(off.setLength(6));
     if (this.pos.y < gh) this.pos.y = gh;
+    this._avoidObstacles(obj.position, m.look);
     const lookTarget = obj.position.clone().add(new THREE.Vector3(Math.sin(heading), 0, Math.cos(heading)).multiplyScalar(Math.min(4, speed * 0.15)));
     lookTarget.y += m.look;
     this.target.lerp(lookTarget, Math.min(1, dt * 10));
@@ -125,6 +128,23 @@ export class CameraRig {
     if (cam.position.y < gh) cam.position.y = gh;
     cam.lookAt(o.x, o.y + 1.1, o.z);
     cam.fov = p.fov; cam.updateProjectionMatrix();
+  }
+
+  // pull the camera in front of buildings / trees / rocks between it and the vehicle
+  _avoidObstacles(focus, lookH) {
+    const P = this.physics, R = this.RAPIER;
+    if (!P) return;
+    const from = _f1.set(focus.x, focus.y + lookH, focus.z);
+    const dir = _f2.copy(this.pos).sub(from);
+    const len = dir.length();
+    if (len < 0.5) return;
+    dir.divideScalar(len);
+    const hit = P.castRay(new R.Ray(from, dir), len, true, undefined, undefined, undefined, undefined,
+      (c) => { const k = c.userData?.kind; return k === 'building' || k === 'tree' || k === 'rock'; });
+    const want = hit ? Math.max(1.5, hit.timeOfImpact - 0.6) : len;
+    // shrink fast, grow back slowly (no popping when the obstacle clears)
+    this._camLen = this._camLen === undefined ? want : (want < this._camLen ? want : this._camLen + (want - this._camLen) * 0.06);
+    if (this._camLen < len) this.pos.copy(from).addScaledVector(dir, this._camLen);
   }
 
   _fov(f, dt) {

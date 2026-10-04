@@ -21,6 +21,12 @@ export const VEHICLES = {
     suspensionRest: 0.46, suspensionTravel: 0.34, stiffness: 33, compression: 3.6, relaxation: 4.4,
     bed: null, paint: /body dark purple/i,
   },
+  tractor: {
+    name: 'Çiftlik Traktörü', model: 'tractor_k', price: 900, desc: 'Yavaş ama inatçı. Dev arka tekerler en dik yamaçlara tırmanır.',
+    scale: 1.9, mass: 2100, power: 1.25, grip: 1.35, maxSteer: 0.68, top: 1, pitch: 0.62, maxSpeed: 11,
+    suspensionRest: 0.42, suspensionTravel: 0.3, stiffness: 36, compression: 3.8, relaxation: 4.6,
+    bed: null, paint: /^$/,
+  },
   monster: {
     name: 'Canavar Kamyon', model: 'monster', price: 6000, desc: 'Dev tekerler, uzun süspansiyon. Her tepeye çıkar, kasası da var.',
     mass: 2500, power: 1.6, grip: 1.15, maxSteer: 0.55, top: 5, pitch: 0.78,
@@ -115,7 +121,7 @@ export class Vehicle {
       this.object.add(pivot);
       this.wheels.push({ pivot, spin, rest: c.clone(), radius: (box.max.y - box.min.y) / 2 });
     }
-    this.cfg.radius = this.wheels[0].radius;
+    this.cfg.radius = this.wheels[2].radius; // gearing follows the (driven) rear wheels
     const bb = new THREE.Box3().setFromObject(root);
     this.bodyBox = bb;
   }
@@ -171,7 +177,7 @@ export class Vehicle {
     for (let i = 0; i < 4; i++) {
       const r = this.wheels[i].rest;
       const conn = { x: r.x, y: r.y + c.suspensionRest * 0.55, z: r.z };
-      ctrl.addWheel(conn, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, c.suspensionRest, c.radius);
+      ctrl.addWheel(conn, { x: 0, y: -1, z: 0 }, { x: -1, y: 0, z: 0 }, c.suspensionRest, this.wheels[i].radius);
       ctrl.setWheelSuspensionStiffness(i, c.stiffness);
       ctrl.setWheelSuspensionCompression(i, c.compression);
       ctrl.setWheelSuspensionRelaxation(i, c.relaxation);
@@ -336,6 +342,7 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     }
     if (this.gear === 1) this.gear = 2;
     if (this.gear === 0 && fspeed < -10) drive *= 0.2; // reverse speed limit
+    if (c.maxSpeed && fspeed > c.maxSpeed) drive *= Math.max(0, 1 - (fspeed - c.maxSpeed) / 2); // governor (tractor)
 
     // ----- gearbox (automatic)
     const wheelRps = Math.abs(fspeed) / c.radius;

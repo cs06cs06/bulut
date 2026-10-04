@@ -43,6 +43,13 @@ export class HUD {
     this.mapCanvas = c; this.mapSize = terrain.size; this.mapHalf = terrain.half;
   }
 
+  setNitro(n, on) {
+    if (!this.el.nitro) { this.el.nitro = document.getElementById('nitro-fill'); this.el.nitroWrap = document.getElementById('nitro'); }
+    const k = Math.round(n);
+    if (k !== this._nitro) { this._nitro = k; this.el.nitro.style.width = k + '%'; }
+    this.el.nitroWrap.classList.toggle('on', !!on);
+  }
+
   setMoney(n) {
     const el = this.el.money;
     const prev = this._money ?? n;

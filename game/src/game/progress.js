@@ -17,6 +17,7 @@ export const ACHIEVEMENTS = [
   { id: 'garage', name: 'Garaj Sahibi', desc: 'Yeni bir araç satın al.', reward: 300, test: (s, g, p) => p.data.owned.length >= 2 },
   { id: 'trap', name: 'Radar Avcısı', desc: 'Bir hız kapanından 130 km/sa ile geç.', reward: 300, test: (s) => s.maxTrap >= 130 },
   { id: 'jump', name: 'Uçan Kamyon', desc: 'Bir atlama noktasında 45 metre uç.', reward: 400, test: (s) => s.maxJump >= 45 },
+  { id: 'postman', name: 'Postacı', desc: '3 posta turu tamamla.', reward: 400, test: (s) => s.mailRoutes >= 3 },
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 
@@ -30,6 +31,7 @@ export const DAILY_POOL = [
   { id: 'scare', name: 'Hayvan ürküt', goals: [4, 8], unit: '', reward: 120 },
   { id: 'trap', name: 'Hız kapanından geç (90+ km/sa)', goals: [2, 3], unit: '', reward: 200 },
   { id: 'race', name: 'Zamana karşı görev bitir', goals: [1, 2], unit: '', reward: 300 },
+  { id: 'mail', name: 'Posta turu tamamla', goals: [1, 2], unit: '', reward: 250 },
 ];
 const DAILY_STAT = { deliveries: 'deliver', distance: 'dist', fences: 'fence', scared: 'scare' };
 
@@ -45,7 +47,7 @@ export class Progress {
   _load() {
     const def = {
       money: 250, owned: ['pickup'], current: 'pickup', upgrades: { engine: 0, tires: 0, susp: 0 },
-      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0 },
+      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0, mailRoutes: 0 },
       achievements: [], daily: null,
     };
     try {

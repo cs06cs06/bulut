@@ -347,3 +347,9 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 .daily .ai { font-size: 20px; text-align: center; color: var(--gold); }
 .daily .an { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
 .daily .ar { font-size: 15px; color: #ffe39a; font-weight: 700; }
+
+.nitro { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); width: 150px; display: flex; align-items: center; gap: 6px; }
+.nitro span { font-size: 12px; font-weight: 700; letter-spacing: .12em; color: #9fe0ff; }
+.nitro-bar { flex: 1; height: 8px; border-radius: 4px; background: rgba(0,0,0,.45); overflow: hidden; border: 1px solid rgba(159,224,255,.4); }
+.nitro-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #3aa8ff, #9fe0ff); transition: width .15s linear; }
+.nitro.on .nitro-bar i { background: linear-gradient(90deg, #ff8a3a, #ffe08a); box-shadow: 0 0 10px #ffb04a; }

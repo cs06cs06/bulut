@@ -33,6 +33,9 @@ export class World {
     this._paddocks();
     this._poiProps();
     this._kickerProps();
+    this.blockers = [];
+    this._countryside();
+    this._buildFences();
     this._vegetation();
     this._herds();
     this._bounds();
@@ -98,6 +101,7 @@ export class World {
     const b = this.lib.bounds(name, scaleMul);
     const fp = Math.min(6, Math.max(b.max.x - b.min.x, b.max.z - b.min.z) * 0.35);
     const y = (opts.y ?? this.groundY(x, z, fp)) + (opts.lift || 0);
+    if (name === 'mailbox') (this.mailboxes = this.mailboxes || []).push({ x, z });
     if (DYNAMIC_PROPS.has(name) && opts.dynamic !== false) return this._dynamicProp(name, x, y, z, rot, scaleMul);
     const o = this.lib.clone(name, scaleMul);
     o.position.set(x, y - 0.05, z);
@@ -263,7 +267,6 @@ export class World {
       this.paddocks.push(area);
       for (const [model, n] of p.animals) for (let i = 0; i < n; i++) this._spawnAnimal(model, area, false);
     }
-    this._buildFences();
   }
 
   _spawnAnimal(model, area, wild) {
@@ -297,6 +300,89 @@ export class World {
   }
 
   // hay bales flanking the lip of each dirt kicker
+  // Fill the fields: hay bale rows and piles, abandoned sheds, wind pumps, fences along farm roads
+  _countryside() {
+    const T = this.terrain, R = this.rand, half = T.half - 80, f = {};
+    const roadDist = (x, z) => { const q = T.roads.query(x, z, _rq); return q ? q.dist - q.halfWidth : 99; };
+    const free = (x, z, r) => FARMS.every((fm) => Math.hypot(x - fm.x, z - fm.z) > fm.r + 20 + r) && POIS.every((p) => Math.hypot(x - p.x, z - p.z) > 25 + r)
+      && this.blockers.every((b) => Math.hypot(x - b[0], z - b[1]) > b[2] + r) && T.slopeAt(x, z) < 0.12 && roadDist(x, z) > 12 + r;
+    const bales = [], piles = [];
+    const baleB = this.lib.bounds('haybale'), bs = baleB.getSize(new THREE.Vector3());
+    const mat = (x, z, rot, s) => { const m = new THREE.Matrix4(); m.compose(new THREE.Vector3(x, T.heightAt(x, z) - 0.05, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot), new THREE.Vector3(s, s, s)); return m; };
+    // hay: rows of square bales on wheat stubble, loose piles on fallow fields
+    let clusters = 0;
+    for (let tries = 0; tries < 6000 && clusters < Math.round(80 * this.density); tries++) {
+      const x = (R() * 2 - 1) * half, z = (R() * 2 - 1) * half;
+      T.fieldAt(x, z, f);
+      if ((f.type !== 1 && f.type !== 4) || f.edge < 14 || !free(x, z, 12)) continue;
+      const sp = T.splatAt(x, z);
+      if (sp.wheat + sp.fallow < 0.6) continue;
+      clusters++;
+      this.blockers.push([x, z, 14]);
+      if (f.type === 1) {
+        const dx = Math.cos(f.angle), dz = Math.sin(f.angle), n = 4 + Math.floor(R() * 5);
+        for (let i = 0; i < n; i++) {
+          const px = x + dx * (i - n / 2) * 6.5 + (R() - 0.5), pz = z + dz * (i - n / 2) * 6.5 + (R() - 0.5);
+          bales.push(mat(px, pz, Math.atan2(dx, dz) + Math.PI / 2 + (R() - 0.5) * 0.3, 1));
+          const c = this.physics.createCollider(this.R.ColliderDesc.cuboid(bs.x / 2, bs.y / 2, bs.z / 2).setTranslation(px, T.heightAt(px, pz) + bs.y / 2, pz)
+            .setRotation(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.atan2(dx, dz) + Math.PI / 2)));
+          c.userData = { kind: 'prop' };
+        }
+      } else {
+        const n = 3 + Math.floor(R() * 4);
+        for (let i = 0; i < n; i++) {
+          const a = R() * Math.PI * 2, r = 3 + R() * 12, px = x + Math.cos(a) * r, pz = z + Math.sin(a) * r;
+          piles.push(mat(px, pz, R() * 6.28, 0.6 + R() * 0.35));
+        }
+      }
+    }
+    for (const [name, list] of [['haybale', bales], ['hay_round', piles]]) {
+      if (list.length) this.cells.push(...buildInstances(this.lib, name, list, { group: this.veg, cell: 300, maxDist: 1100 }));
+    }
+    // abandoned sheds with a dead tree, and old wind pumps
+    const objs = [];
+    const placeSome = (count, r, fn) => {
+      for (let tries = 0, k = 0; tries < 3000 && k < count; tries++) {
+        const x = (R() * 2 - 1) * half, z = (R() * 2 - 1) * half;
+        if (!free(x, z, r) || T.heightAt(x, z) > 160) continue;
+        k++; this.blockers.push([x, z, r]); fn(x, z);
+      }
+    };
+    placeSome(Math.round(10 * this.density + 2), 18, (x, z) => {
+      const res = this.place(R() < 0.5 ? 'barn_small' : 'barn_open', x, z, R() * 360, 0.9 + R() * 0.2);
+      objs.push(res.object);
+      (this._extraTrees = this._extraTrees || []).push(this._treeMatrix(R() < 0.5 ? 'dead_1' : 'dead_2', x + 10 + R() * 4, z + (R() - 0.5) * 10, 0.9 + R() * 0.3));
+      if (R() < 0.6) objs.push(this.place('cart', x - 9, z + 5, R() * 360, 1).object);
+    });
+    placeSome(Math.round(12 * this.density + 2), 10, (x, z) => {
+      const res = this.place('windmill', x, z, R() * 360, 0.9 + R() * 0.25);
+      this._registerSpinner(res.object); this.static.add(res.object);
+      if (R() < 0.7) objs.push(this.place('cistern', x + 4, z + 2, R() * 360, 0.8).object);
+    });
+    const m = this._mergeStatic(objs.filter(Boolean), 'countryside');
+    m.userData.maxDist = 99999;
+    // wooden fences along the roads that lead to farms (one side, ~200 m each way)
+    for (const fm of FARMS) {
+      const q = T.roads.query(fm.x, fm.z, {});
+      let best = null, bd = Infinity;
+      for (const r of T.roads.roads) for (let i = 0; i < r.points.length; i++) { const p = r.points[i]; const d = (p[0] - fm.x) ** 2 + (p[1] - fm.z) ** 2; if (d < bd) { bd = d; best = { r, i }; } }
+      if (!best || !q) continue;
+      const pts = best.r.points, hw = best.r.width / 2 + 3.5;
+      // fence on the side facing away from the farm so the driveway stays open
+      const side = (() => { const p = pts[best.i], n = pts[Math.min(pts.length - 1, best.i + 1)]; const dx = n[0] - p[0], dz = n[1] - p[1]; return ((fm.x - p[0]) * -dz + (fm.z - p[1]) * dx) > 0 ? -1 : 1; })();
+      const seg = 6;
+      for (let i = Math.max(1, best.i - 100); i < Math.min(pts.length - 1, best.i + 100); i += seg) {
+        const a = pts[i], b = pts[Math.min(pts.length - 1, i + seg)];
+        const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l * side * hw, nz = dx / l * side * hw;
+        const ax = a[0] + nx, az = a[1] + nz, bx = b[0] + nx, bz = b[1] + nz;
+        if (T.slopeAt(ax, az) > 0.2 || this.kickerNear(ax, az)) continue;
+        this._fenceLine('fence', ax, az, bx, bz);
+      }
+    }
+  }
+
+  kickerNear(x, z) { return (this.terrain.kickers || []).some((k) => Math.hypot(x - k.x, z - k.z) < 40); }
+
   _kickerProps() {
     for (const k of this.terrain.kickers || []) {
       for (const side of [-1, 1]) {
@@ -328,7 +414,8 @@ export class World {
       const dx = x - a.cx, dz = z - a.cz, c = Math.cos(a.rot), s = Math.sin(a.rot);
       return Math.abs(dx * c - dz * s) < a.hw + 8 && Math.abs(dx * s + dz * c) < a.hd + 8;
     });
-    const farAway = (x, z, extra = 0) => FARMS.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 12 + extra) && POIS.every(p => Math.hypot(x - p.x, z - p.z) > 14) && !inPaddock(x, z);
+    const farAway = (x, z, extra = 0) => FARMS.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 12 + extra) && POIS.every(p => Math.hypot(x - p.x, z - p.z) > 14) && !inPaddock(x, z)
+      && this.blockers.every((b) => Math.hypot(x - b[0], z - b[1]) > b[2] + extra);
     const trees = ['tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5'];
     const colliders = [];
 

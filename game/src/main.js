@@ -22,7 +22,7 @@ import { Gameplay } from './game/gameplay.js';
 import { HUD } from './ui/hud.js';
 import { creditsHTML } from './credits.js';
 
-const MODELS = ['pickup', 'suv', 'monster', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
+const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
   'fence', 'fence2', 'farm_barn', 'cistern', 'mailbox', 'hay_round', 'hay_cube', 'cart', 'barrel', 'pond', 'haybale', 'crate_pumpkin', 'pumpkin',
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',
   'tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5', 'pine_1', 'pine_2', 'pine_3', 'dead_1', 'dead_2', 'birch_1', 'maple_1', 'bush', 'bush_flowers',
@@ -64,6 +64,7 @@ class Game {
     this.progress = new Progress();
     this.drift = { t: 0, grace: 0 };
     this.photo = { dist: 9, fov: 50 };
+    this.nitro = 100;
     this.air = { clear: 0 };
     $('credits').innerHTML = creditsHTML();
     let ti = Math.floor(Math.random() * TIPS.length);
@@ -165,6 +166,7 @@ class Game {
     if (!this.progress.data.owned.includes(this.progress.data.current)) this.progress.data.current = 'pickup';
     this.spawnVehicle(this.progress.data.current, { x: SPAWN.x, y: sy, z: SPAWN.z }, SPAWN.heading);
     this.cameraRig = new CameraRig(rs.camera, $('game'));
+    this.cameraRig.physics = this.physics; this.cameraRig.RAPIER = RAPIER;
     this.dust = new Dust(rs.scene, { smoke: tex.smoke, dirt: tex.debris });
     this.tracks = new TireTracks(rs.scene, tex.skid);
     this.gameplay = new Gameplay({ scene: rs.scene, terrain: this.terrain, lib, tex, hud: this.hud, audio: this.audio, roads: this.terrain.roads });
@@ -639,6 +641,13 @@ class Game {
     if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'photo') {
       let freeze = false;
       if (playing) freeze = this._gameplayResult?.freeze;
+      // nitro: boost drains the tank, which refills slowly (and instantly at the gas station)
+      if (playing) {
+        const boosting = inp.boost && this.nitro > 0 && inp.throttle > 0.2;
+        this.nitro = Math.max(0, Math.min(100, this.nitro + (boosting ? -22 : 4) * dt));
+        inp.boost = boosting;
+        this.hud.setNitro(this.nitro, boosting);
+      }
       const drive = playing && !freeze ? inp : { throttle: 0, brake: 0, steer: 0, handbrake: true, boost: false };
       this.acc += dt;
       let steps = 0;

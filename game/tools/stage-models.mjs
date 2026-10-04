@@ -35,6 +35,8 @@ const L = {
   birch_1: 'ultimatestylizednature/glTF/BirchTree_1.gltf', maple_1: 'ultimatestylizednature/glTF/MapleTree_1.gltf',
   // Kenney City Kit (Suburban) — white farmhouses
   ...Object.fromEntries(['a', 'e', 'g', 'h', 'r'].map(t => ['farmhouse_' + t, `${K}/kenney_city-kit-suburban_20/Models/GLB format/building-type-${t}.glb`])),
+  // Kenney Car Kit — drivable farm tractor
+  tractor_k: `${K}/kenney_car-kit/Models/GLB format/tractor.glb`,
   // Kenney Platformer Kit — challenge flags & signs
   flag: `${K}/platformer/Models/GLB format/flag.glb`, sign: `${K}/platformer/Models/GLB format/sign.glb`, arrow: `${K}/platformer/Models/GLB format/arrow.glb`,
   billboard: 'styloo_cozyfarm/glb/billboard.glb',

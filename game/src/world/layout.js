@@ -33,6 +33,9 @@ export const FARMS = [
   { id: 'watertower', name: 'Su Kulesi Çiftliği', x: -120, z: 1300, r: 50, rot: -15 },
   { id: 'hillhouse', name: 'Tepe Evi', x: 1250, z: 680, r: 42, rot: 10 },
   { id: 'buttefoot', name: 'Butte Eteği', x: -460, z: 380, r: 38, rot: 80 },
+  { id: 'grain', name: 'Doğu Tahıl Çiftliği', x: 1450, z: -440, r: 55, rot: -20 },
+  { id: 'dairy', name: 'Kuzey Mandırası', x: 680, z: -1125, r: 50, rot: 40 },
+  { id: 'poplar', name: 'Kavak Çiftliği', x: -830, z: 1215, r: 48, rot: 5 },
 ];
 
 // Buildings per farm in farm-local coordinates [model, x, z, rotDeg, scaleMul]
@@ -57,10 +60,24 @@ export const FARM_BUILDINGS = {
   buttefoot: [
     ['farmhouse_g', 0, 0, 0], ['barn_open', 16, 8, 90], ['tractor', 12, -10, 40], ['haybale', -14, 10, 0], ['haybale', -14, 12.2, 0], ['mailbox', -4, -20, 0],
   ],
+  grain: [
+    ['silo', -14, -24, 0], ['silo', -4, -26, 0], ['silo', 6, -24, 0], ['silo_house', 18, -22, 180], ['barn_big', -26, 2, 90],
+    ['farmhouse_h', 22, 14, 270], ['windmill', 34, -6, 15], ['tractor', 4, 6, 200], ['cart', 10, 10, 60], ['hay_round', -8, 24, 0], ['hay_round', -2, 28, 70],
+    ['barrel', 14, -10, 0], ['mailbox', 8, 40, 180],
+  ],
+  dairy: [
+    ['barn', 0, -16, 180], ['water_tower', -20, -18, 0], ['farmhouse_e', 24, 0, 270], ['silo', 14, -26, 0], ['chicken_coop', -22, 10, 120],
+    ['well', 10, 8, 0], ['cistern', -10, 4, 0], ['haybale', 16, 18, 10], ['haybale', 17, 20.2, 10], ['mailbox', 4, 36, 180],
+  ],
+  poplar: [
+    ['farm_barn', -4, -18, 180], ['farmhouse_a', 22, -4, 270], ['windmill', -24, -2, 30], ['barn_open', -22, 18, 90], ['chicken_coop', 10, 14, 200],
+    ['crate_pumpkin', 4, 4, 15], ['crate_pumpkin', 5.5, 5, 40], ['pumpkin', 2, 7, 0], ['mailbox', 0, 34, 0],
+  ],
 };
 
 // Job boards (farm-local x, z, rotDeg): pick up and drop off cargo here
-export const BOARDS = { miller: [-40, 24, 90], redbarn: [-8, 18, 0], watertower: [-14, 24, 0], hillhouse: [-10, 18, 180], buttefoot: [6, -20, 0] };
+export const BOARDS = { miller: [-40, 24, 90], redbarn: [-8, 18, 0], watertower: [-14, 24, 0], hillhouse: [-10, 18, 180], buttefoot: [6, -20, 0],
+  grain: [-12, 34, 180], dairy: [-6, 30, 180], poplar: [-10, 30, 0] };
 
 // Paddocks: fenced areas with animals [farmId, localX, localZ, w, d, animals]
 export const PADDOCKS = [
@@ -68,6 +85,9 @@ export const PADDOCKS = [
   { farm: 'miller', x: -18, z: 26, w: 14, d: 12, fence: 'fence2', animals: [['chicken', 7]] },
   { farm: 'redbarn', x: 0, z: 46, w: 56, d: 36, fence: 'fence', animals: [['horse', 3], ['horse_white', 2]] },
   { farm: 'watertower', x: 40, z: 22, w: 46, d: 34, fence: 'fence', animals: [['donkey', 3], ['alpaca', 2]] },
+  { farm: 'dairy', x: -58, z: 8, w: 40, d: 56, fence: 'fence', animals: [['cow', 6], ['bull', 1]] },
+  { farm: 'poplar', x: 40, z: 30, w: 44, d: 32, fence: 'fence', animals: [['horse', 2], ['alpaca', 3]] },
+  { farm: 'grain', x: -46, z: 30, w: 30, d: 24, fence: 'fence2', animals: [['donkey', 2]] },
   { farm: 'hillhouse', x: -30, z: -30, w: 34, d: 26, fence: 'fence2', animals: [['cow', 3]] },
 ];
 
@@ -79,6 +99,9 @@ export const POIS = [
   { id: 'watertower', name: 'Su Kulesi Çiftliği', desc: 'Güney tarlalarının kalbi.', x: -120, z: 1300, r: 55, icon: '⌂' },
   { id: 'hillhouse', name: 'Tepe Evi', desc: 'Rüzgârlı sırtta yalnız bir ev.', x: 1250, z: 680, r: 50, icon: '⌂' },
   { id: 'buttefoot', name: 'Butte Eteği', desc: 'Dağın gölgesinde küçük bir çiftlik.', x: -460, z: 380, r: 45, icon: '⌂' },
+  { id: 'grain', name: 'Doğu Tahıl Çiftliği', desc: 'Siloları buğdayla dolu, en büyük çiftlik.', x: 1450, z: -440, r: 55, icon: '⌂' },
+  { id: 'dairy', name: 'Kuzey Mandırası', desc: 'Sütün ve peynirin geldiği yer.', x: 680, z: -1125, r: 50, icon: '⌂' },
+  { id: 'poplar', name: 'Kavak Çiftliği', desc: 'Balkabağı tarlalarıyla ünlü.', x: -830, z: 1215, r: 50, icon: '⌂' },
   { id: 'windmill', name: 'Yalnız Değirmen', desc: 'Tepedeki değirmen hâlâ dönüyor.', x: 760, z: -610, r: 40, icon: '✣' },
   { id: 'pond', name: 'Söğüt Göleti', desc: 'Serin su, kurbağalar ve gölge.', x: -700, z: 930, r: 40, icon: '◍' },
   { id: 'tractor', name: 'Unutulmuş Traktör', desc: 'Biri onu yıllar önce burada bırakmış.', x: -1290, z: 1080, r: 35, icon: '⚙' },
