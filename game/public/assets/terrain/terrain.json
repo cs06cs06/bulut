@@ -1,0 +1,13 @@
+{
+  "source": "AWS Terrain Tiles (Terrarium), z14 tiles x2852-2855 y5759-5762 — Steptoe Butte / Palouse, Washington, USA",
+  "size": 3328.04,
+  "resolution": 1024,
+  "minHeight": 721,
+  "maxHeight": 1103,
+  "outer": {
+    "size": 6662.6,
+    "resolution": 256,
+    "offsetX": 286.56,
+    "offsetZ": 26.05
+  }
+}

@@ -1,0 +1,27 @@
+<!doctype html><html><body style="margin:0;background:#9bb"><canvas id="c"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+const names = new URLSearchParams(location.search).get('m').split(',');
+const cols = Math.ceil(Math.sqrt(names.length)), rows = Math.ceil(names.length / cols);
+const W = cols * 320, H = rows * 320;
+const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, preserveDrawingBuffer: true }); r.setSize(W, H); r.toneMapping = THREE.ACESFilmicToneMapping; r.shadowMap.enabled = true; r.setScissorTest(true);
+const env = await new RGBELoader().loadAsync('/assets/sky/sky_1k.hdr'); env.mapping = THREE.EquirectangularReflectionMapping;
+const loader = new GLTFLoader();
+const cells = await Promise.all(names.map(async (n) => {
+  const g = await loader.loadAsync(`/assets/models/${n}.glb`);
+  const s = new THREE.Scene(); s.environment = env; s.background = new THREE.Color(0xb8cdd8);
+  const sun = new THREE.DirectionalLight(0xfff1dd, 2.5); sun.position.set(5, 8, 6); s.add(sun);
+  const box = new THREE.Box3().setFromObject(g.scene); const size = box.getSize(new THREE.Vector3()); const ctr = box.getCenter(new THREE.Vector3());
+  s.add(g.scene);
+  if (g.animations.length) { const mx = new THREE.AnimationMixer(g.scene); mx.clipAction(g.animations.find(a=>/idle/i.test(a.name))||g.animations[0]).play(); mx.update(0.5); }
+  const cam = new THREE.PerspectiveCamera(35, 1, 0.01, 1000); const d = Math.max(size.x, size.y, size.z) * 1.9;
+  cam.position.set(ctr.x + d * 0.7, ctr.y + d * 0.45, ctr.z + d * 0.8); cam.lookAt(ctr);
+  return { s, cam, label: `${n} ${size.x.toFixed(1)}x${size.y.toFixed(1)}x${size.z.toFixed(1)} a:${g.animations.map(a=>a.name).join('|').slice(0,60)}` };
+}));
+cells.forEach((cl, i) => { const x = (i % cols) * 320, y = H - (Math.floor(i / cols) + 1) * 320; r.setViewport(x, y, 320, 320); r.setScissor(x, y, 320, 320); r.render(cl.s, cl.cam); });
+const ctx2 = document.createElement('canvas'); ctx2.width = W; ctx2.height = H; const x2 = ctx2.getContext('2d'); x2.drawImage(c, 0, 0);
+x2.font = '13px sans-serif'; cells.forEach((cl, i) => { x2.fillStyle = '#000a'; x2.fillRect((i % cols) * 320, Math.floor(i / cols) * 320, 320, 18); x2.fillStyle = '#fff'; x2.fillText(cl.label, (i % cols) * 320 + 4, Math.floor(i / cols) * 320 + 13); });
+window.__shot = ctx2.toDataURL('image/png'); window.__done = true;
+</script></body></html>
