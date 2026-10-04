@@ -158,7 +158,7 @@ export class Story {
   update(dt) {
     if (this.done || this.speaking || this.g.state !== 'play') return;
     const g = this.g, c = this.chapter, st = this.state;
-    const busy = g.races.active || g.gameplay.active || g.postal.active || g.delivery.job || g.townsfolk?.ride;
+    const busy = g.races.active || g.gameplay.active || g.postal.active || g.delivery.job || g.townsfolk?.ride || g.herding?.active;
     if (st.stage === 'intro') {
       this.delay -= dt;
       if (this.delay > 0 || busy) return;

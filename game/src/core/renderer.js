@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect, ToneMappingEffect, ToneMappingMode, VignetteEffect, SMAAEffect, SMAAPreset,
-  HueSaturationEffect, BrightnessContrastEffect } from 'postprocessing';
+  HueSaturationEffect, BrightnessContrastEffect, DepthOfFieldEffect } from 'postprocessing';
 import { N8AOPostPass } from 'n8ao';
 
 export const TIME_PRESETS = {
@@ -225,6 +225,12 @@ export class RenderSystem {
       composer.addPass(ao);
       this.ao = ao;
     } else this.ao = null;
+    // photo mode: depth of field focused on the car
+    if (this.photoDOF) {
+      const dof = new DepthOfFieldEffect(this.camera, { worldFocusRange: 7, bokehScale: 3.2, resolutionScale: 0.75 });
+      dof.target = this.dofTarget;
+      composer.addPass(new EffectPass(this.camera, dof));
+    }
     const effects = [];
     if (Q.bloom) effects.push(new BloomEffect({ intensity: 0.55, luminanceThreshold: 0.82, luminanceSmoothing: 0.25, mipmapBlur: true, radius: 0.7 }));
     effects.push(new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL }));
@@ -234,6 +240,13 @@ export class RenderSystem {
     composer.addPass(new EffectPass(this.camera, ...effects));
     if (Q.smaa) composer.addPass(new EffectPass(this.camera, new SMAAEffect({ preset: SMAAPreset.HIGH })));
     this.composer = composer;
+  }
+
+  setPhotoDOF(on, target) {
+    if (this.photoDOF === on) return;
+    this.photoDOF = on; this.dofTarget = target;
+    this._buildComposer(QUALITY[this.quality]);
+    this.resize();
   }
 
   resize() {

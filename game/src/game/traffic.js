@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { seatDriver, SEATS, glassify } from './driver.js';
 
 // Ambient farm traffic: vehicles cruise the dirt roads (right-hand side), wait for the player,
 // U-turn at road ends. Kinematic bodies, so you can bump into them.
@@ -48,11 +49,13 @@ export class Traffic {
       });
       model.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
       const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+      glassify(model);
+      const driver = seatDriver(lib, root, box, SEATS[r.model], ['char_m_c', 'char_f_e', 'char_m_e', 'char_f_a'][this.cars.length % 4]);
       scene.add(root);
       const body = physics.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased());
       const col = physics.createCollider(RAPIER.ColliderDesc.cuboid(size.x / 2 * 0.95, size.y / 2 * 0.9, size.z / 2 * 0.95).setTranslation(ctr.x, ctr.y, ctr.z).setFriction(0.6), body);
       col.userData = { kind: 'building' };
-      const car = { ...r, root, model, spins, body, pts, cum, len: cum[cum.length - 1], s: cum[cum.length - 1] * (r.start || 0.1), dir: 1, v: 0, turn: 0, halfLen: size.z / 2 };
+      const car = { ...r, root, model, driver, spins, body, pts, cum, len: cum[cum.length - 1], s: cum[cum.length - 1] * (r.start || 0.1), dir: 1, v: 0, turn: 0, halfLen: size.z / 2 };
       const snd = r.sound || 'engine_diesel';
       if (audio.buffers[snd]) car.sound = audio.loop(snd, 'sfx', { volume: 0 });
       this.cars.push(car);
@@ -113,7 +116,9 @@ export class Traffic {
       // blocked if the player is close in front
       const fx = Math.sin(car.root.rotation.y), fz = Math.cos(car.root.rotation.y);
       const ahead = (player.x - car.root.position.x) * fx + (player.z - car.root.position.z) * fz;
-      const blocked = d < 16 && ahead > 0;
+      // wait for the player in front, or for a train at a level crossing ahead
+      const cr = this.train?.blocked(car.root.position.x + fx * 6, car.root.position.z + fz * 6);
+      const blocked = (d < 16 && ahead > 0) || (cr && (cr.x - car.root.position.x) * fx + (cr.z - car.root.position.z) * fz > 2);
       let want = blocked ? 0 : car.speed;
       if (car.turn > 0) {
         want = 0;
@@ -136,6 +141,7 @@ export class Traffic {
         car.sound.set(g, 0.7 + car.v / car.speed * 0.45, 0.2);
       }
       car.root.visible = d < 1500;
+      if (d < 160) car.driver.mixer.update(dt);
     }
   }
 }

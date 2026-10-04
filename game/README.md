@@ -7,6 +7,10 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 ▶ **Oyna:** https://cs06cs06.github.io/bulut/tozlu-yollar/
 
 ## Özellikler
+- **Yük treni:** Haritanın doğusunu boydan boya geçen demiryolu (raylar araziye yarma ve dolgu olarak oyulmuş); dizel lokomotif ve yedi vagonlu tren sefer yapar, hemzemin geçitlerde kırmızı lambalar yanıp söner, zil çalar, tren düdük öter; trafik treni bekler. Trenin önünden kıl payı geçmek beceri zincirine büyük puan yazar.
+- **Sürücüler:** Senin aracında, trafikteki ve rakip araçlarda direksiyon başında animasyonlu sürücüler; camlar artık hafif saydam.
+- **Sığır gütme:** İnekli çiftliklerin ilan panolarında yeni iş: kaçan 5 ineği arkalarından sürerek ağıla geri getir (inekler arabadan kaçar, sürü halinde kalır).
+- **Ayrıntılar:** Şafakta vadilere çöken sabah sisi, fotoğraf modunda arabaya odaklanan alan derinliği, kornaya el sallayan kasabalılar.
 - **Palouse’un insanları:** Kasabanın kaldırımlarında dolaşan, dükkân önlerinde sohbet eden, banklarda oturan kasabalılar; panayırda satıcılar ve ziyaretçiler; göl kıyısında kamp ateşinin başında kampçılar ve oltacı; vadide piknik yapan aile; çiftliklerde çalışan çiftçiler; yol kenarında koşanlar. Araba yaklaşınca kenara kaçarlar (animasyonlu Kenney Mini Characters).
 - **Komşularla sohbet:** Earl (benzinlik), Rosie (postane), Şerif Dale (devriye arabasının yanında), Martha (Su Kulesi Çiftliği) ve Hank (Kuzey Sprinti bayrağı) dünyada isim etiketleriyle durur; yanlarına gidip F ile konuşursun.
 - **Otostopçular:** Yol kenarında el sallayanları arabaya al, gideceği yere bırak; mesafeye göre ücret, zamanında varırsan bahşiş, sarsarsan şikâyet.
@@ -40,7 +44,7 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Günlük görevler:** Her gün 3 yeni görev (teslimat, drift, atlayış, hız kapanı…), hepsine +$500 bonus.
 - **Çamur:** Arazide sürdükçe araç alttan yukarı çamurlanır (yağmurda daha hızlı); Söğüt Göleti’nden geçerek veya garajda yıkanır.
 - **Yer işareti:** Büyük haritaya tıklayınca dünyada yeşil ışık sütunu ve mini haritada hedef.
-- **Keşif:** 22 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 23 başarım ve istatistik ekranı.
+- **Keşif:** 22 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 24 başarım ve istatistik ekranı.
 - **Canlı dünya:** Tarlaların üzerinde dönen kuş sürüleri (yakınından geçince havalanır), gece ateş böcekleri, gölette su sıçraması; 8 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
 - **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.
 - **Ses:** Devre göre katmanlı motor sesi, çakıl/patinaj, çarpışma, yağmur ve gök gürültüsü, kır ambiyansı, Kevin MacLeod'un country/bluegrass parçaları.

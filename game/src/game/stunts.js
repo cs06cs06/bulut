@@ -10,7 +10,7 @@ export class StuntZones {
   constructor({ scene, lib, terrain, hud, progress, audio, glowTex }) {
     Object.assign(this, { terrain, hud, progress, audio });
     this.group = new THREE.Group(); this.group.name = 'stunts'; scene.add(this.group);
-    const roads = terrain.roads.roads;
+    const roads = terrain.roads.roads.filter((r) => !r.rail);
     const snap = (x, z) => {
       let best = null, bd = Infinity;
       for (const r of roads) for (let i = 0; i < r.points.length; i++) { const p = r.points[i]; const d = (p[0] - x) ** 2 + (p[1] - z) ** 2; if (d < bd) { bd = d; best = { p, r, i }; } }

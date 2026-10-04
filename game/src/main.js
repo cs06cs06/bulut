@@ -27,6 +27,9 @@ import { SkillChain } from './game/skills.js';
 import { Winch } from './game/winch.js';
 import { PhotoBounties } from './game/photos.js';
 import { Townsfolk } from './game/npcs.js';
+import { Train } from './game/train.js';
+import { Herding } from './game/herding.js';
+import { seatDriver, SEATS, glassify } from './game/driver.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks, Fireflies } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
@@ -43,7 +46,8 @@ const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'jeep', 'pole', 'wires'
   'cow', 'bull', 'horse', 'horse_white', 'donkey', 'alpaca', 'deer', 'chicken', 'bird',
   'char_m_a', 'char_m_b', 'char_m_c', 'char_m_d', 'char_m_e', 'char_m_f', 'char_f_a', 'char_f_b', 'char_f_c', 'char_f_d', 'char_f_e', 'char_f_f',
   'tent', 'tent2', 'campfire', 'log_seat', 'canoe', 'bedroll', 'fish_stand', 'bucket', 'stall', 'stall_green', 'stall_red', 'stall_bench', 'stall_stool', 'lantern',
-  'k_sedan', 'k_hatchback', 'k_police', 'k_delivery', 'k_taxi'];
+  'k_sedan', 'k_hatchback', 'k_police', 'k_delivery', 'k_taxi', 'sign_warning',
+  'diesel_a', 'wagon_coal', 'wagon_lumber', 'wagon_tank', 'wagon_box', 'wagon_wood', 'wagon_flatbed_wood', 'track_single'];
 
 const TIPS = [
   'İpucu: Boşluk tuşu ile el frenini çekip toprak yolda drift yapabilirsin.',
@@ -74,6 +78,9 @@ const TIPS = [
   'İpucu: Earl, Rosie, Şerif Dale, Martha ve Hank ile yanlarına gidip F’ye basarak sohbet edebilirsin.',
   'İpucu: Kasabada yavaş sür, yayalar kaçışırken şapkalarını düşürüyor!',
   'İpucu: Gece Göl Kampı’nda ateş yanar, panayırın fenerleri ışıldar.',
+  'İpucu: Hemzemin geçitte kırmızı lambalar yanıyorsa dur; yük treni geliyor!',
+  'İpucu: İnekli çiftliklerin panolarında sığır gütme işi var: inekleri arkalarından sürerek ağıla it.',
+  'İpucu: Kornaya bas, kasabalılar sana el sallasın.',
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
@@ -196,7 +203,7 @@ class Game {
     await nextFrame();
     // snap the spawn onto the nearest road sample
     let bestD = Infinity, best = null;
-    for (const r of this.terrain.roads.roads) for (const p of r.points) {
+    for (const r of this.terrain.roads.roads) for (const p of r.rail ? [] : r.points) {
       const d = Math.hypot(p[0] - SPAWN.x, p[1] - SPAWN.z);
       if (d < bestD) { bestD = d; best = p; }
     }
@@ -218,7 +225,9 @@ class Game {
     this.postal = new PostalRoute({ scene: rs.scene, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress, glowTex: tex.glow,
       office: this.world.postOffice, mailboxes: this.world.mailboxes });
     this._buildStreetGlow(tex.glow);
+    this.train = new Train({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio, world: this.world, glowTex: tex.glow });
     this.traffic = new Traffic({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio });
+    this.traffic.train = this.train;
     this.races = new Races({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud, dust: this.dust, progress: this.progress, glowTex: tex.glow });
     this.hud.races = this.races.races;
     this.races.isNight = () => this.rs.isNight;
@@ -239,6 +248,7 @@ class Game {
     this.winch = new Winch({ scene: rs.scene, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud });
     this.photos = new PhotoBounties({ game: this });
     this.townsfolk = new Townsfolk({ game: this });
+    this.herding = new Herding({ scene: rs.scene, lib, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress, glowTex: tex.glow });
     this.races.onFinish = (place, id, beatHank) => this.story.event('race', { id, place, beatHank });
     mark('map');
     this.hud.updateCounts(this.gameplay);
@@ -290,6 +300,8 @@ class Game {
       config: { ...spec }, upgrades: this.progress.data.upgrades });
     this.vehicle.id = id;
     this.vehicle.dirt = keepDirt;
+    glassify(this.vehicle.object);
+    this.vehicle.driver = seatDriver(this.lib, this.vehicle.object, this.vehicle.bodyBox, SEATS[spec.model], 'char_m_b');
     const dmg = this.progress.data.damage?.[id];
     if (dmg) this.vehicle.setDamageState(dmg.dents, dmg.d);
     this.hud.setDamage(this.vehicle.damage);
@@ -541,7 +553,25 @@ class Game {
     $('board-msg').textContent = '';
     const list = $('board-list');
     list.innerHTML = '';
-    const D = this.delivery;
+    const D = this.delivery, HD = this.herding;
+    // cattle drive offered at farms with cows
+    if (HD.active || (!D.job && HD.offer(board.farm.id))) {
+      const div = document.createElement('div');
+      div.className = 'job' + (HD.active ? ' active' : '');
+      div.innerHTML = HD.active
+        ? `<div class="ji">🐄</div><div><div class="jt">Aktif iş: Sığır gütme</div><div class="jd">Ağılda ${HD.active.penned}/${HD.active.cows.length}</div></div>`
+        : `<div class="ji">🐄</div><div><div class="jt">Kaçan 5 ineği ağıla geri getir</div><div class="jd">Arkalarından sürerek it · hızlı olursan bonus</div></div>`;
+      const right = document.createElement('div');
+      if (!HD.active) right.innerHTML = `<div class="pay">$350+</div>`;
+      const b = document.createElement('button'); b.className = HD.active ? 'btn' : 'btn primary'; b.textContent = HD.active ? 'İptal et' : 'Kabul et';
+      b.onclick = () => {
+        if (HD.active) { HD.cancel(); this.openBoard(board); return; }
+        if (this.postal.active || this.townsfolk.ride) { $('board-msg').textContent = 'Önce aktif işini bitir.'; return; }
+        this.closeBoard(); HD.start(board.farm.id, this.vehicle.position);
+      };
+      right.appendChild(b); div.appendChild(right); list.appendChild(div);
+      if (HD.active) return;
+    }
     if (D.job) {
       const j = D.job;
       const div = document.createElement('div');
@@ -584,11 +614,13 @@ class Game {
     $('photo').classList.remove('hidden');
     this.cameraRig.orbitPitch = 0.15;
     this.photo = { dist: +$('ph-dist').value, fov: +$('ph-fov').value };
+    this.rs.setPhotoDOF($('ph-dof').checked, this.vehicle.object.position);
   }
 
   exitPhoto() {
     $('photo').classList.add('hidden');
     $('game').style.filter = '';
+    this.rs.setPhotoDOF(false);
     this.hud.show(true);
     $('touch').classList.toggle('hidden', !this.input.touchEnabled);
     this.state = 'play';
@@ -651,6 +683,13 @@ class Game {
   _dayCycle(dt, force = false) {
     this.dayT = ((this.dayT ?? 0.08) + dt / DAY_LEN) % 1;
     const hour = this._hour = this.rs.setDayCycle(this.dayT);
+    // morning mist: the valleys fill with fog around dawn
+    const mist = Math.max(0, 1 - Math.abs(hour - 6.6) / 1.9);
+    if (mist > 0 && this.rs._base) {
+      const b = this.rs._base, m = mist * mist * (3 - 2 * mist);
+      b.fogNear *= 1 - 0.85 * m; b.fogFar *= 1 - 0.62 * m;
+      b.fog.lerp(_mistCol, 0.45 * m);
+    }
     this.world.impostors.material.uniforms.uTint.value.copy(this.rs.impostorTint);
     if (force || this.rs.isNight !== this._wasNight) {
       this._wasNight = this.rs.isNight;
@@ -704,6 +743,7 @@ class Game {
     $('prompt').addEventListener('pointerdown', (e) => { e.preventDefault(); this.input.pressed.add('KeyF'); });
     document.querySelector('[data-board="close"]').addEventListener('click', () => { click(); this.closeBoard(); });
     $('ph-shot').addEventListener('click', () => this.takePhoto());
+    $('ph-dof').addEventListener('change', (e) => this.rs.setPhotoDOF(e.target.checked, this.vehicle.object.position));
     $('ph-exit').addEventListener('click', () => { click(); this.exitPhoto(); });
     $('ph-dist').addEventListener('input', (e) => { this.photo.dist = +e.target.value; });
     $('ph-fov').addEventListener('input', (e) => { this.photo.fov = +e.target.value; });
@@ -878,9 +918,10 @@ class Game {
       this._raceResult = this.races.update(dt, v);
       this.barnFinds.update(dt, v.position);
       this._rideResult = this.townsfolk.update(dt);
+      this._herdResult = this.herding.update(dt, v.position, v.speed);
       this.explore.update(dt, v.position);
       this.hud.rivals = this._raceResult?.cars || null;
-      this.hud.extraTarget = this._raceResult?.target || this._rideResult?.target || dres?.target || pres?.target || (this.gameplay.active ? null : this.story.target) || null;
+      this.hud.extraTarget = this._raceResult?.target || this._rideResult?.target || this._herdResult?.target || dres?.target || pres?.target || (this.gameplay.active ? null : this.story.target) || null;
       this._gasStation(dt);
       this._campfire(dt);
       this._effects(dt);
@@ -914,10 +955,11 @@ class Game {
 
     if (this.settings.time === 'dynamic' && this.state !== 'pause' && this.state !== 'loading') this._dayCycle(dt);
     this.world.update(dt, this.time, v.position, v.speed, playing ? this.audio : null);
-    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'dialogue') this.traffic.update(dt, v.position, v.speed);
+    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'dialogue') { this.train.update(dt, cam.position); this.traffic.update(dt, v.position, v.speed); }
     this.grass.update(v.position);
     this.birds.update(dt, this.time, cam.position, v.position, v.speed);
     { const lv = v.body.linvel(); this._carVel.set(lv.x, lv.y, lv.z); }
+    if (v.driver) { v.driver.mixer.update(dt); v.driver.o.visible = this.cameraRig.mode !== 2 || this.state !== 'play'; }
     this.people.update(dt, cam.position, { pos: v.position, vel: this._carVel, speed: v.speed });
     this.terrain.update(cam.position);
     this.lib.windUniform.value = this.time;
@@ -965,7 +1007,7 @@ class Game {
       this.audio.play('gear', { volume: 0.5, rate: 0.8 });
     }
     const horn = inp.keys.has('KeyH') || inp.keys.has('PadKeyH') || inp.touch.horn;
-    if (horn && !this.hornLoop) this.hornLoop = this.audio.loop('horn', 'sfx', { volume: 0.55, offset: 0.02 });
+    if (horn && !this.hornLoop) { this.hornLoop = this.audio.loop('horn', 'sfx', { volume: 0.55, offset: 0.02 }); this.people.honk(v.position); }
     if (!horn && this.hornLoop) { this.hornLoop.set(0, 1, 0.03); const h = this.hornLoop; setTimeout(() => h.stop(), 150); this.hornLoop = null; }
   }
 
@@ -1058,6 +1100,11 @@ class Game {
       const pos = c.root.position, dist = Math.hypot(pos.x - v.position.x, pos.z - v.position.z);
       if (dist < 4.6 && v.speed > 7 && (c._nm || 0) < this.time) { c._nm = this.time + 3; this.skills.add('KIL PAYI', 300); }
     }
+    for (const c of this.train.cars) {
+      if (!c.o.visible) continue;
+      const p = c.o.position, dist = Math.hypot(p.x - v.position.x, p.z - v.position.z);
+      if (dist < c.half + 4 && v.speed > 8 && (this._trainNm || 0) < this.time) { this._trainNm = this.time + 5; this.skills.add('TRENLE KIL PAYI', 900); }
+    }
     // mud builds up off-road (faster in rain); driving through the pond washes it off
     const surf = v.wheelState[0].surface, wet = this.weather.wet;
     if (v.contacts > 0 && v.speed > 2) v.dirt = Math.min(1, v.dirt + dt * Math.min(1, v.speed / 15) * (surf === 'road' ? 0.004 : surf === 'field' ? 0.012 : 0.008) * (1 + wet * 3));
@@ -1095,7 +1142,7 @@ class Game {
     }
     const so = this.story.objective();
     if (this.races.active) hud.objective(null);
-    else if (this.townsfolk.ride) { /* the ride sets its own objective */ }
+    else if (this.townsfolk.ride || this.herding.active) { /* these set their own objective */ }
     else if (!this.delivery.job && !this.gameplay.active && !this.postal.active) {
       if (so) hud.objective(so);
       else if (this.waypoint) {
@@ -1135,7 +1182,7 @@ class Game {
       const k = Math.min(1, (mag - 9000) / 60000);
       if (k <= 0.02) return;
       this.impactCooldown = this.time + 0.25;
-      let name = kind === 'rival' ? 'impact_metal' : kind === 'rock' ? 'impact_stone' : kind === 'fence' || kind === 'tree' || kind === 'prop' ? 'impact_wood' : kind === 'building' ? 'crash_1' : 'land_thud';
+      let name = kind === 'train' ? 'crash_3' : kind === 'rival' ? 'impact_metal' : kind === 'rock' ? 'impact_stone' : kind === 'fence' || kind === 'tree' || kind === 'prop' ? 'impact_wood' : kind === 'building' ? 'crash_1' : 'land_thud';
       if (k > 0.55 && kind !== 'terrain') name = Math.random() < 0.5 ? 'crash_2' : 'crash_3';
       this.audio.play(name, { volume: 0.35 + k * 0.65, rate: 0.9 + Math.random() * 0.2 });
       this.cameraRig.addShake(0.3 + k * 0.8);
@@ -1201,7 +1248,7 @@ class Game {
   }
 }
 
-const _tmpV = new THREE.Vector3(), _tmpQ = new THREE.Quaternion();
+const _tmpV = new THREE.Vector3(), _tmpQ = new THREE.Quaternion(), _mistCol = new THREE.Color(0xd4d8dc);
 if (MOBILE) document.documentElement.classList.add('mobile');
 const game = new Game();
 game.load().catch((e) => {

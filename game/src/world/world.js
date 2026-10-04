@@ -378,7 +378,7 @@ export class World {
     for (const fm of FARMS) {
       const q = T.roads.query(fm.x, fm.z, {});
       let best = null, bd = Infinity;
-      for (const r of T.roads.roads) for (let i = 0; i < r.points.length; i++) { const p = r.points[i]; const d = (p[0] - fm.x) ** 2 + (p[1] - fm.z) ** 2; if (d < bd) { bd = d; best = { r, i }; } }
+      for (const r of T.roads.roads) for (let i = 0; i < (r.rail ? 0 : r.points.length); i++) { const p = r.points[i]; const d = (p[0] - fm.x) ** 2 + (p[1] - fm.z) ** 2; if (d < bd) { bd = d; best = { r, i }; } }
       if (!best || !q) continue;
       const pts = best.r.points, hw = best.r.width / 2 + 3.5;
       // fence on the side facing away from the farm so the driveway stays open

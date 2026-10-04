@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RACES } from '../world/layout.js';
 import { VEHICLES } from './vehicle.js';
 import { fmt } from './gameplay.js';
+import { seatDriver, SEATS, glassify } from './driver.js';
 
 // Road races against three AI rivals. Rivals are kinematic: they follow the road with a
 // curvature-based speed profile, change lanes to overtake, fly off crests and lean / squat
@@ -171,6 +172,8 @@ export class Races {
       return { pivot, radius: Math.max(0.2, (box.max.y - box.min.y) / 2) };
     });
     const box = new THREE.Box3().setFromObject(model), size = box.getSize(new THREE.Vector3()), ctr = box.getCenter(new THREE.Vector3());
+    glassify(model);
+    const driver = seatDriver(this.lib, root, box, SEATS[spec.model], ['char_m_d', 'char_f_f', 'char_m_a'][i % 3]);
     // head / tail lights for night races
     const lights = new THREE.Group();
     const mk = (color, sc, x, y, z) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending })); sp.scale.setScalar(sc); sp.position.set(x, y, z); lights.add(sp); };
@@ -183,7 +186,7 @@ export class Races {
     col.userData = { kind: 'rival' };
     this.group.add(root);
     const sound = this.audio.buffers.engine_mid ? this.audio.loop('engine_mid', 'sfx', { volume: 0 }) : null;
-    return { ...def, root, model, spins, body, col, sound, lights, halfLen: size.z / 2, halfW: size.x / 2,
+    return { ...def, root, model, driver, spins, body, col, sound, lights, halfLen: size.z / 2, halfW: size.x / 2,
       s: 0, d: 0, dTarget: 0, v: 0, y: 0, vy: 0, air: 0, pitch: 0, roll: 0, susp: 0, suspV: 0, finished: null, hint: 0, idx: i };
   }
 
@@ -367,6 +370,7 @@ export class Races {
     c.body.setNextKinematicRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
     for (const w of c.spins) w.pivot.rotation.x += (c.v * dt) / w.radius;
     c.lights.visible = !!this.isNight?.();
+    if (dt > 0) c.driver.mixer.update(dt);
     // dust off the rear wheels, engine note
     if (dt > 0 && this.dust && c.v > 6 && c.air === 0) {
       const n = Math.random() < c.v * dt * 0.9 ? 1 : 0;

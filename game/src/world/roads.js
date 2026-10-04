@@ -29,7 +29,7 @@ export class RoadNetwork {
       }
     }
     out.push(pts[n - 1].slice());
-    return { name: def.name, width: def.width || 6, points: out, heights: null };
+    return { name: def.name, width: def.width || 6, points: out, heights: null, rail: !!def.rail, smooth: def.smooth };
   }
 
   // Compute a smooth longitudinal height profile from a height sampler.
@@ -40,7 +40,7 @@ export class RoadNetwork {
         return sampleHeight(p[0], p[1]);
       });
       let h = raw.slice();
-      const win = 9; // ~18 m each side
+      const win = r.smooth || 9; // ~18 m each side (railway: much longer)
       for (let pass = 0; pass < 3; pass++) {
         const nh = h.slice();
         for (let i = 0; i < h.length; i++) {
@@ -56,6 +56,27 @@ export class RoadNetwork {
       }
       r.heights = h;
     }
+    this._buildSegments();
+  }
+
+  // level crossings: bring each road up/down to the rail bed where it meets the railway
+  alignToRail() {
+    const rail = this.roads.find((r) => r.rail);
+    if (!rail) return;
+    for (const r of this.roads) {
+      if (r.rail) continue;
+      for (let i = 0; i < r.points.length; i++) {
+        const [x, z] = r.points[i];
+        let bd = Infinity, bi = 0;
+        for (let k = 0; k < rail.points.length; k += 2) { const d = (rail.points[k][0] - x) ** 2 + (rail.points[k][1] - z) ** 2; if (d < bd) { bd = d; bi = k; } }
+        const d = Math.sqrt(bd);
+        if (d > 60) continue;
+        const w = 1 - Math.min(1, Math.max(0, (d - 8) / 52));
+        const s = w * w * (3 - 2 * w);
+        r.heights[i] += (rail.heights[bi] - r.heights[i]) * s;
+      }
+    }
+    this.grid.clear();
     this._buildSegments();
   }
 

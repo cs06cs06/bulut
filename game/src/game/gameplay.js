@@ -69,7 +69,7 @@ export class Gameplay {
     this.challenges = CHALLENGES.map((c0) => {
       // snap the start onto the nearest road sample
       let s = c0.start, bd = Infinity;
-      for (const r of this.roads.roads) for (const p of r.points) {
+      for (const r of this.roads.roads) for (const p of r.rail ? [] : r.points) {
         const d = (p[0] - c0.start.x) ** 2 + (p[1] - c0.start.z) ** 2;
         if (d < bd) { bd = d; s = { ...c0.start, x: p[0], z: p[1] }; }
       }

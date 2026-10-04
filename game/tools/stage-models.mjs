@@ -49,7 +49,7 @@ const L = {
   bench: `${M2}/kaykit_citybuilder/glb/bench.glb`, hydrant: `${M2}/kaykit_citybuilder/glb/firehydrant.glb`, trash: `${M2}/kaykit_citybuilder/glb/trash_A.glb`,
   picnic: `${M2}/oga_picnictable/glb/picnic_table.glb`, pallet: `${M2}/kaykit_resource/glb/Pallet_Wood_Covered_A.glb`,
   fuel_barrels: `${M2}/kaykit_resource/glb/Fuel_A_Barrels.glb`, logs: `${M2}/kaykit_resource/glb/Wood_Log_Stack.glb`,
-  cone: `${M2}/q_zombie/glb/TrafficCone_1.glb`, sign_stop: `${M2}/kenney_city-kit-roads/glb/road-sign-stop.glb`,
+  cone: `${M2}/q_zombie/glb/TrafficCone_1.glb`, sign_stop: `${M2}/kenney_city-kit-roads/glb/road-sign-stop.glb`, sign_warning: `${M2}/kenney_city-kit-roads/glb/road-sign-warning.glb`,
   // KayKit Medieval Hexagon: country chapel, roadside tavern (diner) and farmers' market stall
   ...Object.fromEntries([['chapel', 'church'], ['diner', 'tavern'], ['market', 'market']].map(([k, b]) => [k, `${M2}/kaykit_hex/KayKit_Medieval_Hexagon_Pack_1.0_FREE/Assets/gltf/buildings/red/building_${b}_red.gltf`])),
   ...Object.fromEntries(['wheelbarrow', 'sack', 'crate_A_big'].map((k) => [k.replace('_A_big', ''), `${M2}/kaykit_hex/KayKit_Medieval_Hexagon_Pack_1.0_FREE/Assets/gltf/decoration/props/${k}.gltf`])),
@@ -63,6 +63,8 @@ const L = {
   fish_stand: `${K}/kenney_survival-kit/Models/GLB format/campfire-fishing-stand.glb`, bucket: `${K}/kenney_survival-kit/Models/GLB format/bucket.glb`,
   ...Object.fromEntries(['stall', 'stall-green', 'stall-red', 'stall-bench', 'stall-stool', 'banner-red', 'banner-green', 'lantern'].map((k) => [k.replace('-', '_'), `${K}/kenney_fantasy-town-kit_2.0/Models/GLB format/${k}.glb`])),
   ...Object.fromEntries(['sedan', 'hatchback-sports', 'police', 'delivery', 'taxi'].map((k) => ['k_' + k.split('-')[0], `${K}/kenney_car-kit/Models/GLB format/${k}.glb`])),
+  // Kenney Train Kit: freight train and track
+  ...Object.fromEntries(['train-diesel-a', 'train-locomotive-a', 'train-carriage-coal', 'train-carriage-lumber', 'train-carriage-tank', 'train-carriage-box', 'train-carriage-wood', 'train-carriage-flatbed-wood', 'track-single', 'track'].map((k) => [k.replace('train-carriage-', 'wagon_').replace('train-', '').replace(/-/g, '_'), `${M2}/kenney_train-kit/Models/GLB format/${k}.glb`])),
   // Kenney Platformer Kit — challenge flags & signs
   flag: `${K}/platformer/Models/GLB format/flag.glb`, sign: `${K}/platformer/Models/GLB format/sign.glb`, arrow: `${K}/platformer/Models/GLB format/arrow.glb`,
   billboard: 'styloo_cozyfarm/glb/billboard.glb',

@@ -27,6 +27,7 @@ All assets were downloaded from the external sources below.
 | City Kit Industrial (rüzgâr türbini, su kulesi, tahıl silosu) | [Kenney](https://kenney.nl/assets/city-kit-industrial) | CC0 |
 | Modular Buildings (kasaba evleri) | [Kenney](https://kenney.nl/assets/modular-buildings) | CC0 |
 | Car Kit (Çiftlik Traktörü; trafikteki sedan, hatchback, şerif aracı, kargo kamyoneti, taksi) | [Kenney](https://kenney.nl/assets/car-kit) | CC0 |
+| Train Kit (yük treni: dizel lokomotif, kömür / kereste / tanker / kapalı vagonlar; ray parçaları) | [Kenney](https://kenney.nl/assets/train-kit) | CC0 |
 | Mini Characters (kasaba halkı, çiftçiler, yolcular, hikâye karakterleri; animasyonlu) | [Kenney](https://kenney.nl/assets/mini-characters) | CC0 |
 | Nature Kit (kamp çadırı, kamp ateşi, kütük, kano) | [Kenney](https://kenney.nl/assets/nature-kit) | CC0 |
 | Survival Kit (kanvas çadır, uyku tulumu, balık standı, kova) | [Kenney](https://kenney.nl/assets/survival-kit) | CC0 |

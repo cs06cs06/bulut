@@ -40,6 +40,17 @@ export class HUD {
       img.data[k] = Math.min(255, r * shade); img.data[k + 1] = Math.min(255, g * shade); img.data[k + 2] = Math.min(255, bl * shade); img.data[k + 3] = 255;
     }
     ctx.putImageData(img, 0, 0);
+    // railway: dark line with sleepers
+    for (const rd of terrain.roads.roads.filter((r) => r.rail)) {
+      const px = (p) => [(p[0] + terrain.half) / terrain.size * R, (p[1] + terrain.half) / terrain.size * R];
+      ctx.lineWidth = 3; ctx.strokeStyle = '#3a2f26'; ctx.beginPath();
+      rd.points.forEach((p, i) => { const [x, y] = px(p); if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y); }); ctx.stroke();
+      ctx.lineWidth = 1.5;
+      for (let i = 0; i < rd.points.length - 4; i += 6) {
+        const [x0, y0] = px(rd.points[i]), [x1, y1] = px(rd.points[i + 4]), dx = x1 - x0, dy = y1 - y0, l = Math.hypot(dx, dy) || 1;
+        ctx.beginPath(); ctx.moveTo(x0 - dy / l * 3, y0 + dx / l * 3); ctx.lineTo(x0 + dy / l * 3, y0 - dx / l * 3); ctx.stroke();
+      }
+    }
     this.mapCanvas = c; this.mapSize = terrain.size; this.mapHalf = terrain.half;
   }
 

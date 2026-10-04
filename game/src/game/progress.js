@@ -24,6 +24,7 @@ export const ACHIEVEMENTS = [
   { id: 'barnfind', name: 'Hurda Avcısı', desc: 'Bir ahır buluntusunu restore et.', reward: 400, test: (s, g, p) => p.data.owned.some((id) => ['semi', 'van'].includes(id)) },
   { id: 'towers', name: 'Gözcü', desc: 'Tüm gözetleme kulelerine çık.', reward: 500, test: (s, g, p) => (p.data.towers || []).length >= 4 },
   { id: 'hitch', name: 'Otostop Dostu', desc: '5 otostopçuyu gideceği yere bırak.', reward: 400, test: (s) => s.rides >= 5 },
+  { id: 'rancher', name: 'Usta Kovboy', desc: 'Kaçan bir sürüyü ağıla geri getir.', reward: 350, test: (s) => s.herds >= 1 },
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 
@@ -59,7 +60,7 @@ export class Progress {
   _load() {
     const def = {
       money: 250, owned: ['pickup'], current: 'pickup', upgrades: { engine: 0, tires: 0, susp: 0 },
-      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0, mailRoutes: 0, raceWins: 0, rides: 0 },
+      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0, mailRoutes: 0, raceWins: 0, rides: 0, herds: 0 },
       achievements: [], daily: null,
     };
     try {

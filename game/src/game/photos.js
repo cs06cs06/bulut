@@ -37,7 +37,8 @@ export class PhotoBounties {
     for (const b of this.list) {
       if (this.done.includes(b.id)) continue;
       let ok = true;
-      if (b.turbine) ok = (g.world.turbines || []).some((t) => this._inFrame(t.x, T.heightAt(t.x, t.z) + 30, t.z, b.dist));
+      if (b.train) ok = (g.train?.cars || []).some((c) => c.o.visible && this._inFrame(c.o.position.x, c.o.position.y + 2, c.o.position.z, b.dist));
+      else if (b.turbine) ok = (g.world.turbines || []).some((t) => this._inFrame(t.x, T.heightAt(t.x, t.z) + 30, t.z, b.dist));
       else if (b.airborne) ok = v.contacts === 0 && v.position.y - T.heightAt(v.position.x, v.position.z) > 1.4 && carIn();
       else if (b.near) ok = Math.hypot(cam.position.x - b.x, cam.position.z - b.z) < b.near || Math.hypot(v.position.x - b.x, v.position.z - b.z) < b.near;
       else ok = this._inFrame(b.x, T.heightAt(b.x, b.z) + (b.y || 3), b.z, b.dist);

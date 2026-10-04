@@ -14,7 +14,8 @@ export const MODEL_SCALE = {
   pole: 1, wires: 1, turbine: 35, water_tower2: 10, grain_bin: 9, warehouse: 1, jeep: 1, streetlight: 1,
   gas_canopy: 0.85, gas_shop: 0.8, gas_sign: 0.8, store: 1.6, house_s_a: 6.5, house_s_c: 6.5,
   shop_a: 5.5, shop_b: 5.5, shop_c: 5.5, shop_d: 5.5, shop_e: 5.5, shop_f: 5.5, shop_g: 5.5, shop_h: 5.5,
-  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, bird: 1,
+  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, sign_warning: 5, tractor_k: 1.9, bird: 1,
+  diesel_a: 2.6, locomotive_a: 2.6, wagon_coal: 2.6, wagon_lumber: 2.6, wagon_tank: 2.6, wagon_box: 2.6, wagon_wood: 2.6, wagon_flatbed_wood: 2.6, track_single: 2.6, track: 2.6,
   char_m_a: 2.9, char_m_b: 2.9, char_m_c: 2.9, char_m_d: 2.9, char_m_e: 2.9, char_m_f: 2.9, char_f_a: 2.9, char_f_b: 2.9, char_f_c: 2.9, char_f_d: 2.9, char_f_e: 2.9, char_f_f: 2.9,
   tent: 4.5, tent2: 5.5, campfire: 3, log_seat: 3, canoe: 3.5, bedroll: 3, fish_stand: 3, bucket: 3, stall: 4.5, stall_green: 4.5, stall_red: 4.5, stall_bench: 4, stall_stool: 4, banner_red: 3.5, banner_green: 3.5, lantern: 1.7,
   k_sedan: 1.65, k_hatchback: 1.65, k_police: 1.65, k_delivery: 1.65, k_taxi: 1.65, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
@@ -22,6 +23,8 @@ export const MODEL_SCALE = {
 };
 
 export const ROADS = [
+  // freight railway: carved like a road but with a much smoother grade; not drivable traffic road
+  { name: 'Demiryolu', width: 5, rail: true, smooth: 32, points: [[800, -1660], [1000, 0], [1200, 1660]] },
   { name: 'Palouse Yolu', width: 7, points: [[120, 1660], [160, 1300], [230, 1000], [330, 700], [420, 430], [440, 250], [380, 0], [300, -300], [420, -650], [650, -950], [880, -1250], [1000, -1660]] },
   { name: 'Doğu Yolu', width: 6, points: [[440, 250], [700, 200], [950, -50], [1120, -290], [1350, -500], [1660, -620]] },
   { name: 'Batı Yolu', width: 6, points: [[-1660, 620], [-1300, 560], [-900, 450], [-460, 330], [0, 300], [440, 250]] },
@@ -131,6 +134,7 @@ export const PHOTO_BOUNTIES = [
   { id: 'summitSunset', name: 'Zirvede Akşam', desc: 'Steptoe Zirvesi’nde gün batımında ya da gece bir fotoğraf çek.', x: -805, z: -831, near: 140, dusk: true, reward: 400 },
   { id: 'townNight', name: 'Kasaba Işıkları', desc: 'Steptoe Kasabası’nı gece çek.', x: 392, z: 545, y: 6, dist: 180, night: true, reward: 350 },
   { id: 'airborne', name: 'Uçan Kamyon', desc: 'Aracın havadayken fotoğrafını çek.', airborne: true, reward: 400 },
+  { id: 'train', name: 'Yük Treni', desc: 'Yük trenini yakından çek.', train: true, dist: 90, reward: 350 },
   { id: 'pond', name: 'Göl Kıyısı', desc: 'Söğüt Göleti’nde aracınla poz ver.', x: 0, z: 0, poi: 'pond', near: 40, withCar: true, reward: 200 },
 ];
 

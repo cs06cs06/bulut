@@ -149,6 +149,17 @@ export class People {
     }
   }
 
+  // a friendly honk: people nearby turn and wave
+  honk(pos) {
+    for (const p of this.list) {
+      if (p.hidden || p.mode === 'sit' || p.mode === 'dodge') continue;
+      if (Math.hypot(p.x - pos.x, p.z - pos.z) > 30) continue;
+      p.yaw = Math.atan2(pos.x - p.x, pos.z - p.z);
+      if (p.mode === 'walk' || p.mode === 'work') p.wait = 2;
+      p.play('yes', 0.15); p.back = 2.2; p.timer = Math.max(p.timer, 3);
+    }
+  }
+
   // ------------------------------------------------------------ per frame
   _place(p) {
     p.root.position.set(p.x, this.terrain.heightAt(p.x, p.z) + (p.mode === 'sit' ? (p.sitY || 0) : 0), p.z);
