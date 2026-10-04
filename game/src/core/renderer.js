@@ -39,6 +39,10 @@ function horizonColor(img) {
 
 const _rainFog = new THREE.Color();
 
+// day cycle keyframes: [t, preset, clock hour]
+const DAY_KEYS = [[0, 'noon', 10], [0.36, 'noon', 17], [0.46, 'sunset', 19], [0.53, 'sunset', 20], [0.61, 'night', 21.5],
+  [0.84, 'night', 28.5], [0.91, 'sunset', 30], [0.95, 'sunset', 31], [1, 'noon', 34]];
+
 export const QUALITY = {
   low: { pixelRatio: 1, shadow: 1024, ao: false, bloom: false, smaa: false, grass: 'low', shadowRange: 50 },
   medium: { pixelRatio: 1, shadow: 2048, ao: false, bloom: true, smaa: true, grass: 'medium', shadowRange: 80 },
@@ -68,6 +72,7 @@ export class RenderSystem {
     for (const [name, { sky, hdr }] of Object.entries(skies)) {
       sky.colorSpace = THREE.SRGBColorSpace;
       sky.generateMipmaps = false; sky.minFilter = THREE.LinearFilter; // no mip seam at the atan wrap
+      sky.wrapS = THREE.RepeatWrapping; // skies are turned to follow the sun, so wrap across the seam
       hdr.mapping = THREE.EquirectangularReflectionMapping;
       const sun = findSun(hdr);
       const env = pmrem.fromEquirectangular(hdr).texture;
@@ -86,24 +91,62 @@ export class RenderSystem {
     this.setTimeOfDay('noon');
   }
 
-  setTimeOfDay(name) {
-    const P = TIME_PRESETS[name] || TIME_PRESETS.noon, sky = this.skies[name] || this.skies.noon, s = this.scene;
-    s.background = null;
-    this.dome.material.uniforms.tA.value = sky.sky;
-    s.environment = sky.env;
-    s.environmentIntensity = P.env;
-    s.backgroundIntensity = P.bg;
-    // light comes from where the sun is in the HDRI; elevation clamped for readable shadows
+  // lighting state of one preset (sky, IBL, sun, hemi, fog) so presets can be blended
+  _preset(name) {
+    if (this._presets?.[name]) return this._presets[name];
+    const P = TIME_PRESETS[name] || TIME_PRESETS.noon, sky = this.skies[name] || this.skies.noon;
     const el = THREE.MathUtils.clamp(sky.sunEl, P.minElev * Math.PI / 180, P.maxElev * Math.PI / 180);
-    this.sunDir = new THREE.Vector3(Math.cos(el) * Math.cos(sky.sunAz), Math.sin(el), Math.cos(el) * Math.sin(sky.sunAz)).normalize();
-    this.sun.color.set(P.sunColor); this.sun.intensity = P.sunIntensity;
-    this.hemi.color.set(P.hemi[0]); this.hemi.groundColor.set(P.hemi[1]); this.hemi.intensity = P.hemi[2];
-    s.fog.color.copy(sky.horizon).lerp(new THREE.Color(P.fogTint), P.fogMix ?? 0.35);
-    this.isNight = !!P.night;
-    s.fog.near = P.fogNear; s.fog.far = P.fogFar;
+    const st = {
+      name, sky: sky.sky, env: sky.env, skyAz: sky.sunAz, sunAz: sky.sunAz, sunEl: el,
+      sunColor: new THREE.Color(P.sunColor), sunI: P.sunIntensity, envI: P.env, bg: P.bg,
+      hemiSky: new THREE.Color(P.hemi[0]), hemiGround: new THREE.Color(P.hemi[1]), hemiI: P.hemi[2],
+      fogNear: P.fogNear, fogFar: P.fogFar, fog: sky.horizon.clone().lerp(new THREE.Color(P.fogTint), P.fogMix ?? 0.35),
+      tint: new THREE.Color(P.impostorTint), night: !!P.night,
+    };
+    (this._presets = this._presets || {})[name] = st;
+    return st;
+  }
+
+  setTimeOfDay(name) {
+    this._blend(this._preset(name), this._preset(name), 0);
     this.timeOfDay = name;
-    this.impostorTint = new THREE.Color(P.impostorTint);
-    this._base = { sun: P.sunIntensity, env: P.env, bg: P.bg, hemi: P.hemi[2], fogNear: P.fogNear, fogFar: P.fogFar, fog: s.fog.color.clone() };
+  }
+
+  // Day cycle: t in [0,1) walks morning → noon → sunset → night → dawn. Returns the clock hour.
+  setDayCycle(t) {
+    const K = DAY_KEYS;
+    let i = 0;
+    while (i < K.length - 2 && t >= K[i + 1][0]) i++;
+    const a = K[i], b = K[i + 1], f = (t - a[0]) / (b[0] - a[0]);
+    const k = f * f * (3 - 2 * f);
+    this._blend(this._preset(a[1]), this._preset(b[1]), a[1] === b[1] ? 0 : k);
+    this.timeOfDay = 'dynamic';
+    return (a[2] + (b[2] - a[2]) * f) % 24;
+  }
+
+  _blend(A, B, k) {
+    const s = this.scene, L = THREE.MathUtils.lerp;
+    s.background = null;
+    // sun sweeps between the two presets' sun positions (shortest way round)
+    let dAz = B.sunAz - A.sunAz; dAz = Math.atan2(Math.sin(dAz), Math.cos(dAz));
+    const az = A.sunAz + dAz * k, el = L(A.sunEl, B.sunEl, k);
+    (this.sunDir = this.sunDir || new THREE.Vector3()).set(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az)).normalize();
+    // sky: crossfade the two images, each turned so its painted sun sits where the light comes from
+    const u = this.dome.material.uniforms;
+    u.tA.value = A.sky; u.tA2.value = B.sky; u.uSkyMix.value = k;
+    u.uRotA.value = A.skyAz - az; u.uRotA2.value = B.skyAz - az;
+    s.environment = k < 0.5 ? A.env : B.env;
+    // sunset ↔ night: the sun sets and the moon rises, so the key light dips in between
+    const dip = A.night !== B.night ? 1 - 0.85 * Math.sin(Math.PI * k) : 1;
+    // the IBL swap at k=0.5 is hidden in a short dip of the environment light
+    const envDip = A.env !== B.env ? 1 - 0.35 * Math.max(0, 1 - Math.abs(k - 0.5) * 6) : 1;
+    this.sun.color.copy(A.sunColor).lerp(B.sunColor, k);
+    this.hemi.color.copy(A.hemiSky).lerp(B.hemiSky, k); this.hemi.groundColor.copy(A.hemiGround).lerp(B.hemiGround, k);
+    s.fog.color.copy(A.fog).lerp(B.fog, k);
+    this.isNight = k < 0.5 ? A.night : B.night;
+    this.impostorTint = (this.impostorTint || new THREE.Color()).copy(A.tint).lerp(B.tint, k);
+    this._base = { sun: L(A.sunI, B.sunI, k) * dip, env: L(A.envI, B.envI, k) * envDip, bg: L(A.bg, B.bg, k), hemi: L(A.hemiI, B.hemiI, k),
+      fogNear: L(A.fogNear, B.fogNear, k), fogFar: L(A.fogFar, B.fogFar, k), fog: s.fog.color.clone() };
     this.applyWeather(this._wet || 0, 0);
   }
 
@@ -111,13 +154,16 @@ export class RenderSystem {
   _buildDome(storm) {
     for (const t of [storm]) { t.colorSpace = THREE.SRGBColorSpace; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
     const mat = new THREE.ShaderMaterial({
-      uniforms: { tA: { value: null }, tB: { value: storm }, uMix: { value: 0 }, uIntA: { value: 1 }, uIntB: { value: 0.6 } },
+      uniforms: { tA: { value: null }, tA2: { value: null }, uSkyMix: { value: 0 }, uRotA: { value: 0 }, uRotA2: { value: 0 }, tB: { value: storm }, uMix: { value: 0 }, uIntA: { value: 1 }, uIntB: { value: 0.6 } },
       vertexShader: `varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
-      fragmentShader: `uniform sampler2D tA, tB; uniform float uMix, uIntA, uIntB; varying vec3 vDir;
+      fragmentShader: `uniform sampler2D tA, tA2, tB; uniform float uMix, uIntA, uIntB, uSkyMix, uRotA, uRotA2; varying vec3 vDir;
+        vec2 equi(vec3 d, float rot){ return vec2(fract((atan(d.z, d.x) + rot) * 0.15915494 + 0.5), asin(clamp(d.y, -1.0, 1.0)) * 0.31830989 + 0.5); }
         void main(){
           vec3 d = normalize(vDir);
-          vec2 uv = vec2(atan(d.z, d.x) * 0.15915494 + 0.5, asin(clamp(d.y, -1.0, 1.0)) * 0.31830989 + 0.5);
-          vec3 a = texture2D(tA, uv).rgb * uIntA;
+          vec2 uv = equi(d, 0.0);
+          vec3 a = texture2D(tA, equi(d, uRotA)).rgb;
+          if (uSkyMix > 0.001) a = mix(a, texture2D(tA2, equi(d, uRotA2)).rgb, uSkyMix);
+          a *= uIntA;
           vec3 b = texture2D(tB, uv).rgb * uIntB;
           gl_FragColor = vec4(mix(a, b, uMix), 1.0);
         }`,

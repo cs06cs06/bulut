@@ -35,6 +35,7 @@ All assets were downloaded from the external sources below.
 | Low-Poly Warehouse (depo) | [Acheron](https://opengameart.org/content/low-poly-warehouse) | CC0 |
 | Picnic Table (piknik masası) | [Teh_Bucket](https://opengameart.org/content/picnic-table) | CC0 |
 | Lowpoly soviet jeep (GAZ-67 → Cip) | [artie31](https://opengameart.org/content/lowpoly-soviet-jeep) | CC0 |
+| Low poly 3D Pigeon (rigged + animated) — kuş sürüleri; gövde düz renge boyandı | [mujtaba-io](https://opengameart.org/content/low-poly-3d-pigeon-model-rigged-animated-untextured) | CC0 |
 | Low Poly Town Store (kasaba bakkalı) | [T Allen Studios](https://opengameart.org/content/low-poly-town-store) | **CC BY 4.0** — https://creativecommons.org/licenses/by/4.0/ |
 
 ## Dokular, gökyüzü, efektler / Textures, sky, effects

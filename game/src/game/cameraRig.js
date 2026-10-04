@@ -5,9 +5,10 @@ const MODES = [
   { name: 'Takip', dist: 9.5, height: 3.6, look: 1.6, fov: 62 },
   { name: 'Uzak', dist: 15, height: 5.5, look: 1.8, fov: 58 },
   { name: 'Kaput', dist: -0.6, height: 2.05, look: 1.9, fov: 72, hood: true },
+  { name: 'Sinematik', cine: true, fov: 50 },
 ];
 
-const _f1 = new THREE.Vector3(), _f2 = new THREE.Vector3();
+const _f1 = new THREE.Vector3(), _f2 = new THREE.Vector3(), _f3 = new THREE.Vector3();
 
 export class CameraRig {
   constructor(camera, dom) {
@@ -70,6 +71,8 @@ export class CameraRig {
     this.yaw += dy * Math.min(1, dt * (m.hood ? 20 : 3.4));
     const zoom = this.zoom || 1;
 
+    if (m.cine) { this._cinematic(dt, vehicle, terrain); return; }
+    this.cine = null;
     const q = obj.quaternion;
     if (m.hood) {
       const p = new THREE.Vector3(0, m.height, m.dist).applyQuaternion(q).add(obj.position);
@@ -114,6 +117,55 @@ export class CameraRig {
     }
     this.camera.lookAt(this.target);
     this._fov(m.fov + Math.min(16, Math.max(0, speed - 8) * 0.38) + (input.boost ? 4 : 0), dt);
+  }
+
+  // TV-style director: trackside telephoto, drone chase, low tracking and helicopter orbit shots
+  _cinematic(dt, vehicle, terrain) {
+    const o = vehicle.object.position, cam = this.camera, sp = vehicle.speed;
+    const lv = vehicle.body.linvel();
+    const vdir = _f1.set(lv.x, 0, lv.z);
+    if (vdir.lengthSq() < 1) vdir.set(Math.sin(vehicle.heading()), 0, Math.cos(vehicle.heading()));
+    vdir.normalize();
+    let c = this.cine;
+    const far = c && cam.position.distanceTo(o) > (c.type === 'side' ? 95 : 140);
+    if (!c || (c.t += dt) > c.dur || far || this._occluded(o)) {
+      const types = sp > 4 ? ['side', 'side', 'drone', 'low', 'heli'] : ['drone', 'heli', 'low'];
+      let type = types[Math.floor(Math.random() * types.length)];
+      if (c && type === c.type) type = types[(types.indexOf(type) + 1) % types.length];
+      c = this.cine = { type, t: 0, dur: 5 + Math.random() * 3, side: Math.random() < 0.5 ? -1 : 1, yaw: Math.random() * Math.PI * 2 };
+      if (type === 'side') {
+        const ahead = 22 + Math.min(40, sp * 1.6), lat = 7 + Math.random() * 7;
+        const x = o.x + vdir.x * ahead - vdir.z * lat * c.side, z = o.z + vdir.z * ahead + vdir.x * lat * c.side;
+        c.pos = new THREE.Vector3(x, terrain.heightAt(x, z) + 1 + Math.random() * 2.5, z);
+      }
+      this.cineFresh = true;
+    }
+    const want = _f2;
+    if (c.type === 'side') want.copy(c.pos);
+    else if (c.type === 'drone') { const h = vehicle.heading() + Math.sin(c.t * 0.3) * 0.5; want.set(o.x - Math.sin(h) * 20, o.y + 12, o.z - Math.cos(h) * 20); }
+    else if (c.type === 'low') { want.set(o.x + vdir.x * 8 - vdir.z * 3.5 * c.side, o.y + 0.9, o.z + vdir.z * 8 + vdir.x * 3.5 * c.side); }
+    else { const a = c.yaw + c.t * 0.12; want.set(o.x + Math.cos(a) * 42, o.y + 26, o.z + Math.sin(a) * 42); }
+    const gh = terrain.heightAt(want.x, want.z) + 0.8;
+    if (want.y < gh) want.y = gh;
+    if (this.cineFresh || c.type === 'side') { cam.position.copy(want); this.cineFresh = false; }
+    else cam.position.lerp(want, Math.min(1, dt * (c.type === 'low' ? 6 : 2.5)));
+    cam.up.set(0, 1, 0);
+    cam.lookAt(o.x, o.y + 1, o.z);
+    // telephoto on trackside shots keeps the car a similar size in frame
+    const d = cam.position.distanceTo(o);
+    const fov = c.type === 'side' ? THREE.MathUtils.clamp(2 * Math.atan(5.5 / d) * 180 / Math.PI, 14, 55) : c.type === 'low' ? 58 : 48;
+    cam.fov = fov; cam.updateProjectionMatrix();
+  }
+
+  _occluded(focus) {
+    const P = this.physics, R = this.RAPIER;
+    if (!P) return false;
+    const from = this.camera.position, dir = _f3.set(focus.x, focus.y + 1, focus.z).sub(from);
+    const len = dir.length();
+    if (len < 2) return false;
+    dir.divideScalar(len);
+    return !!P.castRay(new R.Ray(from, dir), len - 2, true, undefined, undefined, undefined, undefined,
+      (c) => { const k = c.userData?.kind; return k === 'building' || k === 'tree' || k === 'rock'; });
   }
 
   // free orbit around the vehicle for photo mode (no auto-recentre)

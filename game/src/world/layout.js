@@ -14,7 +14,7 @@ export const MODEL_SCALE = {
   pole: 1, wires: 1, turbine: 35, water_tower2: 10, grain_bin: 9, warehouse: 1, jeep: 1, streetlight: 1,
   gas_canopy: 0.85, gas_shop: 0.8, gas_sign: 0.8, store: 1.6, house_s_a: 6.5, house_s_c: 6.5,
   shop_a: 5.5, shop_b: 5.5, shop_c: 5.5, shop_d: 5.5, shop_e: 5.5, shop_f: 5.5, shop_g: 5.5, shop_h: 5.5,
-  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
+  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, bird: 1, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
   cow: 0.33, bull: 0.34, horse: 0.36, horse_white: 0.36, donkey: 0.3, alpaca: 0.32, deer: 0.33, chicken: 1.0,
 };
 
@@ -98,6 +98,13 @@ export const TOWN = {
   postOffice: ['shop_d', 67, 1],
   gas: { t: 8, side: 1, setback: 10 },
 };
+
+// Road races against AI rivals: a stretch of one road (fractions of its length; from > to drives it backwards)
+export const RACES = [
+  { id: 'north', name: 'Kuzey Sprinti', road: 'Palouse Yolu', from: 0.40, to: 0.97, desc: 'Miller Çiftliği’nden kuzey ucuna, tepeler arasında dümdüz bir sprint.' },
+  { id: 'west', name: 'Batı Kupası', road: 'Batı Yolu', from: 0.03, to: 0.93, desc: 'Batı ucundan kavşağa: uzun düzlükler, sert virajlar.' },
+  { id: 'south', name: 'Güney Derbisi', road: 'Güney Yolu', from: 0.03, to: 0.96, desc: 'Su Kulesi tarlaları boyunca toz bulutu içinde bir derbi.' },
+];
 
 // Job boards (farm-local x, z, rotDeg): pick up and drop off cargo here
 export const BOARDS = { miller: [-40, 24, 90], redbarn: [-8, 18, 0], watertower: [-14, 24, 0], hillhouse: [-10, 18, 180], buttefoot: [6, -20, 0],

@@ -54,8 +54,10 @@
   <div id="hud" class="hidden">
     <div class="hud-top-left">
       <div class="chip money"><span class="chip-ico">$</span><span id="hud-money">0</span></div>
+      <div class="chip lvl" id="hud-lvl-chip"><span class="chip-ico">▲</span><span id="hud-lvl">1</span><small>Seviye</small><i class="xp"><b id="hud-xp"></b></i></div>
       <div class="chip"><span class="chip-ico">★</span><span id="hud-disc">0/0</span><small>Keşif</small></div>
       <div class="chip"><span class="chip-ico">●</span><span id="hud-coll">0/0</span><small>Balkabağı</small></div>
+      <div class="chip clock hidden" id="hud-clock"><span class="chip-ico" id="hud-clock-ico">☀</span><span id="hud-clock-t">12:00</span></div>
       <div id="hud-challenge" class="challenge hidden"></div>
       <div id="objective" class="objective hidden"></div>
     </div>
@@ -69,6 +71,7 @@
       <div class="speed-num"><span id="speed">0</span><small id="speed-unit">km/sa</small></div>
       <div class="gear" id="gear">1</div>
       <div id="nitro" class="nitro"><span>NİTRO</span><div class="nitro-bar"><i id="nitro-fill"></i></div></div>
+      <div id="damage" class="nitro dmg hidden"><span>HASAR</span><div class="nitro-bar"><i id="damage-fill"></i></div></div>
     </div>
     <div id="toast" class="toast"></div>
     <div id="hint" class="hint"></div>
@@ -130,6 +133,8 @@
             <button class="swatch" data-paint="cream" style="--c:#e6d7b0" title="Krem"></button>
             <button class="swatch" data-paint="orange" style="--c:#d06a1c" title="Balkabağı turuncusu"></button>
             <button class="swatch" data-paint="black" style="--c:#23262b" title="Gece siyahı"></button>
+            <button class="swatch" data-paint="white" style="--c:#ecebe6" title="Kar beyazı"></button>
+            <button class="swatch" data-paint="gold" style="--c:#c9a227" title="Altın"></button>
           </span>
         </div>
       </div>
@@ -151,7 +156,7 @@
             <select id="set-weather"><option value="dynamic">Değişken</option><option value="clear">Açık</option><option value="rain">Yağmurlu</option></select>
           </label>
           <label>Günün saati
-            <select id="set-time"><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option><option value="night">Yıldızlı gece</option></select>
+            <select id="set-time"><option value="dynamic">Gün döngüsü (dinamik)</option><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option><option value="night">Yıldızlı gece</option></select>
           </label>
           <label>İlerleme <button class="btn small-btn" id="reset-progress">Sıfırla</button></label>
           <label class="row">Ölçü birimi

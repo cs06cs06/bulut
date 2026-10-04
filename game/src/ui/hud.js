@@ -50,6 +50,29 @@ export class HUD {
     this.el.nitroWrap.classList.toggle('on', !!on);
   }
 
+  setClock(hour) {
+    const el = this._clk || (this._clk = { box: document.getElementById('hud-clock'), t: document.getElementById('hud-clock-t'), ico: document.getElementById('hud-clock-ico') });
+    if (hour === null) { el.box.classList.add('hidden'); return; }
+    el.box.classList.remove('hidden');
+    const h = Math.floor(hour), m = Math.floor((hour - h) * 6) * 10, txt = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+    if (txt !== el.last) { el.last = txt; el.t.textContent = txt; el.ico.textContent = hour >= 20.5 || hour < 5.5 ? '☾' : hour >= 18 || hour < 7 ? '◐' : '☀'; }
+  }
+
+  setLevel(info) {
+    const k = Math.round(info.frac * 100);
+    if (k === this._xpK && info.level === this._lvl) return;
+    this._xpK = k; this._lvl = info.level;
+    document.getElementById('hud-lvl').textContent = info.level;
+    document.getElementById('hud-xp').style.width = k + '%';
+  }
+
+  setDamage(d) {
+    const box = document.getElementById('damage'), f = document.getElementById('damage-fill');
+    box.classList.toggle('hidden', d < 0.02);
+    f.style.width = Math.round(d * 100) + '%';
+    box.classList.toggle('bad', d >= 0.5);
+  }
+
   setMoney(n) {
     const el = this.el.money;
     const prev = this._money ?? n;
@@ -103,7 +126,7 @@ export class HUD {
   challenge(c) {
     if (!c) { this.el.chall.classList.add('hidden'); return; }
     this.el.chall.classList.remove('hidden');
-    this.el.chall.innerHTML = `${c.name}<span class="t">${c.time}</span><small>${c.sub || ''}</small>`;
+    this.el.chall.innerHTML = `${c.name}<span class="t">${c.time}</span><small>${c.sub || ''}</small>${c.rows ? `<div class="rows">${c.rows}</div>` : ''}`;
   }
 
   nowPlaying(track) {
@@ -190,6 +213,8 @@ export class HUD {
     };
     for (const p of POIS) icon(p.x, p.z, gp.isFound(p.id) ? p.icon : '?', gp.isFound(p.id) ? '#f6ead2' : '#e8b04a');
     for (const ch of CHALLENGES) icon(ch.start.x, ch.start.z, '⚑', '#ff7a50');
+    for (const r of this.races || []) icon(r.start.x, r.start.z, '⚐', '#8fd8ff');
+    for (const c of this.rivals || []) icon(c.root.position.x, c.root.position.z, '●', '#ff5a3c', true);
     for (const k of gp.pumpkins) if (k.g.visible && Math.hypot(k.x - pos.x, k.z - pos.z) < 150) icon(k.x, k.z, '●', '#ff9a2e');
     for (const b of this.boards) icon(b.x, b.z, '$', '#ffd36b', !this.extraTarget && !gp.nextTarget && this.showBoards);
     if (this.stuntZones) {
@@ -224,6 +249,7 @@ export class HUD {
       if (f) { c.font = '700 15px "Barlow Condensed"'; c.strokeText(p.name, x, y + 18); c.fillText(p.name, x, y + 18); c.font = '700 22px "Barlow Condensed"'; }
     }
     for (const ch of CHALLENGES) { const [x, y] = toPx(ch.start.x, ch.start.z); c.fillStyle = '#ff7a50'; c.strokeText('⚑', x, y); c.fillText('⚑', x, y); }
+    for (const r of this.races || []) { const [x, y] = toPx(r.start.x, r.start.z); c.fillStyle = '#8fd8ff'; c.strokeText('⚐', x, y); c.fillText('⚐', x, y); }
     for (const b of this.boards) { const [x, y] = toPx(b.x, b.z); c.fillStyle = '#ffd36b'; c.strokeText('$', x + 14, y - 10); c.fillText('$', x + 14, y - 10); }
     if (this.stuntZones) {
       for (const t of this.stuntZones.traps) { const [x, y] = toPx(t.x, t.z); c.fillStyle = '#7fd4ff'; c.strokeText('»', x, y); c.fillText('»', x, y); }

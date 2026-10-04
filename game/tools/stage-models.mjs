@@ -53,6 +53,8 @@ const L = {
   // KayKit Medieval Hexagon: country chapel, roadside tavern (diner) and farmers' market stall
   ...Object.fromEntries([['chapel', 'church'], ['diner', 'tavern'], ['market', 'market']].map(([k, b]) => [k, `${M2}/kaykit_hex/KayKit_Medieval_Hexagon_Pack_1.0_FREE/Assets/gltf/buildings/red/building_${b}_red.gltf`])),
   ...Object.fromEntries(['wheelbarrow', 'sack', 'crate_A_big'].map((k) => [k.replace('_A_big', ''), `${M2}/kaykit_hex/KayKit_Medieval_Hexagon_Pack_1.0_FREE/Assets/gltf/decoration/props/${k}.gltf`])),
+  // OGA pigeon (mujtaba-io, CC0), exported from .blend with a flat slate-grey body
+  bird: `${M2}/oga_pigeon/pigeon.glb`,
   // Kenney Platformer Kit — challenge flags & signs
   flag: `${K}/platformer/Models/GLB format/flag.glb`, sign: `${K}/platformer/Models/GLB format/sign.glb`, arrow: `${K}/platformer/Models/GLB format/arrow.glb`,
   billboard: 'styloo_cozyfarm/glb/billboard.glb',

@@ -366,3 +366,32 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
   .mobile .popup { font-size: 21px; }
   .mobile .prompt { font-size: 18px; padding: 8px 16px; bottom: calc(140px + env(safe-area-inset-bottom)); }
 }
+
+/* race standings inside the challenge panel */
+.challenge .rows { margin-top: 6px; display: flex; flex-direction: column; gap: 2px; font-size: 16px; letter-spacing: .02em; }
+.challenge .rr { display: grid; grid-template-columns: 22px 1fr auto; gap: 8px; padding: 1px 6px; border-radius: 4px; background: rgba(0,0,0,.18); }
+.challenge .rr b { color: #ffe39a; }
+.challenge .rr span { font-variant-numeric: tabular-nums; opacity: .85; }
+.challenge .rr.me { background: rgba(255,227,154,.28); }
+.mobile .challenge .rows { font-size: 13px; }
+
+/* damage bar under the nitro gauge */
+.nitro.dmg { bottom: -22px; }
+.nitro.dmg span { color: #ffb49a; }
+.nitro.dmg .nitro-bar { border-color: rgba(255,160,130,.45); }
+.nitro.dmg .nitro-bar i { background: linear-gradient(90deg, #e8b04a, #d9442f); }
+.nitro.dmg.bad span { animation: dmgblink 1s steps(2) infinite; }
+@keyframes dmgblink { 50% { color: #ff5a3c; } }
+.chip.clock { font-variant-numeric: tabular-nums; }
+
+/* driver level chip with XP bar; locked paints */
+.chip.lvl { position: relative; color: #cdefff; }
+.chip.lvl .chip-ico { color: #9fe0ff; }
+.chip.lvl .xp { position: absolute; left: 10px; right: 10px; bottom: 3px; height: 3px; border-radius: 2px; background: rgba(0,0,0,.35); overflow: hidden; }
+.chip.lvl .xp b { display: block; height: 100%; width: 0; background: #9fe0ff; transition: width .4s ease; }
+.swatch.locked { opacity: .35; cursor: not-allowed; position: relative; }
+.swatch.locked::after { content: '🔒'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 13px; }
+/* mobile: five chips no longer fit beside the top buttons — drop the pumpkin counter (it is on the map screen) */
+.mobile .hud-top-left .chip:nth-child(4) { display: none; }
+.mobile .hud-top-left .chip { font-size: 14px; padding: 3px 8px 3px 6px; }
+.mobile .chip.lvl .xp { left: 6px; right: 6px; bottom: 2px; }

@@ -89,8 +89,18 @@ export class Traffic {
     }
   }
 
+  // clear a road for a race: its traffic parks out of the way until the race ends
+  suspendRoad(name) {
+    for (const car of this.cars) {
+      car.suspended = !!name && car.road === name;
+      car.root.visible = !car.suspended;
+      if (car.suspended) { car.body.setNextKinematicTranslation({ x: 0, y: -600, z: 0 }); car.sound?.set(0); }
+    }
+  }
+
   update(dt, player, playerSpeed) {
     for (const car of this.cars) {
+      if (car.suspended) continue;
       const d = Math.hypot(player.x - car.root.position.x, player.z - car.root.position.z);
       // blocked if the player is close in front
       const fx = Math.sin(car.root.rotation.y), fz = Math.cos(car.root.rotation.y);

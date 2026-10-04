@@ -76,7 +76,11 @@ export class Vehicle {
     this._buildPhysics(spawn, heading);
     this._buildLights();
     this.dirt = 0;
-    this._dirtU = { uDirt: { value: 0 }, uBaseY: { value: 0 }, uHeight: { value: this.bodyBox.max.y } };
+    this._dirtU = { uDirt: { value: 0 }, uBaseY: { value: 0 }, uHeight: { value: this.bodyBox.max.y },
+      uDents: { value: Array.from({ length: 8 }, () => new THREE.Vector4()) }, uRoot: { value: new THREE.Matrix4() }, uInvRoot: { value: new THREE.Matrix4() },
+      uCenterY: { value: (this.bodyBox.min.y + this.bodyBox.max.y) / 2 }, uLowY: { value: this.bodyBox.min.y + this.cfg.radius * 1.6 }, uDentOn: { value: 1 } };
+    this._dirtUW = { ...this._dirtU, uDentOn: { value: 0 } }; // tyres stay round
+    this.damage = 0;
     this._dirtified = new WeakSet();
     this._dirtify();
     this.gear = 2; this.rpm = IDLE_RPM; this.shiftTimer = 0;
@@ -131,6 +135,7 @@ export class Vehicle {
       wm.premultiply(inv);
       wm.decompose(w.position, w.quaternion, w.scale);
       this.object.add(pivot);
+      w.traverse((m) => { if (m.isMesh) m.userData.wheel = true; });
       this.wheels.push({ pivot, spin, rest: c.clone(), radius: (box.max.y - box.min.y) / 2 });
     }
     this.cfg.radius = this.wheels[2].radius; // gearing follows the (driven) rear wheels
@@ -247,7 +252,7 @@ export class Vehicle {
 
   // repaint the body (materials whose name contains "body" and the main colour)
   setPaint(name) {
-    const colors = { green: 0x1f6b2e, red: 0xa3241c, blue: 0x24508f, cream: 0xe6d7b0, black: 0x23262b, orange: 0xd06a1c };
+    const colors = { green: 0x1f6b2e, red: 0xa3241c, blue: 0x24508f, cream: 0xe6d7b0, black: 0x23262b, orange: 0xd06a1c, white: 0xecebe6, gold: 0xc9a227 };
     if (!this._paintMats) {
       this._paintMats = new Set();
       const re = this.cfg.paint || /body.*(green|red|blue|main|paint)|dark green/i;
@@ -263,7 +268,7 @@ export class Vehicle {
       this._paintMats = new Set();
       this.object.traverse((o) => { if (o.isMesh && o.material.userData?.paint) this._paintMats.add(o.material); });
     }
-    for (const m of this._paintMats) { m.color.set(colors[name] ?? colors.green); m.roughness = 0.45; m.metalness = 0.25; }
+    for (const m of this._paintMats) { m.color.set(colors[name] ?? colors.green); m.roughness = name === 'gold' ? 0.3 : 0.45; m.metalness = name === 'gold' ? 0.75 : 0.25; }
     this._dirtify();
   }
 
@@ -277,12 +282,34 @@ export class Vehicle {
       if (this._paintMats?.has(o.material)) { this._paintMats.delete(o.material); this._paintMats.add(m); }
       const li = this.lensMats?.indexOf(o.material);
       if (li >= 0) this.lensMats[li] = m;
+      const UU = o.userData.wheel ? this._dirtUW : U;
       m.onBeforeCompile = (sh) => {
-        Object.assign(sh.uniforms, U);
-        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uBaseY; varying float vRelH; varying vec3 vLocal;')
+        Object.assign(sh.uniforms, UU);
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', `#include <common>
+uniform float uBaseY; varying float vRelH; varying vec3 vLocal;
+uniform vec4 uDents[8]; uniform mat4 uRoot, uInvRoot; uniform float uCenterY, uLowY, uDentOn; varying vec3 vVP;`)
+          // dents: vertices near an impact point are pushed in towards the middle of the body
+          .replace('#include <project_vertex>', `vec4 dwp = modelMatrix * vec4(transformed, 1.0);
+vVP = (uInvRoot * dwp).xyz;
+if (uDentOn > 0.5) {
+  vec3 vp = vVP, off = vec3(0.0);
+  for (int i = 0; i < 8; i++) {
+    vec4 d = uDents[i];
+    if (d.w <= 0.0) continue;
+    float f = 1.0 - smoothstep(0.0, 1.0 + d.w * 0.8, distance(vp, d.xyz));
+    vec3 inward = normalize(vec3(0.0, uCenterY, 0.0) - d.xyz);
+    float crumple = 0.65 + 0.35 * sin(vp.x * 23.0 + vp.y * 17.0 + vp.z * 29.0);
+    off += inward * f * f * d.w * 0.42 * crumple;
+  }
+  off *= smoothstep(uLowY - 0.6, uLowY, vp.y) * 0.8 + 0.2; // keep the wheel arches mostly intact
+  dwp = uRoot * vec4(vp + off, 1.0);
+}
+vec4 mvPosition = viewMatrix * dwp;
+gl_Position = projectionMatrix * mvPosition;`)
           .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRelH = (modelMatrix * vec4(transformed, 1.0)).y - uBaseY; vLocal = position;');
         sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-uniform float uDirt, uHeight; varying float vRelH; varying vec3 vLocal; float mudMask;
+uniform float uDirt, uHeight, uDentOn; varying float vRelH; varying vec3 vLocal; float mudMask;
+uniform vec4 uDents[8]; varying vec3 vVP;
 float mh(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }
 float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   return mix(mix(mh(i), mh(i + vec2(1, 0)), f.x), mix(mh(i + vec2(0, 1)), mh(i + vec2(1, 1)), f.x), f.y); }`)
@@ -292,11 +319,19 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
   float n = mn(vLocal.xz * 4.0 + vLocal.y * 3.0) * 0.6 + mn(vLocal.xy * 11.0 + 5.0) * 0.4;
   mudMask = smoothstep(0.0, 0.2, uDirt * 1.3 - h * 0.95 + (n - 0.5) * 0.55) * step(0.001, uDirt);
   diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.27, 0.2, 0.13) * (0.75 + n * 0.5), mudMask * 0.88);
+  // scraped paint: bare grey metal and dark scuffs around impacts
+  float sc = 0.0;
+  for (int i = 0; i < 8; i++) { vec4 d = uDents[i]; if (d.w > 0.0) sc = max(sc, (1.0 - smoothstep(0.1, 0.55 + d.w * 0.5, distance(vVP, d.xyz))) * d.w); }
+  sc *= uDentOn;
+  float streak = mn(vVP.xy * vec2(3.0, 26.0) + vVP.z * 9.0) * 0.6 + mn(vVP.zy * vec2(24.0, 3.0)) * 0.4;
+  float bare = smoothstep(0.45, 0.75, streak + sc * 0.5) * sc;
+  diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 0.55, sc * 0.6);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.62, 0.6, 0.56), bare * 0.85);
 }`)
           .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.95, mudMask);')
           .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - mudMask * 0.8;');
       };
-      m.customProgramCacheKey = () => 'mud';
+      m.customProgramCacheKey = () => 'mud-dent';
       done.add(m);
       o.material = m;
     });
@@ -306,6 +341,31 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     this._dirtU.uDirt.value = d;
     this._dirtU.uBaseY.value = this.object.position.y;
   }
+
+  // impact: velDir = world velocity just before the hit, k = 0..1 strength
+  addDamage(velDir, k) {
+    const q = this.object.quaternion.clone().invert();
+    const d = velDir.clone().applyQuaternion(q);
+    if (d.lengthSq() < 1e-4) return;
+    d.normalize();
+    const bb = this.bodyBox, c = bb.getCenter(new THREE.Vector3()), h = bb.getSize(new THREE.Vector3()).multiplyScalar(0.5);
+    const t = Math.min(h.x / Math.max(1e-3, Math.abs(d.x)), h.y / Math.max(1e-3, Math.abs(d.y)), h.z / Math.max(1e-3, Math.abs(d.z)));
+    const p = c.add(d.multiplyScalar(t));
+    const dents = this._dirtU.uDents.value;
+    this.damage = Math.min(1, this.damage + k * 0.14);
+    if (k < 0.22) return; // scrapes wear the car but leave no visible dent
+    let slot = dents.find((x) => x.w > 0 && Math.hypot(x.x - p.x, x.y - p.y, x.z - p.z) < 0.9);
+    if (slot) slot.w = Math.min(1, slot.w + k * 0.5);
+    else { slot = dents.reduce((a, b) => (b.w < a.w ? b : a)); slot.set(p.x, p.y, p.z, Math.min(1, k * 0.9)); }
+  }
+
+  setDamageState(dents, damage) {
+    const D = this._dirtU.uDents.value;
+    D.forEach((x, i) => (dents && dents[i] ? x.fromArray(dents[i]) : x.set(0, 0, 0, 0)));
+    this.damage = damage || 0;
+  }
+
+  repair() { this.setDamageState(null, 0); }
 
   get position() { return this.object.position; }
 
@@ -375,7 +435,7 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     this.rpm += (Math.min(REDLINE + 150, rpm) - this.rpm) * Math.min(1, dt * 12);
     const shifting = this.shiftTimer > 0.25;
     const boost = input.boost ? 1.35 : 1;
-    const engineForce = shifting ? 0 : torqueAt(this.rpm) * ratio * 0.6 / c.radius * drive * boost * c.power * (c.mass / 1650);
+    const engineForce = shifting ? 0 : torqueAt(this.rpm) * ratio * 0.6 / c.radius * drive * boost * c.power * (1 - this.damage * 0.22) * (c.mass / 1650);
     const dir = this.gear === 0 ? -1 : 1;
     this.throttle = drive;
 
@@ -455,6 +515,9 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     this._curRot = (this._curRot || new THREE.Quaternion()).set(r.x, r.y, r.z, r.w);
     this.object.position.lerpVectors(this._prevPos, this._curPos, alpha);
     this.object.quaternion.slerpQuaternions(this._prevRot, this._curRot, alpha);
+    this.object.updateMatrix();
+    this._dirtU.uRoot.value.copy(this.object.matrix);
+    this._dirtU.uInvRoot.value.copy(this.object.matrix).invert();
     const c = this.cfg;
     for (let i = 0; i < 4; i++) {
       const w = this.wheels[i];

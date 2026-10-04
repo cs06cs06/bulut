@@ -20,6 +20,7 @@ export const CREDITS = [
     ['Low-Poly Warehouse (depo)', 'Acheron — CC0', 'https://opengameart.org/content/low-poly-warehouse'],
     ['Picnic Table', 'Teh_Bucket — CC0', 'https://opengameart.org/content/picnic-table'],
     ['Lowpoly soviet jeep (Cip)', 'artie31 — CC0', 'https://opengameart.org/content/lowpoly-soviet-jeep'],
+    ['Low poly 3D Pigeon (kuş sürüleri)', 'mujtaba-io — CC0', 'https://opengameart.org/content/low-poly-3d-pigeon-model-rigged-animated-untextured'],
     ['Low Poly Town Store (kasaba bakkalı)', 'T Allen Studios — CC BY 4.0', 'https://opengameart.org/content/low-poly-town-store'],
   ] },
   { h: 'Dokular ve Gökyüzü', items: [

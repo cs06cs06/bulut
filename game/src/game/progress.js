@@ -18,6 +18,8 @@ export const ACHIEVEMENTS = [
   { id: 'trap', name: 'Radar Avcısı', desc: 'Bir hız kapanından 130 km/sa ile geç.', reward: 300, test: (s) => s.maxTrap >= 130 },
   { id: 'jump', name: 'Uçan Kamyon', desc: 'Bir atlama noktasında 45 metre uç.', reward: 400, test: (s) => s.maxJump >= 45 },
   { id: 'postman', name: 'Postacı', desc: '3 posta turu tamamla.', reward: 400, test: (s) => s.mailRoutes >= 3 },
+  { id: 'winner', name: 'İlk Zafer', desc: 'Bir yarışı birinci bitir.', reward: 400, test: (s) => s.raceWins >= 1 },
+  { id: 'champion', name: 'Palouse Şampiyonu', desc: 'Üç yarışın hepsini kazan.', reward: 1500, test: (s, g, p) => ['north', 'west', 'south'].every((id) => p.data.races?.[id] === 1) },
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 
@@ -30,10 +32,15 @@ export const DAILY_POOL = [
   { id: 'fence', name: 'Çit devir', goals: [5, 10], unit: '', reward: 120 },
   { id: 'scare', name: 'Hayvan ürküt', goals: [4, 8], unit: '', reward: 120 },
   { id: 'trap', name: 'Hız kapanından geç (90+ km/sa)', goals: [2, 3], unit: '', reward: 200 },
-  { id: 'race', name: 'Zamana karşı görev bitir', goals: [1, 2], unit: '', reward: 300 },
+  { id: 'race', name: 'Görev ya da yarış bitir', goals: [1, 2], unit: '', reward: 300 },
   { id: 'mail', name: 'Posta turu tamamla', goals: [1, 2], unit: '', reward: 250 },
 ];
 const DAILY_STAT = { deliveries: 'deliver', distance: 'dist', fences: 'fence', scared: 'scare' };
+
+// Driver level: XP is everything you have ever earned. Paints unlock along the way.
+export const PAINT_LEVELS = { green: 1, red: 1, blue: 1, cream: 2, orange: 3, black: 5, white: 6, gold: 8 };
+export const levelXP = (L) => 250 * L * (L - 1); // total XP needed to reach level L
+export function levelOf(xp) { let L = 1; while (xp >= levelXP(L + 1)) L++; return L; }
 
 function today() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
 
@@ -47,7 +54,7 @@ export class Progress {
   _load() {
     const def = {
       money: 250, owned: ['pickup'], current: 'pickup', upgrades: { engine: 0, tires: 0, susp: 0 },
-      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0, mailRoutes: 0 },
+      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0, mailRoutes: 0, raceWins: 0 },
       achievements: [], daily: null,
     };
     try {
@@ -59,12 +66,27 @@ export class Progress {
   save() { try { localStorage.setItem(KEY, JSON.stringify(this.data)); } catch { /* private mode */ } }
 
   get money() { return this.data.money; }
+  get level() { return levelOf(this.data.stats.earned); }
+  get xpInfo() { const L = this.level, a = levelXP(L), b = levelXP(L + 1); return { level: L, frac: (this.data.stats.earned - a) / (b - a), next: b - this.data.stats.earned }; }
+
+  _checkLevel() {
+    const L = this.level;
+    if (this.data.level === undefined) { this.data.level = L; return; } // existing saves: no back-pay
+    while (this.data.level < L) {
+      this.data.level++;
+      const reward = this.data.level * 100;
+      this.data.money += reward;
+      const paints = Object.entries(PAINT_LEVELS).filter(([, l]) => l === this.data.level).map(([k]) => k);
+      this.onLevel?.(this.data.level, reward, paints);
+    }
+  }
   get stats() { return this.data.stats; }
 
   addMoney(n) {
     if (!n) return;
     this.data.money += n;
     if (n > 0) this.data.stats.earned += n;
+    this._checkLevel();
     this.save();
     this.onChange?.();
   }
@@ -133,6 +155,7 @@ export class Progress {
         this.onChange?.();
       }
     }
+    this._checkLevel();
     if (this._dirty) { this._dirty = false; this.save(); }
   }
 

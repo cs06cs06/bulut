@@ -156,3 +156,54 @@ export class TireTracks {
     t.last = p.clone(); t.lastL = L; t.lastR = R; t.lastI = intensity;
   }
 }
+
+// Fireflies: blinking glow points drifting low over the grass around the player on clear nights.
+export class Fireflies {
+  constructor(scene, glowTex, count = 140) {
+    this.count = count;
+    const g = new THREE.BufferGeometry();
+    const seed = new Float32Array(count * 4);
+    for (let i = 0; i < count * 4; i++) seed[i] = Math.random();
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+    g.setAttribute('aSeed', new THREE.BufferAttribute(seed, 4));
+    g.boundingSphere = new THREE.Sphere(new THREE.Vector3(), 1e6);
+    this.material = new THREE.ShaderMaterial({
+      uniforms: { tGlow: { value: glowTex }, uTime: { value: 0 }, uCenter: { value: new THREE.Vector3() }, uAmount: { value: 0 }, uScale: { value: 600 } },
+      vertexShader: `attribute vec4 aSeed; uniform float uTime, uAmount, uScale; uniform vec3 uCenter; varying float vA;
+        void main(){
+          const float R = 34.0;
+          vec2 base = (aSeed.xy - 0.5) * 2.0 * R;
+          vec2 drift = vec2(sin(uTime * 0.3 + aSeed.z * 40.0), cos(uTime * 0.23 + aSeed.w * 40.0)) * 3.0;
+          vec2 p = mod(base + drift - uCenter.xz + R, 2.0 * R) - R;            // wrap around the player
+          vec3 wp = vec3(uCenter.x + p.x, position.y + 0.6 + aSeed.z * 2.2 + sin(uTime * 0.8 + aSeed.w * 30.0) * 0.4, uCenter.z + p.y);
+          vec4 mv = viewMatrix * vec4(wp, 1.0);
+          gl_Position = projectionMatrix * mv;
+          float blink = smoothstep(0.2, 0.9, sin(uTime * (0.6 + aSeed.z) + aSeed.w * 50.0));
+          vA = blink * uAmount * smoothstep(R, R * 0.6, length(p));
+          gl_PointSize = clamp((0.6 + aSeed.x * 0.4) * uScale / -mv.z, 2.0, 40.0);
+        }`,
+      fragmentShader: `uniform sampler2D tGlow; varying float vA;
+        void main(){ float a = texture2D(tGlow, gl_PointCoord).a * vA; if (a < 0.01) discard; gl_FragColor = vec4(vec3(1.0, 0.92, 0.45) * a * 2.0, a); }`,
+      transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    });
+    this.points = new THREE.Points(g, this.material);
+    this.points.frustumCulled = false;
+    this.points.renderOrder = 7;
+    this.points.visible = false;
+    scene.add(this.points);
+  }
+
+  // heights are filled from the terrain lazily around the player every few metres
+  update(dt, center, terrain, amount) {
+    const u = this.material.uniforms;
+    u.uAmount.value += (amount - u.uAmount.value) * Math.min(1, dt * 0.5);
+    this.points.visible = u.uAmount.value > 0.02;
+    if (!this.points.visible) return;
+    u.uTime.value += dt;
+    u.uCenter.value.set(center.x, 0, center.z);
+    // use the ground height under the player as the base (the swarm hugs the local terrain)
+    const pos = this.points.geometry.attributes.position;
+    const h = terrain.heightAt(center.x, center.z);
+    if (Math.abs((this._h ?? -1e9) - h) > 0.5) { this._h = h; for (let i = 0; i < this.count; i++) pos.setY(i, h); pos.needsUpdate = true; }
+  }
+}
