@@ -74,7 +74,37 @@ export class Races {
     glow.scale.set(14, 14, 1); glow.position.set(s.x, s.y + 2, s.z);
     this.group.add(glow);
     const prize = Math.round(len / 2.2 / 50) * 50;
-    return { ...def, P, vmax, len, start: { x: P[0].x, z: P[0].z }, glow, prizes: [prize, Math.round(prize * 0.5 / 10) * 10, Math.round(prize * 0.25 / 10) * 10, 40], hw: road.width / 2 };
+    return { ...def, P, vmax, len, notes: this._paceNotes(P), start: { x: P[0].x, z: P[0].z }, glow, prizes: [prize, Math.round(prize * 0.5 / 10) * 10, Math.round(prize * 0.25 / 10) * 10, 40], hw: road.width / 2 };
+  }
+
+  // co-driver pace notes (rally style): corners graded 1 (hairpin) … 6 (fast kink), crests and jumps
+  _paceNotes(P) {
+    const n = P.length, notes = [];
+    const head = (i) => Math.atan2(P[Math.max(0, Math.min(n - 1, i))].fx, P[Math.max(0, Math.min(n - 1, i))].fz);
+    const curv = (i) => { let d = head(i + 4) - head(i - 4); d = Math.atan2(Math.sin(d), Math.cos(d)); return d / 16; };
+    let i = 6;
+    while (i < n - 6) {
+      const k = curv(i);
+      if (Math.abs(k) > 1 / 320) {
+        let j = i, kmax = 0; const sign = Math.sign(k);
+        while (j < n - 6 && Math.sign(curv(j)) === sign && Math.abs(curv(j)) > 1 / 380) { kmax = Math.max(kmax, Math.abs(curv(j))); j++; }
+        const R = 1 / kmax, sev = R >= 140 ? 6 : R >= 100 ? 5 : R >= 70 ? 4 : R >= 45 ? 3 : R >= 28 ? 2 : 1;
+        const longC = (j - i) * 2 > 70;
+        notes.push({ s: i * 2, dir: sign > 0 ? 'SOL' : 'SAĞ', sev, text: `${sign > 0 ? 'SOL' : 'SAĞ'} ${sev}${longC ? ' UZUN' : ''}${sev <= 2 ? ' !' : ''}` });
+        i = j + 3;
+        continue;
+      }
+      // crest: higher than 10 m behind and drops away ahead
+      const y = P[i].y, yb = P[Math.max(0, i - 6)].y, yf = P[Math.min(n - 1, i + 6)].y;
+      if (y - yb > 0.8 && y - yf > 1.2) {
+        notes.push({ s: i * 2, dir: 'TÜMSEK', sev: 0, text: y - yf > 2.6 ? 'ATLAMA!' : 'TÜMSEK' });
+        i += 15; continue;
+      }
+      i++;
+    }
+    // sign that the following stretch is straight
+    for (let k = 0; k < notes.length - 1; k++) if (notes[k + 1].s - notes[k].s > 260) notes[k].text += ' · UZUN DÜZ';
+    return notes;
   }
 
   nearRace(pos) {
@@ -185,7 +215,7 @@ export class Races {
     if (!this.active) return;
     this._disposeRivals();
     this.active = null;
-    this.hud.challenge(null);
+    this.hud.challenge(null); this.hud.pace(null);
     this.hud.toast(msg, '', 'Başlangıç bayrağına dönüp tekrar dene.');
     this.onEnd?.();
   }
@@ -205,7 +235,8 @@ export class Races {
     this.hud.toast(title, r.name, `${rows} · +$${money}${firstWin ? ' (+$300 ilk zafer)' : ''}`);
     this.audio.play('discover', { bus: 'ui', volume: 0.9, rate: place === 1 ? 1 : 0.85 });
     a.results = { place, t: 6 };
-    this.onFinish?.(place);
+    const st = this._standings();
+    this.onFinish?.(place, r.id, st.findIndex((e) => e.me) < st.findIndex((e) => e.name === 'Hank'));
   }
 
   _standings() {
@@ -283,10 +314,14 @@ export class Races {
     const st = this._standings(), me = st.findIndex((e) => e.me) + 1;
     if (a.results) {
       a.results.t -= dt;
-      if (a.results.t <= 0) { this._disposeRivals(); this.active = null; this.hud.challenge(null); this.onEnd?.(); return null; }
+      if (a.results.t <= 0) { this._disposeRivals(); this.active = null; this.hud.challenge(null); this.hud.pace(null); this.onEnd?.(); return null; }
     }
     this.hud.challenge({ name: r.name, time: a.player.finished ? `${me}. / ${st.length}` : `${me}. / ${st.length}`, sub: `${fmt(a.player.finished || a.t)} · ${Math.max(0, Math.round(r.len - a.player.s))} m`, rows: this._rowsHTML(st) });
     const ahead = this._at(r, Math.min(r.len, a.player.s + 120));
+    // next two pace notes within 260 m
+    const up = r.notes.filter((n) => n.s > a.player.s + 5 && n.s < a.player.s + 260).slice(0, 2);
+    if (up[0] && up[0] !== a.lastNote) { a.lastNote = up[0]; this.audio.play('ui_click', { bus: 'ui', volume: 0.35, rate: 1.8 }); }
+    this.hud.pace(up.map((n) => ({ ...n, d: Math.round(n.s - a.player.s) })));
     return { target: [ahead.x, ahead.z], cars: a.cars };
   }
 

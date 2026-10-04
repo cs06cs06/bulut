@@ -7,6 +7,14 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 ▶ **Oyna:** https://cs06cs06.github.io/bulut/tozlu-yollar/
 
 ## Özellikler
+- **Hikâye — “Palouse’a Dönüş”:** Deden Walt’ın çiftliğini ve emektar pikabını miras aldın. 8 bölüm boyunca tamirci Earl, komşu Martha, postacı Rosie ve Şerif Dale sana iş verir; çiftliğe göz diken Dawson ailesinin oğlu Hank ile yarışırsın; dedenin kayıp kamyonunu bir ahırda bulup restore edersin. Diyalog paneli, bölüm hedefleri ve harita işaretleri.
+- **Ahır buluntuları (Forza Horizon’dan):** Haritadaki kesikli dairelerde söylentiler var; eski ahırda paslanmış bir araç bulup garajda restore et (Dedenin Kamyonu, Eski Minibüs).
+- **Beceri zinciri:** Drift, uçuş, kıl payı geçiş, hız, arazi koşusu, çit kırma ve hayvan ürkütme tek bir puanda birleşir; her numara çarpanı ×0,1 artırır, 4 saniye ara verince puan paraya dönüşür, çarpışma zinciri kırar.
+- **Geri sarma:** T basılı tutulunca son 10 saniye geri sarılır (yarışlarda kapalı).
+- **Yardımcı pilot notları:** Yarışlarda virajlar 1 (keskin) – 6 (hafif) arası derecelendirilip önceden gösterilir; tümsek ve atlama uyarıları.
+- **Vinç ve 4x4 düşük vites (SnowRunner’dan):** X ile en yakın ağaca, direğe ya da binaya kablo bağlayıp kendini çek; Q ile düşük vitese geç, dik yokuşları tırman.
+- **Harita keşfi ve gözetleme kuleleri:** Harita parşömen sisiyle başlar, sürdükçe açılır; 4 eski gözetleme kulesi geniş bir bölgeyi bir anda açar.
+- **Fotoğraf görevleri:** Fotoğraf modunda 7 görev: şapel, Kırmızı Ahır, türbin, zirvede akşam, gece kasaba, uçan kamyon, göl kıyısı.
 - **Gerçek arazi:** AWS Terrain Tiles yükseklik verisinden üretilmiş 3,3 km'lik heightfield, LOD arazi parçaları, Rapier çarpışması; yollara oyulmuş toprak rampalar.
 - **Stilize görünüm:** El boyaması dokular, kalibre edilmiş country paleti, buğday/sürülmüş/yeşil tarla parselleri, bulut gölgeleri, AO, bloom; uzak ağaçlar için impostor sistemi.
 - **Gün döngüsü:** 24 dakikada bir tam gün: güneş gökyüzünde ilerler, gökyüzü sabahtan gün batımına, yıldızlı geceye ve şafağa yumuşakça geçer (boyalı güneş ışıkla hizalanır); hava kararınca farlar ve sokak lambaları kendiliğinden yanar, HUD'da saat. İstenirse sabit öğle / gün batımı / gece.
@@ -28,7 +36,7 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Günlük görevler:** Her gün 3 yeni görev (teslimat, drift, atlayış, hız kapanı…), hepsine +$500 bonus.
 - **Çamur:** Arazide sürdükçe araç alttan yukarı çamurlanır (yağmurda daha hızlı); Söğüt Göleti’nden geçerek veya garajda yıkanır.
 - **Yer işareti:** Büyük haritaya tıklayınca dünyada yeşil ışık sütunu ve mini haritada hedef.
-- **Keşif:** 19 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 19 başarım ve istatistik ekranı.
+- **Keşif:** 19 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 22 başarım ve istatistik ekranı.
 - **Canlı dünya:** Tarlaların üzerinde dönen kuş sürüleri (yakınından geçince havalanır), gece ateş böcekleri, gölette su sıçraması; 8 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
 - **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.
 - **Ses:** Devre göre katmanlı motor sesi, çakıl/patinaj, çarpışma, yağmur ve gök gürültüsü, kır ambiyansı, Kevin MacLeod'un country/bluegrass parçaları.
@@ -56,8 +64,11 @@ npm run preview
 | C | Kamera (takip / uzak / kaput / sinematik) |
 | H | Korna |
 | L | Farlar |
-| P | Fotoğraf modu |
-| F | İlan panosu ($) / görev veya yarış başlat / posta turu / benzinlikte yıkama + tamir / iptal |
+| P | Fotoğraf modu (fotoğraf görevleri) |
+| T (basılı) | Geri sar |
+| X | Vinç bağla / bırak |
+| Q | 4x4 düşük vites |
+| F | İlan panosu ($) / görev veya yarış başlat / posta turu / benzinlikte yıkama + tamir / diyalog / iptal |
 | M / N | Müzik aç-kapa / sonraki parça |
 | Tab / Esc | Harita ve duraklatma menüsü |
 | Fare | Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır |

@@ -66,6 +66,18 @@ export class HUD {
     document.getElementById('hud-xp').style.width = k + '%';
   }
 
+  // rally pace notes: big card for the next call, small one for the call after
+  pace(list) {
+    const el = this._pace || (this._pace = document.getElementById('pace'));
+    if (!list || !list.length) { el.classList.add('hidden'); return; }
+    el.classList.remove('hidden');
+    const ico = (n) => (n.dir === 'SOL' ? '↰' : n.dir === 'SAĞ' ? '↱' : '⌒');
+    const key = list.map((n) => n.text + Math.round(n.d / 10)).join('|');
+    if (key === this._paceKey) return;
+    this._paceKey = key;
+    el.innerHTML = list.map((n, i) => `<div class="pn${i ? ' next' : ''}${n.sev && n.sev <= 2 ? ' hard' : ''}"><span class="pi">${ico(n)}</span><span class="pt">${n.text}</span><span class="pd">${n.d} m</span></div>`).join('');
+  }
+
   setDamage(d) {
     const box = document.getElementById('damage'), f = document.getElementById('damage-fill');
     box.classList.toggle('hidden', d < 0.02);
@@ -200,6 +212,11 @@ export class HUD {
     const sx = (pos.x + this.mapHalf) * pxPerM, sz = (pos.z + this.mapHalf) * pxPerM;
     const srcR = range * 1.5 * pxPerM;
     c.drawImage(this.mapCanvas, sx - srcR, sz - srcR, srcR * 2, srcR * 2, -range * 1.5 * scale, -range * 1.5 * scale, range * 3 * scale, range * 3 * scale);
+    if (this.fog) { // unexplored land under parchment fog
+      const k = this.fog.width / this.mapSize, fx = (pos.x + this.mapHalf) * k, fz = (pos.z + this.mapHalf) * k, fr = range * 1.5 * k;
+      c.imageSmoothingEnabled = true;
+      c.drawImage(this.fog, fx - fr, fz - fr, fr * 2, fr * 2, -range * 1.5 * scale, -range * 1.5 * scale, range * 3 * scale, range * 3 * scale);
+    }
     c.restore();
     // vignette ring
     const g = c.createRadialGradient(110, 110, 70, 110, 110, 112); g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.45)');
@@ -214,6 +231,13 @@ export class HUD {
     for (const p of POIS) icon(p.x, p.z, gp.isFound(p.id) ? p.icon : '?', gp.isFound(p.id) ? '#f6ead2' : '#e8b04a');
     for (const ch of CHALLENGES) icon(ch.start.x, ch.start.z, '⚑', '#ff7a50');
     for (const r of this.races || []) icon(r.start.x, r.start.z, '⚐', '#8fd8ff');
+    for (const a of this.searchAreas || []) {
+      const [mx, my] = this._w2m(a.x, a.z, pos.x, pos.z, scale, rot);
+      c.save(); c.beginPath(); c.arc(mx, my, a.r * scale, 0, Math.PI * 2); c.setLineDash([5, 4]); c.lineWidth = 2; c.strokeStyle = 'rgba(255,214,120,0.85)'; c.stroke(); c.restore();
+      icon(a.x, a.z, '?', '#ffd678', true);
+    }
+    for (const b of this.barnIcons || []) icon(b.x, b.z, '⌂', '#ffb070');
+    for (const t of this.towers || []) icon(t.x, t.z, '♜', t.visited ? '#f6ead2' : '#ffd36b');
     for (const c of this.rivals || []) icon(c.root.position.x, c.root.position.z, '●', '#ff5a3c', true);
     for (const k of gp.pumpkins) if (k.g.visible && Math.hypot(k.x - pos.x, k.z - pos.z) < 150) icon(k.x, k.z, '●', '#ff9a2e');
     for (const b of this.boards) icon(b.x, b.z, '$', '#ffd36b', !this.extraTarget && !gp.nextTarget && this.showBoards);
@@ -241,6 +265,7 @@ export class HUD {
   drawBigMap(pos, heading, gp) {
     const c = this.big.getContext('2d'), W = this.big.width;
     c.drawImage(this.mapCanvas, 0, 0, W, W);
+    if (this.fog) { c.imageSmoothingEnabled = true; c.drawImage(this.fog, 0, 0, W, W); }
     const toPx = (x, z) => [(x + this.mapHalf) / this.mapSize * W, (z + this.mapHalf) / this.mapSize * W];
     c.font = '700 22px "Barlow Condensed"'; c.textAlign = 'center'; c.textBaseline = 'middle';
     for (const p of POIS) {
@@ -250,6 +275,14 @@ export class HUD {
     }
     for (const ch of CHALLENGES) { const [x, y] = toPx(ch.start.x, ch.start.z); c.fillStyle = '#ff7a50'; c.strokeText('⚑', x, y); c.fillText('⚑', x, y); }
     for (const r of this.races || []) { const [x, y] = toPx(r.start.x, r.start.z); c.fillStyle = '#8fd8ff'; c.strokeText('⚐', x, y); c.fillText('⚐', x, y); }
+    for (const a of this.searchAreas || []) {
+      const [x, y] = toPx(a.x, a.z), r = a.r / this.mapSize * W;
+      c.save(); c.beginPath(); c.arc(x, y, r, 0, Math.PI * 2); c.setLineDash([8, 6]); c.lineWidth = 3; c.strokeStyle = 'rgba(255,214,120,0.9)'; c.stroke();
+      c.fillStyle = 'rgba(255,214,120,0.12)'; c.fill(); c.restore();
+      c.fillStyle = '#ffd678'; c.strokeText('?', x, y); c.fillText('?', x, y);
+    }
+    for (const b of this.barnIcons || []) { const [x, y] = toPx(b.x, b.z); c.fillStyle = '#ffb070'; c.strokeText('⌂', x, y); c.fillText('⌂', x, y); }
+    for (const t of this.towers || []) { const [x, y] = toPx(t.x, t.z); c.fillStyle = t.visited ? '#f6ead2' : '#ffd36b'; c.strokeText('♜', x, y); c.fillText('♜', x, y); }
     for (const b of this.boards) { const [x, y] = toPx(b.x, b.z); c.fillStyle = '#ffd36b'; c.strokeText('$', x + 14, y - 10); c.fillText('$', x + 14, y - 10); }
     if (this.stuntZones) {
       for (const t of this.stuntZones.traps) { const [x, y] = toPx(t.x, t.z); c.fillStyle = '#7fd4ff'; c.strokeText('»', x, y); c.fillText('»', x, y); }

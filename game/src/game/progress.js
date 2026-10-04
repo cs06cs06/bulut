@@ -20,6 +20,9 @@ export const ACHIEVEMENTS = [
   { id: 'postman', name: 'Postacı', desc: '3 posta turu tamamla.', reward: 400, test: (s) => s.mailRoutes >= 3 },
   { id: 'winner', name: 'İlk Zafer', desc: 'Bir yarışı birinci bitir.', reward: 400, test: (s) => s.raceWins >= 1 },
   { id: 'champion', name: 'Palouse Şampiyonu', desc: 'Üç yarışın hepsini kazan.', reward: 1500, test: (s, g, p) => ['north', 'west', 'south'].every((id) => p.data.races?.[id] === 1) },
+  { id: 'legend', name: 'Palouse’un Yeni Efsanesi', desc: 'Hikâyeyi tamamla.', reward: 1000, test: (s, g, p) => !!p.data.storyDone },
+  { id: 'barnfind', name: 'Hurda Avcısı', desc: 'Bir ahır buluntusunu restore et.', reward: 400, test: (s, g, p) => p.data.owned.some((id) => ['semi', 'van'].includes(id)) },
+  { id: 'towers', name: 'Gözcü', desc: 'Tüm gözetleme kulelerine çık.', reward: 500, test: (s, g, p) => (p.data.towers || []).length >= 4 },
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 

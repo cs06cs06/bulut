@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildInstances } from './models.js';
 import { bakeImpostorAtlas, ImpostorField } from './impostors.js';
 import { createNoise2D, fbm, mulberry32, smoothstep } from '../util/noise.js';
-import { FARMS, FARM_BUILDINGS, PADDOCKS, POIS, POI_PROPS, HERDS, TOWN } from './layout.js';
+import { FARMS, FARM_BUILDINGS, PADDOCKS, POIS, POI_PROPS, HERDS, TOWN, BARNS, TOWERS } from './layout.js';
 import { Animal } from '../game/animals.js';
 
 const DEG = Math.PI / 180;
@@ -36,6 +36,7 @@ export class World {
     this._kickerProps();
     this.blockers = [];
     this._town();
+    this._landmarks();
     this._powerLines();
     this._turbines();
     this._countryside();
@@ -461,6 +462,28 @@ export class World {
     const m = this._mergeStatic(objs, 'town');
     m.userData.center = new THREE.Vector3(T.center[0], 0, T.center[1]); m.userData.maxDist = 2600;
     this.cells.push(m);
+  }
+
+  // barn-find barns and lookout towers (gameplay lives in game/barns.js and game/explore.js)
+  _landmarks() {
+    const objs = [];
+    for (const b of BARNS) {
+      this.blockers.push([b.x, b.z, 16]);
+      const r = this.place('barn_open', b.x, b.z, b.rot, 1.25);
+      if (r.object) objs.push(r.object);
+      // overgrown yard: dead tree, hay and an old cart
+      for (const [m, dx, dz, rot, sc] of [['dead_1', 9, -6, 0, 1], ['hay_round', -7, 5, 30, 1], ['cart', 8, 6, 200, 1], ['dead_2', -10, -8, 90, 1]]) {
+        const c = Math.cos(b.rot * Math.PI / 180), sn = Math.sin(b.rot * Math.PI / 180);
+        const rr = this.place(m, b.x + dx * c + dz * sn, b.z - dx * sn + dz * c, rot, sc);
+        if (rr.object) objs.push(rr.object);
+      }
+    }
+    for (const t of TOWERS) {
+      this.blockers.push([t.x, t.z, 10]);
+      const r = this.place('water_tower', t.x, t.z, 20, 1.5);
+      if (r.object) objs.push(r.object);
+    }
+    if (objs.length) this._mergeStatic(objs, 'landmarks').userData.maxDist = 99999;
   }
 
   // wooden power poles along the main roads with sagging wires between them

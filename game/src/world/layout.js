@@ -106,6 +106,31 @@ export const RACES = [
   { id: 'south', name: 'Güney Derbisi', road: 'Güney Yolu', from: 0.03, to: 0.96, desc: 'Su Kulesi tarlaları boyunca toz bulutu içinde bir derbi.' },
 ];
 
+// Barn finds: rusted vehicles hidden in old barns; a rumour marks a search circle on the map
+export const BARNS = [
+  { id: 'grandpa', vehicle: 'semi', name: 'Dedenin Kamyonu', x: 313, z: 44, rot: 35, search: { dx: 70, dz: -50, r: 150 }, rumour: 'Walt Miller’ın eski kamyonu çiftliğin kuzeyindeki bir ahırda saklıymış.', story: true },
+  { id: 'van', vehicle: 'van', name: 'Unutulmuş Minibüs', x: -1194, z: 469, rot: 120, search: { dx: -60, dz: 80, r: 170 }, rumour: 'Batı tepelerinde terk edilmiş bir ahırda eski bir minibüs çürüyormuş.' },
+];
+
+// Lookout towers (old fire-watch water towers): visiting one reveals the map around it
+export const TOWERS = [
+  { id: 'east', name: 'Doğu Gözetleme Kulesi', x: 1495, z: 783 },
+  { id: 'north', name: 'Kuzey Gözetleme Kulesi', x: 871, z: -1426 },
+  { id: 'west', name: 'Batı Gözetleme Kulesi', x: -1064, z: 448 },
+  { id: 'summit', name: 'Zirve Gözetleme Kulesi', x: -778, z: -812 },
+];
+
+// Photo challenges: subject point in frame within `dist`, plus an optional condition
+export const PHOTO_BOUNTIES = [
+  { id: 'chapel', name: 'Kır Şapeli', desc: 'Kasabanın kırmızı çatılı şapelini çek.', x: 376, z: 623, y: 8, dist: 70, reward: 250 },
+  { id: 'redbarn', name: 'Kırmızı Ahır', desc: 'Kırmızı Ahır’ı aracınla birlikte çek.', x: 1178, z: -262, y: 6, dist: 90, withCar: true, reward: 250 },
+  { id: 'turbine', name: 'Dev Pervaneler', desc: 'Bir rüzgâr türbinini yakından çek.', turbine: true, dist: 160, reward: 300 },
+  { id: 'summitSunset', name: 'Zirvede Akşam', desc: 'Steptoe Zirvesi’nde gün batımında ya da gece bir fotoğraf çek.', x: -805, z: -831, near: 140, dusk: true, reward: 400 },
+  { id: 'townNight', name: 'Kasaba Işıkları', desc: 'Steptoe Kasabası’nı gece çek.', x: 392, z: 545, y: 6, dist: 180, night: true, reward: 350 },
+  { id: 'airborne', name: 'Uçan Kamyon', desc: 'Aracın havadayken fotoğrafını çek.', airborne: true, reward: 400 },
+  { id: 'pond', name: 'Göl Kıyısı', desc: 'Söğüt Göleti’nde aracınla poz ver.', x: 0, z: 0, poi: 'pond', near: 40, withCar: true, reward: 200 },
+];
+
 // Job boards (farm-local x, z, rotDeg): pick up and drop off cargo here
 export const BOARDS = { miller: [-40, 24, 90], redbarn: [-8, 18, 0], watertower: [-14, 24, 0], hillhouse: [-10, 18, 180], buttefoot: [6, -20, 0],
   grain: [-12, 34, 180], dairy: [-6, 30, 180], poplar: [-10, 30, 0] };

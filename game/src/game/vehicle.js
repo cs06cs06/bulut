@@ -33,6 +33,19 @@ export const VEHICLES = {
     suspensionRest: 0.5, suspensionTravel: 0.45, stiffness: 28, compression: 3.2, relaxation: 4.0,
     bed: null, paint: /khaki/i,
   },
+  // barn finds: hidden until found, then restored in the garage
+  semi: {
+    name: 'Dedenin Kamyonu', model: 'truck', price: 4000, barn: 'grandpa', desc: 'Walt Miller’ın çekicisi. Ağır ve çok güçlü; tümsekleri ezip geçer.',
+    scale: 0.82, mass: 3400, power: 2.1, grip: 1.05, maxSteer: 0.5, top: 5, pitch: 0.7,
+    suspensionRest: 0.55, suspensionTravel: 0.38, stiffness: 34, compression: 3.6, relaxation: 4.4,
+    bed: null, paint: /body dark green/i,
+  },
+  van: {
+    name: 'Eski Minibüs', model: 'van', price: 2500, barn: 'van', desc: 'Ahırdan çıkan yetmişler minibüsü. Rahat ve sağlam, biraz hantal.',
+    mass: 1900, power: 1.12, grip: 0.98, maxSteer: 0.58, top: 4, pitch: 0.95,
+    suspensionRest: 0.48, suspensionTravel: 0.36, stiffness: 31, compression: 3.4, relaxation: 4.2,
+    bed: null, paint: /body dark blue/i,
+  },
   monster: {
     name: 'Canavar Kamyon', model: 'monster', price: 6000, desc: 'Dev tekerler, uzun süspansiyon. Her tepeye çıkar, kasası da var.',
     mass: 2500, power: 1.6, grip: 1.15, maxSteer: 0.55, top: 5, pitch: 0.78,
@@ -101,7 +114,8 @@ export class Vehicle {
     root.updateMatrixWorld(true);
     this.wheels = [];
     const names = [['front', 'left'], ['front', 'right'], [/back|rear/, 'left'], [/back|rear/, 'right']];
-    const found = {};
+    const found = {}, extras = [];
+    const taken = (o) => { for (let p = o.parent; p; p = p.parent) if (Object.values(found).includes(p) || extras.some((e) => e[1] === p)) return true; return false; };
     root.traverse((o) => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
       const n = o.name.toLowerCase();
@@ -114,7 +128,7 @@ export class Vehicle {
         }
         const short = n.match(/(?:^|[^a-z])(fl|fr|rl|rr)(?:$|[^a-z])/); // e.g. "wheel FL" (loader turns spaces into _)
         if (short) idx = ['fl', 'fr', 'rl', 'rr'].indexOf(short[1]);
-        if (idx >= 0 && !found[idx]) found[idx] = o;
+        if (idx >= 0 && !taken(o)) { if (!found[idx]) found[idx] = o; else extras.push([idx, o]); } // e.g. dual rear axles
       }
     });
     this.object.add(root);
@@ -138,6 +152,18 @@ export class Vehicle {
       w.traverse((m) => { if (m.isMesh) m.userData.wheel = true; });
       this.wheels.push({ pivot, spin, rest: c.clone(), radius: (box.max.y - box.min.y) / 2 });
     }
+    // extra wheels (second rear axle) copy the spin and travel of their partner
+    this.extraWheels = extras.map(([idx, w]) => {
+      const box = new THREE.Box3().setFromObject(w), c = box.getCenter(new THREE.Vector3());
+      const pivot = new THREE.Group(); pivot.position.copy(c);
+      const spin = new THREE.Group(); pivot.add(spin);
+      w.updateMatrixWorld(true);
+      const wm = w.matrixWorld.clone().premultiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z));
+      w.parent.remove(w); spin.add(w); wm.decompose(w.position, w.quaternion, w.scale);
+      w.traverse((m) => { if (m.isMesh) m.userData.wheel = true; });
+      this.object.add(pivot);
+      return { pivot, spin, rest: c.clone(), of: idx };
+    });
     this.cfg.radius = this.wheels[2].radius; // gearing follows the (driven) rear wheels
     const bb = new THREE.Box3().setFromObject(root);
     this.bodyBox = bb;
@@ -415,6 +441,7 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     if (this.gear === 1) this.gear = 2;
     if (this.gear === 0 && fspeed < -10) drive *= 0.2; // reverse speed limit
     if (c.maxSpeed && fspeed > c.maxSpeed) drive *= Math.max(0, 1 - (fspeed - c.maxSpeed) / 2); // governor (tractor)
+    if (this.lowRange && fspeed > 12) drive *= Math.max(0, 1 - (fspeed - 12) / 2); // 4x4 low range tops out around 43 km/h
 
     // ----- gearbox (automatic)
     const wheelRps = Math.abs(fspeed) / c.radius;
@@ -435,7 +462,7 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     this.rpm += (Math.min(REDLINE + 150, rpm) - this.rpm) * Math.min(1, dt * 12);
     const shifting = this.shiftTimer > 0.25;
     const boost = input.boost ? 1.35 : 1;
-    const engineForce = shifting ? 0 : torqueAt(this.rpm) * ratio * 0.6 / c.radius * drive * boost * c.power * (1 - this.damage * 0.22) * (c.mass / 1650);
+    const engineForce = shifting ? 0 : torqueAt(this.rpm) * ratio * 0.6 / c.radius * drive * boost * c.power * (1 - this.damage * 0.22) * (this.lowRange ? 1.75 : 1) * (c.mass / 1650);
     const dir = this.gear === 0 ? -1 : 1;
     this.throttle = drive;
 
@@ -526,6 +553,11 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
       w.pivot.rotation.set(0, i < 2 ? this.steerAngle : 0, 0);
       w.spin.rotation.x = this.ctrl.wheelRotation(i) || 0;
     }
+    for (const e of this.extraWheels) {
+      const w = this.wheels[e.of];
+      e.pivot.position.set(e.rest.x, e.rest.y + (w.pivot.position.y - w.rest.y), e.rest.z);
+      e.spin.rotation.x = w.spin.rotation.x;
+    }
   }
 
   savePrev() {
@@ -534,7 +566,7 @@ float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
     this._prevPos.set(t.x, t.y, t.z); this._prevRot.set(r.x, r.y, r.z, r.w);
   }
 
-  gearLabel() { return this.gear === 0 ? 'R' : this.gear === 1 ? 'N' : String(this.gear - 1); }
+  gearLabel() { return this.gear === 0 ? 'R' : this.gear === 1 ? 'N' : this.lowRange ? 'L' + (this.gear - 1) : String(this.gear - 1); }
 }
 
 const _q = new THREE.Quaternion(), _f = new THREE.Vector3(), _u = new THREE.Vector3(), _r = new THREE.Vector3();

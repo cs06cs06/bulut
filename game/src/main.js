@@ -19,6 +19,12 @@ import { StuntZones } from './game/stunts.js';
 import { Traffic } from './game/traffic.js';
 import { PostalRoute } from './game/postal.js';
 import { Races } from './game/race.js';
+import { BarnFinds } from './game/barns.js';
+import { Exploration } from './game/explore.js';
+import { Story } from './game/story.js';
+import { SkillChain } from './game/skills.js';
+import { Winch } from './game/winch.js';
+import { PhotoBounties } from './game/photos.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks, Fireflies } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
@@ -54,6 +60,11 @@ const TIPS = [
   'İpucu: Sert çarpışmalar kaportayı ezer ve motoru zorlar. Benzinlikte ya da garajda tamir ettir.',
   'İpucu: Kazandığın her dolar tecrübe puanıdır; seviye atladıkça yeni boyalar açılır.',
   'İpucu: Gün döngüsünde hava kararınca farlar kendiliğinden yanar. Gece tarlalarda ateş böcekleri dolaşır.',
+  'İpucu: Haritadaki kesikli dairelerde ahır buluntusu söylentisi var. Paslı hazineler restorasyon bekliyor.',
+  'İpucu: Numaraları zincirle: drift, uçuş, kıl payı… Çarpan büyüdükçe kazanç artar ama çarparsan hepsi gider!',
+  'İpucu: Saplandın mı? X ile vinci en yakın ağaca bağla, Q ile düşük vitese geç.',
+  'İpucu: T’yi basılı tutarak son 10 saniyeyi geri sarabilirsin.',
+  'İpucu: Gözetleme kulelerine gidince haritanın büyük bir kısmı açılır.',
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
@@ -201,11 +212,21 @@ class Game {
     this.races = new Races({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud, dust: this.dust, progress: this.progress, glowTex: tex.glow });
     this.hud.races = this.races.races;
     this.races.isNight = () => this.rs.isNight;
+    this.barnFinds = new BarnFinds({ scene: rs.scene, lib, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress });
     this.races.onStart = (r) => { this.traffic.suspendRoad(r.road); this.delivery.cancel(); this.postal.cancel(); this.cameraRig.initialized = false; };
     this.races.onEnd = () => { this.traffic.suspendRoad(null); this.hud.rivals = null; };
     this._wireProgress();
     mark('vehicle+gameplay');
     this.hud.buildMap(this.terrain);
+    this.explore = new Exploration({ scene: rs.scene, hud: this.hud, audio: this.audio, progress: this.progress, terrain: this.terrain, glowTex: tex.glow,
+      mapSize: this.hud.mapSize, foundPois: this.gameplay.save.found });
+    if (!this.gameplay.save.found.length) this.explore.reveal(SPAWN.x, SPAWN.z, 380);
+    this.story = new Story({ game: this });
+    this.skills = new SkillChain({ hud: this.hud, audio: this.audio, progress: this.progress });
+    this.rewindBuf = [];
+    this.winch = new Winch({ scene: rs.scene, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud });
+    this.photos = new PhotoBounties({ game: this });
+    this.races.onFinish = (place, id, beatHank) => this.story.event('race', { id, place, beatHank });
     mark('map');
     this.hud.updateCounts(this.gameplay);
     this.audio.onTrack = (t) => this.hud.nowPlaying(t);
@@ -250,6 +271,7 @@ class Game {
   spawnVehicle(id, pos, heading) {
     const spec = VEHICLES[id] || VEHICLES.pickup;
     const keepDirt = this.vehicle?.dirt || 0;
+    this.winch?.release();
     if (this.vehicle) this.vehicle.dispose(this.rs.scene);
     this.vehicle = new Vehicle({ RAPIER: this.RAPIER, world: this.physics, model: this.lib.gltf[spec.model].scene, spawn: pos, heading,
       config: { ...spec }, upgrades: this.progress.data.upgrades });
@@ -273,6 +295,8 @@ class Game {
     this.progress.save();
     this.hud.setDamage(v.damage);
   }
+
+  restorePrice(id) { const v = VEHICLES[id]; return id === 'semi' && this.progress.data.story?.earl ? Math.round(v.price / 2) : v.price; }
 
   repairCost() { return this.vehicle.damage < 0.02 ? 0 : Math.max(30, Math.round(this.vehicle.damage * 500 / 10) * 10); }
 
@@ -313,7 +337,7 @@ class Game {
       P.daily('race');
       hud.popup(`+$${money} <small>${c.name}</small>`);
     };
-    this.world.onAnimalScared = () => P.stat('scared', 1);
+    this.world.onAnimalScared = () => { P.stat('scared', 1); this.skills?.add('KOVBOY', 180); };
     P.onDaily = (def, t, bonus) => {
       if (bonus) { hud.toast('Günlük Görevler Tamam', '+$500', 'Bugünün tüm görevlerini bitirdin. Yarın yenileri gelecek!'); }
       else hud.popup(`GÜNLÜK: ${def.name} ✓ <small>+$${def.reward}</small>`);
@@ -330,15 +354,28 @@ class Game {
       const owned = d.owned.includes(id), cur = this.vehicle.id === id;
       const div = document.createElement('div');
       div.className = 'veh' + (cur ? ' current' : '');
+      const barnFound = v.barn && this.barnFinds.isFound(v.barn);
+      if (v.barn && !owned && !barnFound) {
+        div.classList.add('locked');
+        div.innerHTML = `<div class="vn">??? · Ahır buluntusu</div><div class="vd">Haritadaki kesikli dairede bir söylenti var. Eski ahırı bul, bu aracı kurtar.</div>`;
+        vEl.appendChild(div);
+        continue;
+      }
       const bar = (x) => `<span class="bar5"><i style="width:${Math.min(100, x * 100)}%"></i></span>`;
       div.innerHTML = `<div class="vn">${v.name}</div><div class="vd">${v.desc}</div>
         <div class="vs"><span>Güç</span>${bar(v.power / 1.7)}<span>Tutuş</span>${bar(v.grip / 1.2)}<span>Arazi</span>${bar(v.suspensionTravel / 0.75)}<span>Kasa</span><span>${v.bed ? 'Var' : 'Yok'}</span></div>`;
       const b = document.createElement('button');
       b.className = 'btn' + (owned ? '' : ' primary');
-      b.textContent = cur ? 'Kullanılıyor' : owned ? 'Seç' : `Satın al · $${v.price.toLocaleString('tr-TR')}`;
-      b.disabled = cur || (!owned && d.money < v.price);
+      const price = v.barn ? this.restorePrice(id) : v.price;
+      b.textContent = cur ? 'Kullanılıyor' : owned ? 'Seç' : `${v.barn ? 'Restore et' : 'Satın al'} · $${price.toLocaleString('tr-TR')}`;
+      b.disabled = cur || (!owned && d.money < price);
       b.onclick = () => {
-        if (!owned) { if (!P.spend(v.price)) return; d.owned.push(id); P.save(); this.audio.play('discover', { bus: 'ui', volume: 0.7 }); }
+        if (!owned) {
+          if (!P.spend(price)) return;
+          d.owned.push(id); P.save(); this.audio.play('discover', { bus: 'ui', volume: 0.7 });
+          if (v.barn) { this.barnFinds.refresh(); this.hud.toast('Restorasyon Tamam', v.name, 'Yeniden yolda! Garajdan istediğin zaman seçebilirsin.'); }
+          this.story?.event('own', id);
+        }
         d.current = id; P.save();
         const p = this.vehicle.body.translation();
         this.spawnVehicle(id, { x: p.x, y: this.terrain.heightAt(p.x, p.z) + 1.5, z: p.z }, this.vehicle.heading());
@@ -539,6 +576,11 @@ class Game {
       setTimeout(() => URL.revokeObjectURL(a.href), 4000);
     }, 'image/png');
     const fl = document.createElement('div'); fl.className = 'photo-flash'; document.body.appendChild(fl); setTimeout(() => fl.remove(), 600);
+    const hits = this.photos.check();
+    const msg = $('ph-msg');
+    msg.textContent = hits.length ? `✓ ${hits.map((b) => `${b.name} +$${b.reward}`).join(' · ')}` : '';
+    msg.classList.toggle('show', hits.length > 0);
+    clearTimeout(this._phMsgT); this._phMsgT = setTimeout(() => msg.classList.remove('show'), 3500);
     this.audio.play('ui_click', { bus: 'ui', volume: 1, rate: 0.6 });
   }
 
@@ -569,7 +611,7 @@ class Game {
   // dynamic time of day: one full day every DAY_LEN seconds; lights follow the dusk automatically
   _dayCycle(dt, force = false) {
     this.dayT = ((this.dayT ?? 0.08) + dt / DAY_LEN) % 1;
-    const hour = this.rs.setDayCycle(this.dayT);
+    const hour = this._hour = this.rs.setDayCycle(this.dayT);
     this.world.impostors.material.uniforms.uTint.value.copy(this.rs.impostorTint);
     if (force || this.rs.isNight !== this._wasNight) {
       this._wasNight = this.rs.isNight;
@@ -755,9 +797,10 @@ class Game {
     else if (this.state === 'pause' && (inp.wasPressed('Escape') || inp.wasPressed('Tab'))) this.resume();
     else if (this.state === 'board' && (inp.wasPressed('Escape') || inp.wasPressed('KeyF'))) this.closeBoard();
     else if (this.state === 'photo' && (inp.wasPressed('Escape') || inp.wasPressed('KeyP'))) this.exitPhoto();
+    else if (this.state === 'dialogue' && ['KeyF', 'Enter', 'Space', 'Escape', 'PadKeyF'].some((k) => inp.wasPressed(k))) this.story.next();
 
     // physics (keeps simulating in the menu so the truck idles naturally)
-    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'photo') {
+    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'photo' && this.state !== 'dialogue') {
       let freeze = false;
       if (playing) freeze = this._gameplayResult?.freeze || this._raceResult?.freeze;
       // nitro: boost drains the tank, which refills slowly (and instantly at the gas station)
@@ -768,6 +811,8 @@ class Game {
         this.hud.setNitro(this.nitro, boosting);
       }
       const drive = playing && !freeze ? inp : { throttle: 0, brake: 0, steer: 0, handbrake: true, boost: false };
+      if (playing && this._rewind(dt, inp)) { v.sync(1); this.acc = 0; }
+      else {
       this.acc += dt;
       let steps = 0;
       while (this.acc >= FIXED && steps < 5) {
@@ -780,6 +825,8 @@ class Game {
       }
       if (steps === 5) this.acc = 0;
       v.sync(this.acc / FIXED);
+      if (playing) this._recordRewind(dt);
+      }
       // safety: fell through the world
       if (v.position.y < this.terrain.heightAt(v.position.x, v.position.z) - 6) this._resetVehicle();
     }
@@ -790,14 +837,19 @@ class Game {
       const dres = this.delivery.update(dt, v);
       const pres = this.postal.update(dt, v);
       this._raceResult = this.races.update(dt, v);
+      this.barnFinds.update(dt, v.position);
+      this.explore.update(dt, v.position);
       this.hud.rivals = this._raceResult?.cars || null;
-      this.hud.extraTarget = this._raceResult?.target || dres?.target || pres?.target || null;
+      this.hud.extraTarget = this._raceResult?.target || dres?.target || pres?.target || (this.gameplay.active ? null : this.story.target) || null;
       this._gasStation(dt);
       this._effects(dt);
       this._stunts(dt);
       this.stunts.update(dt, v);
       this.hud.update(dt, v, this.gameplay, v.heading());
       this._prompts();
+      this.story.update(dt);
+      this.skills.update(dt);
+      this.winch.update(dt, v);
       if (v.lastLandingImpact > 0) {
         const k = v.lastLandingImpact;
         this.audio.play('land_thud', { volume: 0.3 + k * 0.7, rate: 0.9 + Math.random() * 0.2 });
@@ -807,7 +859,7 @@ class Game {
       }
     } else if (this.state === 'menu') this._menuCamera(this.time);
     else if (this.state === 'photo') this.cameraRig.photo(dt, v, this.terrain, this.photo);
-    if (this.state !== 'play' && this.state !== 'pause' && this.state !== 'board') this.delivery.update(0, v);
+    if (this.state !== 'play' && this.state !== 'pause' && this.state !== 'board' && this.state !== 'dialogue') this.delivery.update(0, v);
 
     const cam = this.rs.camera;
     if (MANUAL && window.__camOverride) { const o = window.__camOverride; cam.position.set(...o.pos); cam.lookAt(...o.look); cam.fov = o.fov || 60; cam.updateProjectionMatrix(); }
@@ -821,7 +873,7 @@ class Game {
 
     if (this.settings.time === 'dynamic' && this.state !== 'pause' && this.state !== 'loading') this._dayCycle(dt);
     this.world.update(dt, this.time, v.position, v.speed, playing ? this.audio : null);
-    if (this.state !== 'pause' && this.state !== 'board') this.traffic.update(dt, v.position, v.speed);
+    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'dialogue') this.traffic.update(dt, v.position, v.speed);
     this.grass.update(v.position);
     this.birds.update(dt, this.time, cam.position, v.position, v.speed);
     this.terrain.update(cam.position);
@@ -858,9 +910,55 @@ class Game {
     }
     if (inp.wasPressed('KeyL')) { this.headlights = !this.headlights; v.setHeadlights(this.headlights); this.audio.play('ui_switch', { volume: 0.4 }); }
     if (inp.wasPressed('KeyP')) this.enterPhoto();
+    if (inp.wasPressed('KeyX')) this.winch.toggle(v);
+    if (inp.wasPressed('KeyQ')) {
+      v.lowRange = !v.lowRange;
+      this.hud.hint(v.lowRange ? '4x4 düşük vites AÇIK — daha çok tork, en fazla ~43 km/sa' : '4x4 düşük vites kapalı', 2.2);
+      this.audio.play('gear', { volume: 0.5, rate: 0.8 });
+    }
     const horn = inp.keys.has('KeyH') || inp.keys.has('PadKeyH') || inp.touch.horn;
     if (horn && !this.hornLoop) this.hornLoop = this.audio.loop('horn', 'sfx', { volume: 0.55, offset: 0.02 });
     if (!horn && this.hornLoop) { this.hornLoop.set(0, 1, 0.03); const h = this.hornLoop; setTimeout(() => h.stop(), 150); this.hornLoop = null; }
+  }
+
+  // rewind (Forza Horizon): the last 10 seconds are kept; holding T plays them back
+  _recordRewind(dt) {
+    this._rwT = (this._rwT || 0) + dt;
+    if (this._rwT < 0.05) return;
+    this._rwT = 0;
+    const b = this.vehicle.body, t = b.translation(), r = b.rotation(), lv = b.linvel(), av = b.angvel();
+    this.rewindBuf.push([t.x, t.y, t.z, r.x, r.y, r.z, r.w, lv.x, lv.y, lv.z, av.x, av.y, av.z, this.gameplay.active?.t ?? 0]);
+    if (this.rewindBuf.length > 200) this.rewindBuf.shift();
+  }
+
+  _rewind(dt, inp) {
+    const want = inp.keys.has('KeyT') || !!inp.touch.rewind;
+    const buf = this.rewindBuf, v = this.vehicle, b = v.body;
+    if (want && this.races.active) { if (!this._rwWarn) { this._rwWarn = true; this.hud.hint('Yarışta geri sarma yok!', 2); } return false; }
+    this._rwWarn = false;
+    if (!want || buf.length < 2) {
+      if (this._rewinding) { // resume with the momentum of that moment
+        this._rewinding = false;
+        document.body.classList.remove('rewinding');
+        const s = this._rwLast;
+        if (s) { b.setLinvel({ x: s[7], y: s[8], z: s[9] }, true); b.setAngvel({ x: s[10], y: s[11], z: s[12] }, true); }
+        v._prevPos = null;
+      }
+      return false;
+    }
+    if (!this._rewinding) { this._rewinding = true; document.body.classList.add('rewinding'); this.skills.reset(); this.audio.play('ui_switch', { bus: 'ui', volume: 0.5, rate: 0.6 }); }
+    this._rwAcc = (this._rwAcc || 0) + dt * 1.6;
+    let s = null;
+    while (this._rwAcc >= 0.05 && buf.length > 1) { this._rwAcc -= 0.05; s = buf.pop(); }
+    if (s) {
+      this._rwLast = s;
+      b.setTranslation({ x: s[0], y: s[1], z: s[2] }, true);
+      b.setRotation({ x: s[3], y: s[4], z: s[5], w: s[6] }, true);
+      b.setLinvel({ x: 0, y: 0, z: 0 }, true); b.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      if (this.gameplay.active && s[13]) this.gameplay.active.t = s[13];
+      v._prevPos = null;
+    }
+    return true;
   }
 
   // airtime & drift scoring, distance / speed stats, achievements
@@ -875,10 +973,9 @@ class Game {
     }
     if (v.landedAir) {
       const t = v.landedAir; v.landedAir = 0;
-      if (t > 0.8 && this.air.clear > 1.8) {
-        const money = Math.round(t * t * 10 + t * 8);
-        P.addMoney(money); P.stat('maxAir', t, 'max');
-        hud.popup(`HAVA ${t.toFixed(1)} sn <small>+$${money}</small>`);
+      if (t > 0.6 && this.air.clear > 1.5) {
+        this.skills.add(t > 2 ? `BÜYÜK UÇUŞ ${t.toFixed(1)} sn` : `HAVA ${t.toFixed(1)} sn`, 220 * t + 60 * t * t);
+        P.stat('maxAir', t, 'max');
         if (t >= 1) P.daily('air');
       }
       this.air.clear = 0;
@@ -887,18 +984,31 @@ class Game {
     const right = _tmpV.set(1, 0, 0).applyQuaternion(_tmpQ.set(r.x, r.y, r.z, r.w));
     const lateral = Math.abs(lv.x * right.x + lv.y * right.y + lv.z * right.z);
     const d = this.drift;
-    if (v.contacts >= 3 && v.speed > 9 && lateral > 3.2) { d.t += dt; d.grace = 0.45; }
+    if (v.contacts >= 3 && v.speed > 9 && lateral > 3.2) {
+      d.t += dt; d.grace = 0.45;
+      d.acc = (d.acc || 0) + dt;
+      if (d.acc > 0.25) { d.acc = 0; this.skills.add('DRIFT', 30 + lateral * 4, true); }
+    }
     else if (d.t > 0) {
       d.grace -= dt;
       if (d.grace <= 0) {
         if (d.t > 1.2) {
-          const money = Math.round(d.t * 12);
-          P.addMoney(money); P.stat('maxDrift', d.t, 'max');
-          hud.popup(`DRIFT ${d.t.toFixed(1)} sn <small>+$${money}</small>`);
+          P.stat('maxDrift', d.t, 'max');
           if (d.t >= 1.5) P.daily('drift');
         }
         d.t = 0;
       }
+    }
+    // skill tricks: speed runs, off-road runs, near misses with traffic and rivals
+    const sk = this._sk || (this._sk = { spd: 0, off: 0 });
+    sk.spd = kmh > 115 && v.contacts > 0 ? sk.spd + dt : 0;
+    if (sk.spd > 2) { sk.spd = 0; this.skills.add('HIZ ŞEYTANI', 220); }
+    const offRoad = v.contacts > 0 && v.wheelState[0].surface !== 'road' && kmh > 50;
+    sk.off = offRoad ? sk.off + dt : 0;
+    if (sk.off > 2.5) { sk.off = 0; this.skills.add('ARAZİ USTASI', 160); }
+    for (const c of [...this.traffic.cars.filter((x) => !x.suspended), ...(this.races.active?.cars || [])]) {
+      const pos = c.root.position, dist = Math.hypot(pos.x - v.position.x, pos.z - v.position.z);
+      if (dist < 4.6 && v.speed > 7 && (c._nm || 0) < this.time) { c._nm = this.time + 3; this.skills.add('KIL PAYI', 300); }
     }
     // mud builds up off-road (faster in rain); driving through the pond washes it off
     const surf = v.wheelState[0].surface, wet = this.weather.wet;
@@ -932,9 +1042,11 @@ class Game {
       const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
       if (dist < 22) { this.setWaypoint(null); hud.popup('Yer işaretine vardın', 'info'); this.audio.play('ui_switch', { bus: 'ui', volume: 0.6 }); }
     }
+    const so = this.story.objective();
     if (this.races.active) hud.objective(null);
     else if (!this.delivery.job && !this.gameplay.active && !this.postal.active) {
-      if (this.waypoint) {
+      if (so) hud.objective(so);
+      else if (this.waypoint) {
         const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
         hud.objective({ title: 'Yer işareti', lines: [dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`] });
       } else if (this.progress.stats.deliveries === 0) hud.objective({ title: 'İlk işin', lines: ['Çiftliklerdeki sarı ışıklı <b>$</b> panodan teslimat işi al.', 'Miller Çiftliği’nin panosu evin önünde.'] });
@@ -943,6 +1055,7 @@ class Game {
   }
 
   _resetVehicle() {
+    this.winch?.release();
     const v = this.vehicle, p = v.body.translation();
     const y = this.terrain.heightAt(p.x, p.z) + 1.6;
     v.reset({ x: p.x, y, z: p.z }, v.heading());
@@ -961,6 +1074,7 @@ class Game {
       if (kind === 'fence' && this.vehicle.speed > 3) {
         if (this.world.breakFence(other.userData.seg, this.vehicle.body.linvel())) {
           this.progress.stat('fences', 1);
+          this.skills.add('ÇİT KIRICI', 140);
           this.audio.play('impact_wood', { volume: 0.8, rate: 0.85 + Math.random() * 0.3 });
           this.cameraRig.addShake(0.35);
         }
@@ -973,6 +1087,7 @@ class Game {
       if (k > 0.55 && kind !== 'terrain') name = Math.random() < 0.5 ? 'crash_2' : 'crash_3';
       this.audio.play(name, { volume: 0.35 + k * 0.65, rate: 0.9 + Math.random() * 0.2 });
       this.cameraRig.addShake(0.3 + k * 0.8);
+      if (k > 0.3 && kind !== 'terrain') this.skills.crash();
       // bodywork: walls, trees, rocks, rivals dent the car; only hard tumbles count on open ground
       if ((kind !== 'terrain' || k > 0.5) && k > 0.12 && this._velBefore.lengthSq() > 9) {
         const before = this.vehicle.damage;
