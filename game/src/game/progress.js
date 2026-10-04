@@ -20,6 +20,21 @@ export const ACHIEVEMENTS = [
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 
+// Daily tasks: three per calendar day, picked deterministically from this pool
+export const DAILY_POOL = [
+  { id: 'deliver', name: 'Teslimat yap', goals: [2, 3], unit: '', reward: 250 },
+  { id: 'dist', name: 'Yol yap', goals: [5, 8], unit: 'km', reward: 200, scale: 1000 },
+  { id: 'air', name: 'Uzun atlayış yap (1 sn+)', goals: [3, 5], unit: '', reward: 200 },
+  { id: 'drift', name: 'Drift yap (1,5 sn+)', goals: [4, 6], unit: '', reward: 180 },
+  { id: 'fence', name: 'Çit devir', goals: [5, 10], unit: '', reward: 120 },
+  { id: 'scare', name: 'Hayvan ürküt', goals: [4, 8], unit: '', reward: 120 },
+  { id: 'trap', name: 'Hız kapanından geç (90+ km/sa)', goals: [2, 3], unit: '', reward: 200 },
+  { id: 'race', name: 'Zamana karşı görev bitir', goals: [1, 2], unit: '', reward: 300 },
+];
+const DAILY_STAT = { deliveries: 'deliver', distance: 'dist', fences: 'fence', scared: 'scare' };
+
+function today() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+
 export class Progress {
   constructor() {
     this.data = this._load();
@@ -31,7 +46,7 @@ export class Progress {
     const def = {
       money: 250, owned: ['pickup'], current: 'pickup', upgrades: { engine: 0, tires: 0, susp: 0 },
       stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0 },
-      achievements: [],
+      achievements: [], daily: null,
     };
     try {
       const d = JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -62,6 +77,44 @@ export class Progress {
     const s = this.data.stats;
     if (mode === 'max') { if (value <= s[key]) return; s[key] = value; } else s[key] += value;
     this._dirty = true;
+    if (mode === 'add' && DAILY_STAT[key]) this.daily(DAILY_STAT[key], value);
+  }
+
+  // ------------------------------------------------------------ daily tasks
+  get dailyTasks() {
+    const day = today();
+    if (!this.data.daily || this.data.daily.day !== day) {
+      let seed = 0; for (const ch of day) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+      const rnd = () => { seed = (seed * 1103515245 + 12345) >>> 0; return seed / 4294967296; };
+      const pool = DAILY_POOL.slice(), tasks = [];
+      while (tasks.length < 3) {
+        const t = pool.splice(Math.floor(rnd() * pool.length), 1)[0];
+        tasks.push({ id: t.id, goal: t.goals[Math.floor(rnd() * t.goals.length)], value: 0, done: false });
+      }
+      this.data.daily = { day, tasks, bonus: false };
+      this.save();
+    }
+    return this.data.daily;
+  }
+
+  daily(id, amount = 1) {
+    const d = this.dailyTasks;
+    for (const t of d.tasks) {
+      if (t.id !== id || t.done) continue;
+      const def = DAILY_POOL.find((p) => p.id === id);
+      t.value += amount / (def.scale || 1);
+      if (t.value >= t.goal) {
+        t.value = t.goal; t.done = true;
+        this.data.money += def.reward; this.data.stats.earned += def.reward;
+        this.onDaily?.(def, t, false);
+        if (!d.bonus && d.tasks.every((x) => x.done)) {
+          d.bonus = true; this.data.money += 500; this.data.stats.earned += 500;
+          this.onDaily?.(null, null, true);
+        }
+        this.onChange?.();
+      }
+      this._dirty = true;
+    }
   }
 
   // called a few times per second; unlocks achievements and persists stats

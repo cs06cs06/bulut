@@ -12,7 +12,7 @@ import { GroundCover } from './world/grass.js';
 import { Weather } from './world/weather.js';
 import * as LAYOUT from './world/layout.js';
 import { Vehicle, VEHICLES, UPGRADES } from './game/vehicle.js';
-import { Progress, ACHIEVEMENTS } from './game/progress.js';
+import { Progress, ACHIEVEMENTS, DAILY_POOL } from './game/progress.js';
 import { Delivery } from './game/delivery.js';
 import { StuntZones } from './game/stunts.js';
 import { Traffic } from './game/traffic.js';
@@ -219,10 +219,12 @@ class Game {
   // ------------------------------------------------------------ garage / progression
   spawnVehicle(id, pos, heading) {
     const spec = VEHICLES[id] || VEHICLES.pickup;
+    const keepDirt = this.vehicle?.dirt || 0;
     if (this.vehicle) this.vehicle.dispose(this.rs.scene);
     this.vehicle = new Vehicle({ RAPIER: this.RAPIER, world: this.physics, model: this.lib.gltf[spec.model].scene, spawn: pos, heading,
       config: { ...spec }, upgrades: this.progress.data.upgrades });
     this.vehicle.id = id;
+    this.vehicle.dirt = keepDirt;
     this.rs.scene.add(this.vehicle.object);
     this.vehicle.onShift = () => this.audio.play('gear', { volume: 0.25 });
     this.vehicle.setPaint(this.settings.paint);
@@ -259,9 +261,15 @@ class Game {
         if (medal === 'gold') P.stat('golds', 1);
       }
       P.addMoney(money);
+      P.daily('race');
       hud.popup(`+$${money} <small>${c.name}</small>`);
     };
     this.world.onAnimalScared = () => P.stat('scared', 1);
+    P.onDaily = (def, t, bonus) => {
+      if (bonus) { hud.toast('Günlük Görevler Tamam', '+$500', 'Bugünün tüm görevlerini bitirdin. Yarın yenileri gelecek!'); }
+      else hud.popup(`GÜNLÜK: ${def.name} ✓ <small>+$${def.reward}</small>`);
+      this.audio.play('discover', { bus: 'ui', volume: 0.6, rate: 1.3 });
+    };
   }
 
   _renderGarage() {
@@ -290,6 +298,13 @@ class Game {
       div.appendChild(b);
       vEl.appendChild(div);
     }
+    const wash = document.createElement('div');
+    wash.className = 'upg';
+    wash.innerHTML = `<div><div class="un">Araç yıkama</div><div class="ud">Çamur: %${Math.round(this.vehicle.dirt * 100)} · Söğüt Göleti’nden geçmek bedava!</div></div><div></div>`;
+    const wb = document.createElement('button'); wb.className = 'btn'; wb.textContent = 'Yıka · $25';
+    wb.disabled = this.vehicle.dirt < 0.05 || d.money < 25;
+    wb.onclick = () => { if (!P.spend(25)) return; this.vehicle.dirt = 0; this.vehicle.setDirt(0); this.audio.play('ui_switch', { bus: 'ui' }); this._renderGarage(); };
+    wash.appendChild(wb);
     const uEl = $('g-upgrades');
     uEl.innerHTML = '';
     for (const [key, u] of Object.entries(UPGRADES)) {
@@ -311,6 +326,7 @@ class Game {
       div.appendChild(b);
       uEl.appendChild(div);
     }
+    uEl.appendChild(wash);
   }
 
   _renderAchievements() {
@@ -320,11 +336,32 @@ class Game {
       [(st.distance / 1000).toFixed(1) + ' km', 'Toplam yol'], [Math.round(st.topSpeed) + ' km/sa', 'En yüksek hız'], [st.maxAir.toFixed(1) + ' sn', 'En uzun uçuş'],
       [st.maxDrift.toFixed(1) + ' sn', 'En uzun drift'], [st.fences, 'Devrilen çit'], [st.scared, 'Ürkütülen hayvan'],
     ];
+    const d = P.dailyTasks;
+    $('g-daily').innerHTML = `<h3>Günlük Görevler</h3>` + d.tasks.map((t) => {
+      const def = DAILY_POOL.find((x) => x.id === t.id);
+      const v = def.scale ? t.value.toFixed(1) : Math.floor(t.value);
+      return `<div class="daily ${t.done ? 'on' : ''}"><div class="ai">${t.done ? '✓' : '○'}</div><div><div class="an">${def.name}</div>
+        <div class="bar5"><i style="width:${Math.min(100, t.value / t.goal * 100)}%"></i></div></div><div class="ar">${v}/${t.goal}${def.unit ? ' ' + def.unit : ''} · $${def.reward}</div></div>`;
+    }).join('') + `<div class="muted">Hepsini bitirirsen +$500 bonus${d.bonus ? ' (alındı)' : ''}. Görevler her gün yenilenir.</div>`;
     $('g-stats').innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
     $('g-ach').innerHTML = ACHIEVEMENTS.map((a) => {
       const on = P.data.achievements.includes(a.id);
       return `<div class="ach ${on ? 'on' : ''}"><div class="ai">${on ? '★' : '☆'}</div><div><div class="an">${a.name}</div><div class="ad">${a.desc}</div></div><div class="ar">$${a.reward}</div></div>`;
     }).join('') + `<div class="muted">${P.data.achievements.length} / ${ACHIEVEMENTS.length} başarım</div>`;
+  }
+
+  // ------------------------------------------------------------ waypoint
+  setWaypoint(p) {
+    this.waypoint = p;
+    this.hud.waypoint = p;
+    if (!this.wpBeacon) {
+      const mat = new THREE.SpriteMaterial({ map: this.tex.glow, color: 0xb6ff9a, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending });
+      this.wpBeacon = new THREE.Group();
+      for (let i = 0; i < 7; i++) { const sp = new THREE.Sprite(mat); sp.scale.setScalar(5 - i * 0.45); sp.position.y = 2 + i * 8; this.wpBeacon.add(sp); }
+      this.rs.scene.add(this.wpBeacon);
+    }
+    this.wpBeacon.visible = !!p;
+    if (p) this.wpBeacon.position.set(p[0], this.terrain.heightAt(p[0], p[1]), p[1]);
   }
 
   // ------------------------------------------------------------ job board
@@ -476,8 +513,12 @@ class Game {
     });
     $('bigmap').addEventListener('click', (e) => {
       const [x, z] = this.hud.bigMapToWorld(e);
-      const near = LAYOUT.POIS.find((p) => this.gameplay.isFound(p.id) && Math.hypot(p.x - x, p.z - z) < 90);
-      if (near) this.teleport(near);
+      const T = this.terrain;
+      if (Math.abs(x) > T.half - 20 || Math.abs(z) > T.half - 20) return;
+      if (this.waypoint && Math.hypot(this.waypoint[0] - x, this.waypoint[1] - z) < 60) this.setWaypoint(null);
+      else this.setWaypoint([x, z]);
+      click();
+      this.hud.drawBigMap(this.vehicle.position, this.vehicle.heading(), this.gameplay);
     });
   }
 
@@ -695,6 +736,7 @@ class Game {
         const money = Math.round(t * t * 10 + t * 8);
         P.addMoney(money); P.stat('maxAir', t, 'max');
         hud.popup(`HAVA ${t.toFixed(1)} sn <small>+$${money}</small>`);
+        if (t >= 1) P.daily('air');
       }
       this.air.clear = 0;
     }
@@ -710,10 +752,20 @@ class Game {
           const money = Math.round(d.t * 12);
           P.addMoney(money); P.stat('maxDrift', d.t, 'max');
           hud.popup(`DRIFT ${d.t.toFixed(1)} sn <small>+$${money}</small>`);
+          if (d.t >= 1.5) P.daily('drift');
         }
         d.t = 0;
       }
     }
+    // mud builds up off-road (faster in rain); driving through the pond washes it off
+    const surf = v.wheelState[0].surface, wet = this.weather.wet;
+    if (v.contacts > 0 && v.speed > 2) v.dirt = Math.min(1, v.dirt + dt * Math.min(1, v.speed / 15) * (surf === 'road' ? 0.004 : surf === 'field' ? 0.012 : 0.008) * (1 + wet * 3));
+    const pond = this._pond || (this._pond = LAYOUT.POIS.find((p) => p.id === 'pond'));
+    if (v.dirt > 0.02 && Math.hypot(v.position.x - pond.x, v.position.z - pond.z) < 9) {
+      v.dirt = Math.max(0, v.dirt - dt * 0.6);
+      if (v.dirt < 0.05 && !this._washed) { this._washed = true; hud.popup('Araç tertemiz! ✨', 'info'); }
+    } else if (v.dirt > 0.2) this._washed = false;
+    v.setDirt(v.dirt);
     this._checkT = (this._checkT || 0) - dt;
     if (this._checkT <= 0) { this._checkT = 0.5; P.check(this.gameplay); }
   }
@@ -727,10 +779,17 @@ class Game {
     else if (near) msg = touch ? `⚑ ${near.name} — başlamak için dokun` : `<kbd>F</kbd> ${near.name}`;
     hud.prompt(msg);
     hud.showBoards = !this.delivery.job;
-    if (!this.delivery.job && !this.gameplay.active) {
-      if (this.progress.stats.deliveries === 0) hud.objective({ title: 'İlk işin', lines: ['Çiftliklerdeki sarı ışıklı <b>$</b> panodan teslimat işi al.', 'Miller Çiftliği’nin panosu evin önünde.'] });
-      else hud.objective(null);
+    if (this.waypoint) {
+      const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
+      if (dist < 22) { this.setWaypoint(null); hud.popup('Yer işaretine vardın', 'info'); this.audio.play('ui_switch', { bus: 'ui', volume: 0.6 }); }
     }
+    if (!this.delivery.job && !this.gameplay.active) {
+      if (this.waypoint) {
+        const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
+        hud.objective({ title: 'Yer işareti', lines: [dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`] });
+      } else if (this.progress.stats.deliveries === 0) hud.objective({ title: 'İlk işin', lines: ['Çiftliklerdeki sarı ışıklı <b>$</b> panodan teslimat işi al.', 'Miller Çiftliği’nin panosu evin önünde.'] });
+      else hud.objective(null);
+    } else if (!this.delivery.job) hud.objective(null);
   }
 
   _resetVehicle() {

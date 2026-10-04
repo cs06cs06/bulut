@@ -63,6 +63,10 @@ export class Vehicle {
     this._buildVisual(model);
     this._buildPhysics(spawn, heading);
     this._buildLights();
+    this.dirt = 0;
+    this._dirtU = { uDirt: { value: 0 }, uBaseY: { value: 0 }, uHeight: { value: this.bodyBox.max.y } };
+    this._dirtified = new WeakSet();
+    this._dirtify();
     this.gear = 2; this.rpm = IDLE_RPM; this.shiftTimer = 0;
     this.speed = 0; this.forwardSpeed = 0; this.throttle = 0;
     this.wheelState = [0, 1, 2, 3].map(() => ({ contact: false, slip: 0, compression: 0, pos: new THREE.Vector3(), surface: 'grass' }));
@@ -242,6 +246,47 @@ export class Vehicle {
       this.object.traverse((o) => { if (o.isMesh && o.material.userData?.paint) this._paintMats.add(o.material); });
     }
     for (const m of this._paintMats) { m.color.set(colors[name] ?? colors.green); m.roughness = 0.45; m.metalness = 0.25; }
+    this._dirtify();
+  }
+
+  // Mud: every material gets its own copy with a shader that paints dirt from the bottom up.
+  _dirtify() {
+    const U = this._dirtU, done = this._dirtified;
+    this.object.traverse((o) => {
+      if (!o.isMesh || Array.isArray(o.material) || o.isLight) return;
+      if (done.has(o.material)) return;
+      const m = o.material.clone();
+      if (this._paintMats?.has(o.material)) { this._paintMats.delete(o.material); this._paintMats.add(m); }
+      const li = this.lensMats?.indexOf(o.material);
+      if (li >= 0) this.lensMats[li] = m;
+      m.onBeforeCompile = (sh) => {
+        Object.assign(sh.uniforms, U);
+        sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uBaseY; varying float vRelH; varying vec3 vLocal;')
+          .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRelH = (modelMatrix * vec4(transformed, 1.0)).y - uBaseY; vLocal = position;');
+        sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+uniform float uDirt, uHeight; varying float vRelH; varying vec3 vLocal; float mudMask;
+float mh(vec2 p){ return fract(sin(dot(p, vec2(41.3, 289.1))) * 43758.5); }
+float mn(vec2 p){ vec2 i = floor(p), f = fract(p); f = f * f * (3.0 - 2.0 * f);
+  return mix(mix(mh(i), mh(i + vec2(1, 0)), f.x), mix(mh(i + vec2(0, 1)), mh(i + vec2(1, 1)), f.x), f.y); }`)
+          .replace('#include <map_fragment>', `#include <map_fragment>
+{
+  float h = clamp(vRelH / uHeight, 0.0, 1.0);
+  float n = mn(vLocal.xz * 4.0 + vLocal.y * 3.0) * 0.6 + mn(vLocal.xy * 11.0 + 5.0) * 0.4;
+  mudMask = smoothstep(0.0, 0.2, uDirt * 1.3 - h * 0.95 + (n - 0.5) * 0.55) * step(0.001, uDirt);
+  diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.27, 0.2, 0.13) * (0.75 + n * 0.5), mudMask * 0.88);
+}`)
+          .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = mix(roughnessFactor, 0.95, mudMask);')
+          .replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\ntotalEmissiveRadiance *= 1.0 - mudMask * 0.8;');
+      };
+      m.customProgramCacheKey = () => 'mud';
+      done.add(m);
+      o.material = m;
+    });
+  }
+
+  setDirt(d) {
+    this._dirtU.uDirt.value = d;
+    this._dirtU.uBaseY.value = this.object.position.y;
   }
 
   get position() { return this.object.position; }

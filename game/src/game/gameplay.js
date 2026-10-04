@@ -22,7 +22,10 @@ export class Gameplay {
     catch { return { found: [], collected: [], best: {} }; }
   }
   _store() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(this.save)); } catch { /* private mode */ } }
-  reset() { this.save = { found: [], collected: [], best: {} }; this._store(); }
+  reset() {
+    this.save = { found: [], collected: [], best: {} }; this._store();
+    for (const c of CHALLENGES) try { localStorage.removeItem(this._ghostKey(c.id)); } catch { /* ignore */ }
+  }
 
   get pois() { return POIS; }
   isFound(id) { return this.save.found.includes(id); }
@@ -63,16 +66,14 @@ export class Gameplay {
 
   // ------------------------------------------------------------ challenges
   _challengeMarkers() {
-    this.challenges = CHALLENGES.map((c) => {
-      const s = c.start;
-      const flag = this.lib.clone('flag');
-      flag.position.set(s.x + 5, this.terrain.heightAt(s.x + 5, s.z), s.z);
-      const sign = this.lib.clone('billboard');
-      sign.position.set(s.x - 5, this.terrain.heightAt(s.x - 5, s.z), s.z);
-      sign.rotation.y = s.heading * Math.PI / 180;
-      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff7a50, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
-      glow.scale.set(14, 14, 1); glow.position.set(s.x, this.terrain.heightAt(s.x, s.z) + 2, s.z);
-      this.group.add(flag, sign, glow);
+    this.challenges = CHALLENGES.map((c0) => {
+      // snap the start onto the nearest road sample
+      let s = c0.start, bd = Infinity;
+      for (const r of this.roads.roads) for (const p of r.points) {
+        const d = (p[0] - c0.start.x) ** 2 + (p[1] - c0.start.z) ** 2;
+        if (d < bd) { bd = d; s = { ...c0.start, x: p[0], z: p[1] }; }
+      }
+      const c = { ...c0, start: s };
       let route;
       if (c.checkpoints === 'spiral' || c.checkpoints === 'spiralDown') {
         const sp = this.roads.roads.find(r => r.name === 'Zirve Yolu').points;
@@ -81,6 +82,18 @@ export class Gameplay {
         else for (let i = sp.length - 60; i > 0; i -= 60) route.push([sp[i][0], sp[i][1]]);
         route.push([c.finish.x, c.finish.z]);
       } else route = c.route;
+      // flag and sign stand beside the start line, perpendicular to the direction of the first gate
+      const r0 = route[0];
+      const fl = Math.hypot(r0[0] - s.x, r0[1] - s.z) || 1, fx = (r0[0] - s.x) / fl, fz = (r0[1] - s.z) / fl;
+      const flag = this.lib.clone('flag');
+      flag.position.set(s.x + fz * 7, this.terrain.heightAt(s.x + fz * 7, s.z - fx * 7), s.z - fx * 7);
+      const sign = this.lib.clone('billboard');
+      const sx = s.x - fz * 9 + fx * 4, sz = s.z + fx * 9 + fz * 4;
+      sign.position.set(sx, this.terrain.heightAt(sx, sz), sz);
+      sign.rotation.y = Math.atan2(fx, fz) + Math.PI / 2;
+      const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.glowTex, color: 0xff7a50, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending }));
+      glow.scale.set(14, 14, 1); glow.position.set(s.x, this.terrain.heightAt(s.x, s.z) + 2, s.z);
+      this.group.add(flag, sign, glow);
       // medal times from route length (uphill is slower, downhill a bit faster)
       let len = 0, px = c.start.x, pz = c.start.z;
       for (const [x, z] of route) { len += Math.hypot(x - px, z - pz); px = x; pz = z; }
@@ -113,17 +126,60 @@ export class Gameplay {
     const s = c.start, first = c.route[0];
     const heading = Math.atan2(first[0] - s.x, first[1] - s.z); // face the first gate
     vehicle.reset({ x: s.x, y: this.terrain.heightAt(s.x, s.z) + 1.2, z: s.z }, heading);
-    this.active = { c, index: 0, t: 0, countdown: 3 };
+    this.active = { c, index: 0, t: 0, countdown: 3, rec: [], recT: 0 };
     this._placeGate();
+    this._startGhost(c.id);
     this.audio.play('ui_switch', { bus: 'ui', volume: 0.8 });
   }
 
   cancelChallenge() {
     if (!this.active) return;
     this.active = null; this.gate.visible = false;
+    this._stopGhost();
     this.hud.challenge(null);
     this.hud.toast('Görev iptal edildi', '', 'Bir dahaki sefere!');
   }
+
+  // ------------------------------------------------------------ ghost of the best run
+  _ghostKey(id) { return 'tozlu-yollar-ghost-' + id; }
+
+  _recordGhost(a, vehicle, dt) {
+    a.recT -= dt;
+    if (a.recT > 0) return;
+    a.recT = 0.1;
+    const p = vehicle.object.position, q = vehicle.object.quaternion;
+    a.rec.push(+p.x.toFixed(2), +p.y.toFixed(2), +p.z.toFixed(2), +q.x.toFixed(3), +q.y.toFixed(3), +q.z.toFixed(3), +q.w.toFixed(3));
+  }
+
+  _saveGhost(id, data) { try { localStorage.setItem(this._ghostKey(id), JSON.stringify(data)); } catch { /* quota */ } }
+
+  _startGhost(id) {
+    let data = null;
+    try { data = JSON.parse(localStorage.getItem(this._ghostKey(id)) || 'null'); } catch { data = null; }
+    if (!data || data.length < 14) { this.ghostData = null; return; }
+    this.ghostData = data;
+    if (!this.ghost) {
+      this.ghost = this.lib.clone('pickup');
+      const mat = new THREE.MeshBasicMaterial({ color: 0x9fe0ff, transparent: true, opacity: 0.32, depthWrite: false });
+      this.ghost.traverse((o) => { if (o.isMesh) { o.material = mat; o.castShadow = false; o.receiveShadow = false; } });
+      this.group.add(this.ghost);
+    }
+    this.ghost.visible = false;
+  }
+
+  _playGhost(t) {
+    const d = this.ghostData;
+    if (!d || !this.ghost) return;
+    const n = d.length / 7, f = t / 0.1, i = Math.floor(f);
+    if (i >= n - 1) { this.ghost.visible = false; return; }
+    const k = f - i, o = i * 7, o2 = o + 7;
+    this.ghost.visible = true;
+    this.ghost.position.set(d[o] + (d[o2] - d[o]) * k, d[o + 1] + (d[o2 + 1] - d[o + 1]) * k, d[o + 2] + (d[o2 + 2] - d[o + 2]) * k);
+    _qa.set(d[o + 3], d[o + 4], d[o + 5], d[o + 6]); _qb.set(d[o2 + 3], d[o2 + 4], d[o2 + 5], d[o2 + 6]);
+    this.ghost.quaternion.slerpQuaternions(_qa, _qb, k);
+  }
+
+  _stopGhost() { if (this.ghost) this.ghost.visible = false; this.ghostData = null; }
 
   _placeGate() {
     const a = this.active;
@@ -182,6 +238,8 @@ export class Gameplay {
         return { freeze: a.countdown > 0 };
       }
       a.t += dt;
+      this._recordGhost(a, vehicle, dt);
+      this._playGhost(a.t);
       this.gate.userData.arrow.rotation.y += dt * 2;
       this.gate.userData.arrow.position.y = 6 + Math.sin(this.time * 3) * 0.4;
       const p = a.c.route[a.index];
@@ -191,7 +249,8 @@ export class Gameplay {
         if (a.index >= a.c.route.length) {
           const best = this.save.best[a.c.id];
           const rec = !best || a.t < best;
-          if (rec) { this.save.best[a.c.id] = a.t; this._store(); }
+          if (rec) { this.save.best[a.c.id] = a.t; this._store(); this._saveGhost(a.c.id, a.rec); }
+          this._stopGhost();
           const m = a.c.medals;
           const medal = a.t <= m.gold ? 'gold' : a.t <= m.silver ? 'silver' : a.t <= m.bronze ? 'bronze' : null;
           const names = { gold: 'Altın', silver: 'Gümüş', bronze: 'Bronz' };
@@ -211,6 +270,8 @@ export class Gameplay {
     return {};
   }
 }
+
+const _qa = new THREE.Quaternion(), _qb = new THREE.Quaternion();
 
 export function fmt(t) {
   const m = Math.floor(t / 60), s = t - m * 60;

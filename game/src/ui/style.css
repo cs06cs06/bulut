@@ -339,3 +339,11 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 .mobile .hud-top-right { top: calc(204px + env(safe-area-inset-top)); bottom: auto; right: auto; left: calc(16px + env(safe-area-inset-left)); }
 .mobile .now-playing { transform: translateX(-140%); padding: 6px 12px; border-left: none; border-right: 4px solid var(--gold); }
 .mobile .now-playing.show { transform: none; }
+
+.g-daily { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+.g-daily h3 { font-family: 'Rye', serif; font-weight: 400; color: var(--gold); font-size: 22px; margin-bottom: 4px; }
+.daily { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; background: rgba(255,255,255,.05); border-radius: 8px; padding: 8px 12px; }
+.daily.on { background: rgba(120,190,90,.16); }
+.daily .ai { font-size: 20px; text-align: center; color: var(--gold); }
+.daily .an { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.daily .ar { font-size: 15px; color: #ffe39a; font-weight: 700; }

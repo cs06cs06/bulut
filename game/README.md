@@ -13,6 +13,10 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Teslimat işleri:** Çiftliklerdeki ilan panolarından saman balyası, balkabağı kasası ve süt varili taşı. Yük kasada fiziksel olarak durur; sert sürüşte düşer. Ödeme mesafeye, sağlam kalan yüke ve süre bonusuna göre.
 - **Ekonomi ve garaj:** Kazandığın parayla Arazi SUV ve Canavar Kamyon satın al; motor, lastik ve süspansiyon geliştir; boya seç.
 - **Görevler:** 4 zamana karşı parkur (Zirve Tırmanışı, Zirve İnişi, Çiftlik Rallisi, Vadi Turu) altın/gümüş/bronz madalyalarla; 5 hız kapanı ve 4 atlama rampası (rekor ve yıldızlar); havada kalma ve drift puanı.
+- **Hayalet rekor:** Zamana karşı görevlerde en iyi turun yarı saydam hayaleti seninle yarışır.
+- **Günlük görevler:** Her gün 3 yeni görev (teslimat, drift, atlayış, hız kapanı…), hepsine +$500 bonus.
+- **Çamur:** Arazide sürdükçe araç alttan yukarı çamurlanır (yağmurda daha hızlı); Söğüt Göleti’nden geçerek veya garajda yıkanır.
+- **Yer işareti:** Büyük haritaya tıklayınca dünyada yeşil ışık sütunu ve mini haritada hedef.
 - **Keşif:** 13 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 16 başarım ve istatistik ekranı.
 - **Canlı dünya:** 5 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
 - **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.

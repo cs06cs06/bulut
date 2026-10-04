@@ -188,6 +188,7 @@ export class HUD {
     }
     if (gp.nextTarget) icon(gp.nextTarget[0], gp.nextTarget[1], '◆', '#7fd4ff', true);
     if (this.extraTarget) icon(this.extraTarget[0], this.extraTarget[1], '▼', '#9fe0ff', true);
+    if (this.waypoint) icon(this.waypoint[0], this.waypoint[1], '✚', '#b6ff9a', true);
     // player arrow
     c.save(); c.translate(110, 110);
     c.beginPath(); c.moveTo(0, -10); c.lineTo(7, 8); c.lineTo(0, 4); c.lineTo(-7, 8); c.closePath();
@@ -219,6 +220,7 @@ export class HUD {
       for (const j of this.stuntZones.jumps) { const [x, y] = toPx(j.x, j.z); c.fillStyle = '#ffa04a'; c.strokeText('⌃', x, y); c.fillText('⌃', x, y); }
     }
     if (this.extraTarget) { const [x, y] = toPx(this.extraTarget[0], this.extraTarget[1]); c.fillStyle = '#9fe0ff'; c.strokeText('▼', x, y - 16); c.fillText('▼', x, y - 16); }
+    if (this.waypoint) { const [x, y] = toPx(this.waypoint[0], this.waypoint[1]); c.font = '700 30px "Barlow Condensed"'; c.fillStyle = '#b6ff9a'; c.strokeText('✚', x, y); c.fillText('✚', x, y); }
     const [px, py] = toPx(pos.x, pos.z);
     c.save(); c.translate(px, py); c.rotate(-heading + Math.PI);
     c.beginPath(); c.moveTo(0, -13); c.lineTo(9, 10); c.lineTo(0, 5); c.lineTo(-9, 10); c.closePath();

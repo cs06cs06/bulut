@@ -68,7 +68,10 @@ export class StuntZones {
       if (d < 14) { tr.inside = true; tr.max = Math.max(tr.max, v.speed * 3.6); }
       else if (tr.inside) {
         tr.inside = false;
-        if (tr.max > 40) { this._record(tr.id, tr.max, STARS_TRAP, 'HIZ KAPANI', 'km/sa'); this.progress.stat('maxTrap', tr.max, 'max'); }
+        if (tr.max > 40) {
+          this._record(tr.id, tr.max, STARS_TRAP, 'HIZ KAPANI', 'km/sa'); this.progress.stat('maxTrap', tr.max, 'max');
+          if (tr.max >= 90) this.progress.daily('trap');
+        }
         tr.max = 0;
       }
     }
