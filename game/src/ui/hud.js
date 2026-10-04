@@ -95,7 +95,10 @@ export class HUD {
   }
 
   hint(html, secs = 4) { this.el.hint.innerHTML = html; this.el.hint.classList.add('show'); this.hintTimer = secs; }
-  prompt(html) { if (html) { this.el.prompt.innerHTML = html; this.el.prompt.classList.remove('hidden'); } else this.el.prompt.classList.add('hidden'); }
+  prompt(html) {
+    if (html) { this.el.prompt.innerHTML = html; this.el.prompt.classList.remove('hidden'); } else this.el.prompt.classList.add('hidden');
+    this.el.hud.classList.toggle('has-prompt', !!html); // mobile: the hint shares the prompt's spot
+  }
 
   challenge(c) {
     if (!c) { this.el.chall.classList.add('hidden'); return; }

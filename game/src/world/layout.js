@@ -14,7 +14,7 @@ export const MODEL_SCALE = {
   pole: 1, wires: 1, turbine: 35, water_tower2: 10, grain_bin: 9, warehouse: 1, jeep: 1, streetlight: 1,
   gas_canopy: 0.85, gas_shop: 0.8, gas_sign: 0.8, store: 1.6, house_s_a: 6.5, house_s_c: 6.5,
   shop_a: 5.5, shop_b: 5.5, shop_c: 5.5, shop_d: 5.5, shop_e: 5.5, shop_f: 5.5, shop_g: 5.5, shop_h: 5.5,
-  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9,
+  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
   cow: 0.33, bull: 0.34, horse: 0.36, horse_white: 0.36, donkey: 0.3, alpaca: 0.32, deer: 0.33, chicken: 1.0,
 };
 
@@ -87,10 +87,12 @@ export const TOWN = {
     ['shop_a', 48, -1, 4], ['shop_c', 63, -1, 4], ['shop_e', 79, -1, 4], ['store', 97, -1, 4], ['shop_g', 113, -1, 4], ['house_s_a', 134, -1, 6], ['house_s_c', 156, -1, 6],
     ['shop_b', 52, 1, 4], ['shop_d', 67, 1, 4], ['shop_f', 83, 1, 4], ['shop_h', 101, 1, 4], ['house_s_c', 124, 1, 6], ['house_s_a', 146, 1, 6],
     ['warehouse', 205, -1, 12], ['water_tower2', 190, 1, 14],
+    ['diner', 30, -1, 7], ['chapel', 174, -1, 9], ['market', 170, 1, 5],
   ],
   props: [
     ['bench', 56, -1, 1.2, 0], ['bench', 90, 1, 1.2, 0], ['hydrant', 70, -1, 0.8, 0], ['hydrant', 95, 1, 0.8, 0], ['trash', 60, 1, 0.9, 0], ['trash', 104, -1, 0.9, 0],
     ['grain_bin', 230, -1, 10, 0], ['grain_bin', 246, -1, 10, 0], ['grain_bin', 238, -1, 26, 0],
+    ['wheelbarrow', 162, 1, 4, 30], ['sack', 178, 1, 3.5, 0], ['sack', 179, 1, 4.5, 50], ['crate', 177, 1, 6, 15], ['bench', 168, -1, 4, 0],
     ['fuel_barrels', 196, -1, 4, 0], ['pallet', 214, -1, 3, 0], ['pallet', 217, -1, 3.5, 0], ['logs', 222, -1, 5, 0],
   ],
   postOffice: ['shop_d', 67, 1],
@@ -126,6 +128,7 @@ export const POIS = [
   { id: 'poplar', name: 'Kavak Çiftliği', desc: 'Balkabağı tarlalarıyla ünlü.', x: -830, z: 1215, r: 50, icon: '⌂' },
   { id: 'town', name: 'Steptoe Kasabası', desc: 'Dükkânlar, posta ofisi ve tahıl deposu. Palouse’un kalbi.', x: 392, z: 545, r: 70, icon: '⌂' },
   { id: 'gas', name: 'Benzinlik', desc: 'Nitro deposunu doldur, aracını yıkat.', x: 403, z: 455, r: 30, icon: '⛽' },
+  { id: 'chapel', name: 'Kır Şapeli', desc: 'Kasabanın güney ucunda, kırmızı çatılı küçük şapel. Pazar tezgâhı hemen karşısında.', x: 376, z: 623, r: 28, icon: '✝' },
   { id: 'windmill', name: 'Yalnız Değirmen', desc: 'Tepedeki değirmen hâlâ dönüyor.', x: 760, z: -610, r: 40, icon: '✣' },
   { id: 'pond', name: 'Söğüt Göleti', desc: 'Serin su, kurbağalar ve gölge.', x: -700, z: 930, r: 40, icon: '◍' },
   { id: 'tractor', name: 'Unutulmuş Traktör', desc: 'Biri onu yıllar önce burada bırakmış.', x: -1290, z: 1080, r: 35, icon: '⚙' },

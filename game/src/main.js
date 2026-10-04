@@ -24,7 +24,7 @@ import { HUD } from './ui/hud.js';
 import { creditsHTML } from './credits.js';
 
 const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'jeep', 'pole', 'wires', 'turbine', 'water_tower2', 'grain_bin', 'warehouse', 'streetlight',
-  'gas_canopy', 'gas_shop', 'gas_sign', 'store', 'shop_a', 'shop_b', 'shop_c', 'shop_d', 'shop_e', 'shop_f', 'shop_g', 'shop_h', 'house_s_a', 'house_s_c',
+  'gas_canopy', 'gas_shop', 'gas_sign', 'store', 'shop_a', 'shop_b', 'shop_c', 'shop_d', 'shop_e', 'shop_f', 'shop_g', 'shop_h', 'house_s_a', 'house_s_c', 'chapel', 'diner', 'market', 'wheelbarrow', 'sack', 'crate',
   'bench', 'hydrant', 'trash', 'picnic', 'pallet', 'fuel_barrels', 'logs', 'cone', 'sign_stop', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
   'fence', 'fence2', 'farm_barn', 'cistern', 'mailbox', 'hay_round', 'hay_cube', 'cart', 'barrel', 'pond', 'haybale', 'crate_pumpkin', 'pumpkin',
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',

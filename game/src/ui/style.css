@@ -353,3 +353,16 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 .nitro-bar { flex: 1; height: 8px; border-radius: 4px; background: rgba(0,0,0,.45); overflow: hidden; border: 1px solid rgba(159,224,255,.4); }
 .nitro-bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #3aa8ff, #9fe0ff); transition: width .15s linear; }
 .nitro.on .nitro-bar i { background: linear-gradient(90deg, #ff8a3a, #ffe08a); box-shadow: 0 0 10px #ffb04a; }
+
+/* mobile: the tap prompt replaces the controls hint, and on short landscape screens the discovery toast
+   sits right under the top buttons so it clears the popups and the prompt */
+.mobile .has-prompt .hint { opacity: 0; }
+@media (max-height: 520px) {
+  .mobile .toast { top: calc(64px + env(safe-area-inset-top)); }
+  .mobile .toast .v { font-size: 28px; line-height: 1.1; }
+  .mobile .toast .d { font-size: 14px; max-width: 52vw; }
+  .mobile .toast .k { font-size: 12px; }
+  .mobile .popups { top: 35%; }
+  .mobile .popup { font-size: 21px; }
+  .mobile .prompt { font-size: 18px; padding: 8px 16px; bottom: calc(140px + env(safe-area-inset-bottom)); }
+}

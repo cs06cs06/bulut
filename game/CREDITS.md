@@ -30,7 +30,8 @@ All assets were downloaded from the external sources below.
 | City Builder Bits (kasaba dükkânları, bank, yangın musluğu, çöp kutusu) | [Kay Lousberg](https://kaylousberg.itch.io/city-builder-bits) | CC0 |
 | Resource Bits (palet, yakıt varilleri, kütük yığını) | [Kay Lousberg](https://kaylousberg.itch.io/resource-bits) | CC0 |
 | Zombie Apocalypse Kit (sokak lambası, trafik konisi) | [Quaternius](https://quaternius.com/packs/zombieapocalypsekit.html) | CC0 |
-| Gas Station (benzinlik kanopisi, market, fiyat tabelası) | [elbolilloduro](https://elbolilloduro.itch.io/gas-station) | CC0 |
+| Gas Station (benzinlik kanopisi, market, fiyat tabelası; dokular düz renge dönüştürüldü) | [elbolilloduro](https://elbolilloduro.itch.io/gas-station) | CC0 |
+| Medieval Hexagon Pack (Kır Şapeli, Fıçı Lokantası, pazar tezgâhı, el arabası, çuval, sandık) | [Kay Lousberg](https://kaylousberg.itch.io/kaykit-medieval-hexagon) | CC0 |
 | Low-Poly Warehouse (depo) | [Acheron](https://opengameart.org/content/low-poly-warehouse) | CC0 |
 | Picnic Table (piknik masası) | [Teh_Bucket](https://opengameart.org/content/picnic-table) | CC0 |
 | Lowpoly soviet jeep (GAZ-67 → Cip) | [artie31](https://opengameart.org/content/lowpoly-soviet-jeep) | CC0 |

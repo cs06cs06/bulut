@@ -371,6 +371,8 @@ export class World {
     const m = this._mergeStatic(objs.filter(Boolean), 'countryside');
     m.userData.maxDist = 99999;
     // wooden fences along the roads that lead to farms (one side, ~200 m each way)
+    const g = this.gasStation;
+    const inTown = (x, z) => Math.hypot(x - TOWN.center[0], z - TOWN.center[1]) < TOWN.radius + 25 || (g && Math.hypot(x - g.x, z - g.z) < 60);
     for (const fm of FARMS) {
       const q = T.roads.query(fm.x, fm.z, {});
       let best = null, bd = Infinity;
@@ -385,6 +387,8 @@ export class World {
         const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l * side * hw, nz = dx / l * side * hw;
         const ax = a[0] + nx, az = a[1] + nz, bx = b[0] + nx, bz = b[1] + nz;
         if (T.slopeAt(ax, az) > 0.2 || this.kickerNear(ax, az)) continue;
+        // keep the town (and the gas station forecourt at its edge) open to the road
+        if (inTown(ax, az) || inTown(bx, bz)) continue;
         this._fenceLine('fence', ax, az, bx, bz);
       }
     }

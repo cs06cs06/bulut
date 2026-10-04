@@ -13,8 +13,8 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Teslimat işleri:** Çiftliklerdeki ilan panolarından saman balyası, balkabağı kasası ve süt varili taşı. Yük kasada fiziksel olarak durur; sert sürüşte düşer. Ödeme mesafeye, sağlam kalan yüke ve süre bonusuna göre.
 - **Ekonomi ve garaj:** Kazandığın parayla Çiftlik Traktörü, Arazi SUV, GAZ-67 Cip ve Canavar Kamyon satın al; motor, lastik ve süspansiyon geliştir; boya seç.
 - **Görevler:** 4 zamana karşı parkur (Zirve Tırmanışı, Zirve İnişi, Çiftlik Rallisi, Vadi Turu) altın/gümüş/bronz madalyalarla; 5 hız kapanı ve 4 atlama rampası (rekor ve yıldızlar); havada kalma ve drift puanı.
-- **Steptoe Kasabası:** Ana yol boyunca dükkânlar, bakkal, depo, su kulesi, tahıl siloları, sokak lambaları (gece yanar) ve sokak eşyalarıyla küçük bir kasaba.
-- **Benzinlik:** Durunca nitro deposu dolar, F ile $25'a araç yıkama.
+- **Steptoe Kasabası:** Ana yol boyunca dükkânlar, bakkal, Fıçı Lokantası, kırmızı çatılı Kır Şapeli, çiftçi pazarı tezgâhı, depo, su kulesi, tahıl siloları, sokak lambaları (gece yanar) ve sokak eşyalarıyla küçük bir kasaba.
+- **Benzinlik:** Durunca nitro deposu dolar, F ile $25'a araç yıkama. Modelin foto-gerçekçi dokuları, dünyanın stilize görünümüne uysun diye varlık hattında düz renklere dönüştürülür.
 - **Posta turu:** Kasaba postanesinden 5 posta kutusuna mektup dağıt; kutunun yanında yavaşlaman yeterli, süre bonusu var.
 - **Nitro:** Shift ile harcanan, kendiliğinden dolan nitro deposu ve gösterge.
 - **Kırsal doku:** Yol kenarında elektrik direkleri ve teller, sırtlarda dönen rüzgâr türbinleri, tarlalarda saman sıraları, terk edilmiş barakalar, rüzgâr pompaları, yol kenarı çitleri.
@@ -23,7 +23,7 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Günlük görevler:** Her gün 3 yeni görev (teslimat, drift, atlayış, hız kapanı…), hepsine +$500 bonus.
 - **Çamur:** Arazide sürdükçe araç alttan yukarı çamurlanır (yağmurda daha hızlı); Söğüt Göleti’nden geçerek veya garajda yıkanır.
 - **Yer işareti:** Büyük haritaya tıklayınca dünyada yeşil ışık sütunu ve mini haritada hedef.
-- **Keşif:** 18 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 17 başarım ve istatistik ekranı.
+- **Keşif:** 19 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 17 başarım ve istatistik ekranı.
 - **Canlı dünya:** 8 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
 - **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.
 - **Ses:** Devre göre katmanlı motor sesi, çakıl/patinaj, çarpışma, yağmur ve gök gürültüsü, kır ambiyansı, Kevin MacLeod'un country/bluegrass parçaları.
@@ -82,7 +82,7 @@ game/
 
 ## Varlık hattı (tools/)
 - `dem.mjs` — Terrarium yükseklik karolarını indirip birleştirir; `heightmap.mjs` — oyunun `height.bin` dosyalarını üretir.
-- `stage-models.mjs` — indirilen GLB/glTF modellerini optimize eder (dedup, WebP doku, pivot düzeltme, çatı rengi).
+- `stage-models.mjs` — indirilen GLB/glTF modellerini optimize eder (dedup, WebP doku, pivot düzeltme, çatı rengi, foto dokuları düz renge çevirme).
 - `audio.py` — sesleri normalize edip OGG/MP3'e dönüştürür.
 - `design.mjs`, `layout-json.mjs`, `check-layout.mjs` — harita tasarım görseli ve yol/bina çakışma kontrolü.
 - `viewer.html`, `shot.mjs`, `play.mjs` — model önizleme ve headless (Playwright) oyun testi; `?manual` parametresi oyunu adım adım ilerletir.
