@@ -74,13 +74,19 @@ export class Gameplay {
       glow.scale.set(14, 14, 1); glow.position.set(s.x, this.terrain.heightAt(s.x, s.z) + 2, s.z);
       this.group.add(flag, sign, glow);
       let route;
-      if (c.checkpoints === 'spiral') {
+      if (c.checkpoints === 'spiral' || c.checkpoints === 'spiralDown') {
         const sp = this.roads.roads.find(r => r.name === 'Zirve Yolu').points;
         route = [];
-        for (let i = 60; i < sp.length - 1; i += 60) route.push([sp[i][0], sp[i][1]]);
+        if (c.checkpoints === 'spiral') for (let i = 60; i < sp.length - 1; i += 60) route.push([sp[i][0], sp[i][1]]);
+        else for (let i = sp.length - 60; i > 0; i -= 60) route.push([sp[i][0], sp[i][1]]);
         route.push([c.finish.x, c.finish.z]);
       } else route = c.route;
-      return { ...c, route, glow };
+      // medal times from route length (uphill is slower, downhill a bit faster)
+      let len = 0, px = c.start.x, pz = c.start.z;
+      for (const [x, z] of route) { len += Math.hypot(x - px, z - pz); px = x; pz = z; }
+      const k = c.checkpoints === 'spiral' ? 0.8 : c.checkpoints === 'spiralDown' ? 0.95 : 1;
+      const medals = { gold: len / (21 * k), silver: len / (16.5 * k), bronze: len / (11.5 * k) };
+      return { ...c, route, glow, len, medals };
     });
     // checkpoint gate (two flags + arrow), repositioned for the active challenge
     this.gate = new THREE.Group();
@@ -104,8 +110,9 @@ export class Gameplay {
   }
 
   startChallenge(c, vehicle) {
-    const s = c.start;
-    vehicle.reset({ x: s.x, y: this.terrain.heightAt(s.x, s.z) + 1.2, z: s.z }, s.heading * Math.PI / 180);
+    const s = c.start, first = c.route[0];
+    const heading = Math.atan2(first[0] - s.x, first[1] - s.z); // face the first gate
+    vehicle.reset({ x: s.x, y: this.terrain.heightAt(s.x, s.z) + 1.2, z: s.z }, heading);
     this.active = { c, index: 0, t: 0, countdown: 3 };
     this._placeGate();
     this.audio.play('ui_switch', { bus: 'ui', volume: 0.8 });
@@ -140,6 +147,7 @@ export class Gameplay {
       if (Math.hypot(pos.x - p.x, pos.z - p.z) < p.r) {
         this.save.found.push(p.id); this._store();
         this.hud.toast('Yeni Keşif', p.name, p.desc);
+        this.onDiscover?.(p);
         this.audio.play('discover', { bus: 'ui', volume: 0.7 });
         this.hud.updateCounts(this);
       }
@@ -184,8 +192,13 @@ export class Gameplay {
           const best = this.save.best[a.c.id];
           const rec = !best || a.t < best;
           if (rec) { this.save.best[a.c.id] = a.t; this._store(); }
-          this.hud.toast(rec ? 'Yeni Rekor!' : 'Tamamlandı', fmt(a.t), rec ? a.c.name : `En iyi: ${fmt(best)}`);
+          const m = a.c.medals;
+          const medal = a.t <= m.gold ? 'gold' : a.t <= m.silver ? 'silver' : a.t <= m.bronze ? 'bronze' : null;
+          const names = { gold: 'Altın', silver: 'Gümüş', bronze: 'Bronz' };
+          this.hud.toast(medal ? `${names[medal]} Madalya${rec ? ' · Rekor!' : ''}` : (rec ? 'Yeni Rekor!' : 'Tamamlandı'), fmt(a.t),
+            `${a.c.name} · Altın ${fmt(m.gold)} · Gümüş ${fmt(m.silver)} · Bronz ${fmt(m.bronze)}`);
           this.audio.play('discover', { bus: 'ui', volume: 0.8 });
+          this.onChallengeDone?.(a.c, a.t, medal);
           this.active = null; this.gate.visible = false; this.hud.challenge(null);
           return {};
         }

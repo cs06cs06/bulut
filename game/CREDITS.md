@@ -15,7 +15,7 @@ All assets were downloaded from the external sources below.
 | Ultimate Animated Animals (inek, boğa, at, eşek, alpaka, geyik) | [Quaternius](https://quaternius.com/packs/ultimateanimatedanimals.html) | CC0 |
 | Stylized Nature MegaKit (ağaçlar, çalılar, çimen, çiçek, eğrelti, kaya) | [Quaternius](https://quaternius.itch.io/stylized-nature-megakit) | CC0 |
 | Ultimate Stylized Nature (huş, akçaağaç) | [Quaternius](https://quaternius.com/packs/ultimatestylizednature.html) | CC0 |
-| Pikap (Free Low Poly Vehicles Pack) | [Rgsdev](https://opengameart.org/content/free-low-poly-vehicles-pack) | CC0 |
+| Pikap, Arazi SUV, Canavar Kamyon (Free Low Poly Vehicles Pack) | [Rgsdev](https://opengameart.org/content/free-low-poly-vehicles-pack) | CC0 |
 | Traktör | [Rubik Fish — Low Poly Tractor](https://rubikfish.itch.io/low-poly-tractor) | CC0 |
 | Cozy Farm (posta kutusu, saman yığınları, el arabası, varil, gölet, tabela, balkabağı kasası) | [styloo](https://styloo.itch.io/farm) | CC0 |
 | Lowpoly Farm Pack (saman balyası, balkabağı kasası, balkabağı) | [xra7en](https://xra7en.itch.io/lowpoly-farm-pack) | **CC BY 4.0** — "Lowpoly Farm Pack by xra7en" |
@@ -30,7 +30,9 @@ All assets were downloaded from the external sources below.
 | 2K Handpainted Style Textures (çimen, toprak, kaya) | [rubberduck](https://opengameart.org/content/2k-handpainted-style-textures) | CC0 |
 | Kloofendal 48d Partly Cloudy (Pure Sky) HDRI | [Poly Haven](https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky) | CC0 |
 | Kloppenheim 06 (Pure Sky) HDRI — gün batımı | [Poly Haven](https://polyhaven.com/a/kloppenheim_06_puresky) | CC0 |
-| Particle Pack (toz, parıltı) | [Kenney](https://kenney.nl/assets/particle-pack) | CC0 |
+| Rogland Clear Night HDRI — yıldızlı gece (ufuk altı kırpıldı) | [Poly Haven](https://polyhaven.com/a/rogland_clear_night) | CC0 |
+| Overcast Soil (Pure Sky) — fırtına gökyüzü | [Poly Haven](https://polyhaven.com/a/overcast_soil_puresky) | CC0 |
+| Particle Pack (toz, parıltı, yağmur çizgisi) | [Kenney](https://kenney.nl/assets/particle-pack) | CC0 |
 | Racing Pack (lastik izi) | [Kenney](https://kenney.nl/assets/racing-pack) | CC0 |
 | Rye, Barlow Condensed yazı tipleri | [Google Fonts](https://fonts.google.com) | SIL OFL 1.1 |
 
@@ -68,6 +70,9 @@ All assets were downloaded from the external sources below.
 | Rooster Crow 1 | [BenjaminNelan — freesound #435508](https://freesound.org/s/435508/) | CC0 |
 | Chicken clucking | [Breviceps — freesound #456803](https://freesound.org/s/456803/) | CC0 |
 | Gentle Stream | [BurghRecords — freesound #446019](https://freesound.org/s/446019/) | CC0 |
+| Slowly Raining Loop (yağmur) | [unfa — freesound #177479](https://freesound.org/s/177479/) | CC0 |
+| Thunder (gök gürültüsü) | [lennyboy — freesound #244053](https://freesound.org/s/244053/) | CC0 |
+| thunder (gök gürültüsü) | [netaj — freesound #193170](https://freesound.org/s/193170/) | CC0 |
 | Interface Sounds, Impact Sounds (arayüz) | [Kenney](https://kenney.nl/assets/ui-audio) | CC0 |
 
 ## Yazılım / Software

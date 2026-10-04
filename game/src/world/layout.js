@@ -59,6 +59,9 @@ export const FARM_BUILDINGS = {
   ],
 };
 
+// Job boards (farm-local x, z, rotDeg): pick up and drop off cargo here
+export const BOARDS = { miller: [-40, 24, 90], redbarn: [-8, 18, 0], watertower: [-14, 24, 0], hillhouse: [-10, 18, 180], buttefoot: [6, -20, 0] };
+
 // Paddocks: fenced areas with animals [farmId, localX, localZ, w, d, animals]
 export const PADDOCKS = [
   { farm: 'miller', x: 0, z: 62, w: 70, d: 44, fence: 'fence', animals: [['cow', 5], ['bull', 1]] },
@@ -105,6 +108,16 @@ export const CHALLENGES = [
     id: 'rally', name: 'Çiftlik Rallisi', desc: 'Çiftlikler arası toprak yol rallisi. Tüm kapılardan geç!',
     start: { x: 470, z: 255, heading: 80 },
     route: [[700, 200], [950, -50], [1120, -290], [980, -470], [780, -620], [650, -950], [420, -650], [300, -300], [380, 0], [440, 240]],
+  },
+  {
+    id: 'valley', name: 'Vadi Turu', desc: 'Güney tarlalarından Tepe Evi’ne uzanan hızlı bir parkur.',
+    start: { x: -80, z: 1222, heading: 132 },
+    route: [[0, 1150], [230, 1000], [300, 820], [330, 700], [520, 740], [700, 760], [1000, 720], [1250, 720]],
+  },
+  {
+    id: 'descent', name: 'Zirve İnişi', desc: 'Zirveden spiral yoldan aşağı! Frenlerine güven.',
+    start: { x: -790, z: -812, heading: 120 },
+    checkpoints: 'spiralDown', finish: { x: -330, z: -362 },
   },
 ];
 

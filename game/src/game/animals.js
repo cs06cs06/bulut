@@ -5,7 +5,8 @@ const SPEEDS = { cow: [1.0, 5.5], bull: [1.0, 5.5], horse: [1.4, 9], horse_white
 const SOUNDS = { cow: ['cow_moo_1', 'cow_moo_2'], bull: ['cow_moo_2'], chicken: ['chickens'] };
 
 export class Animal {
-  constructor({ lib, model, area, terrain, rand, wild }) {
+  constructor({ lib, model, area, terrain, rand, wild, onScare }) {
+    this.onScare = onScare;
     this.model = model; this.area = area; this.terrain = terrain; this.rand = rand; this.wild = wild;
     const s = 0.9 + rand() * 0.2;
     this.object = lib.clone(model, s);
@@ -59,6 +60,7 @@ export class Animal {
     this.object.visible = true;
     const scare = this.wild ? (d < 30 && playerSpeed > 1.5) || d < 12 : d < 9 && playerSpeed > 1;
     if (scare) {
+      if (!(this.fleeing > 0)) this.onScare?.();
       // run directly away from the player
       const ax = this.pos.x - playerPos.x, az = this.pos.z - playerPos.z, l = Math.hypot(ax, az) || 1;
       let tx = this.pos.x + ax / l * 25, tz = this.pos.z + az / l * 25;

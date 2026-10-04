@@ -16,7 +16,7 @@ export const MUSIC = [
 export const SFX_FILES = ['engine_idle', 'engine_low', 'engine_mid', 'engine_high', 'engine_diesel', 'gravel_loop', 'skid_dirt', 'skid_road',
   'wind_loop', 'birds_loop', 'countryside', 'wheat_field', 'cow_moo_1', 'cow_moo_2', 'rooster', 'chickens', 'stream',
   'crash_1', 'crash_2', 'crash_3', 'impact_wood', 'impact_metal', 'impact_stone', 'land_thud', 'suspension', 'horn', 'gear',
-  'engine_start', 'door_close', 'ui_click', 'ui_hover', 'ui_switch', 'discover'];
+  'engine_start', 'door_close', 'ui_click', 'ui_hover', 'ui_switch', 'discover', 'rain_loop', 'thunder_1', 'thunder_2'];
 
 export class AudioSystem {
   constructor() {

@@ -164,7 +164,8 @@ export class World {
     if (blades) this.spinners.push({ node: blades, speed: 0.8 + this.rand() * 0.8 });
   }
 
-  _fenceLine(model, x0, z0, x1, z1, objs) {
+  // Fence segments are individual fixed bodies drawn with instancing; a hard hit turns one dynamic.
+  _fenceLine(model, x0, z0, x1, z1) {
     const b = this.lib.bounds(model);
     const seg = (b.max.x - b.min.x) * 0.98;            // fence models run along local X
     const cx = (b.max.x + b.min.x) / 2, cz = (b.max.z + b.min.z) / 2;
@@ -177,19 +178,64 @@ export class World {
       const x = x0 + (x1 - x0) * t, z = z0 + (z1 - z0) * t;
       const ha = this.terrain.heightAt(x0 + (x1 - x0) * (i / n), z0 + (z1 - z0) * (i / n));
       const hb = this.terrain.heightAt(x0 + (x1 - x0) * ((i + 1) / n), z0 + (z1 - z0) * ((i + 1) / n));
-      const o = this.lib.clone(model);
+      const o = new THREE.Object3D();
       o.scale.set(sc * stretch, sc, sc);
       o.rotation.y = ang;
       o.rotateZ(Math.atan2(hb - ha, len / n));
       // centre the model's bounding box on the segment midpoint
       const off = new THREE.Vector3(-cx * stretch, 0, -cz).applyQuaternion(o.quaternion);
       o.position.set(x + off.x, (ha + hb) / 2 - 0.08 + off.y, z + off.z);
-      objs.push(o);
+      o.updateMatrix();
       const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), ang);
-      const col = this.physics.createCollider(this.R.ColliderDesc.cuboid(len / n / 2, 0.6, 0.12)
-        .setTranslation(x, (ha + hb) / 2 + 0.6, z).setRotation(q).setFriction(0.5));
-      col.userData = { kind: 'fence' };
+      const by = (ha + hb) / 2 + 0.6;
+      const body = this.physics.createRigidBody(this.R.RigidBodyDesc.fixed().setTranslation(x, by, z).setRotation(q));
+      const col = this.physics.createCollider(this.R.ColliderDesc.cuboid(len / n / 2, 0.6, 0.12).setFriction(0.5).setDensity(22), body);
+      const bodyMat = new THREE.Matrix4().compose(new THREE.Vector3(x, by, z), q, new THREE.Vector3(1, 1, 1));
+      const segm = { model, body, local: bodyMat.invert().multiply(o.matrix), broken: false, index: -1 };
+      col.userData = { kind: 'fence', seg: segm };
+      (this.fenceSegs = this.fenceSegs || []).push(segm);
     }
+  }
+
+  _buildFences() {
+    this.fenceMeshes = {};
+    const g = new THREE.Group(); g.name = 'fences';
+    const byModel = {};
+    for (const sg of this.fenceSegs || []) (byModel[sg.model] = byModel[sg.model] || []).push(sg);
+    const m = new THREE.Matrix4(), tmp = new THREE.Matrix4();
+    for (const [model, segs] of Object.entries(byModel)) {
+      const sc = this.lib.scaleOf(model);
+      const unscale = new THREE.Matrix4().makeScale(1 / sc, 1 / sc, 1 / sc);
+      const meshes = this.lib.parts(model).map((part) => {
+        const im = new THREE.InstancedMesh(part.geometry, part.material, segs.length);
+        im.userData.raw = unscale.clone().multiply(part.matrix);
+        im.castShadow = true; im.receiveShadow = true; im.frustumCulled = false;
+        g.add(im);
+        return im;
+      });
+      segs.forEach((sg, i) => {
+        sg.index = i;
+        const t = sg.body.translation(), r = sg.body.rotation();
+        m.compose(new THREE.Vector3(t.x, t.y, t.z), new THREE.Quaternion(r.x, r.y, r.z, r.w), new THREE.Vector3(1, 1, 1)).multiply(sg.local);
+        for (const im of meshes) im.setMatrixAt(i, tmp.multiplyMatrices(m, im.userData.raw));
+      });
+      for (const im of meshes) { im.instanceMatrix.needsUpdate = true; im.computeBoundingSphere(); }
+      this.fenceMeshes[model] = meshes;
+    }
+    this.root.add(g);
+    this.brokenFences = [];
+  }
+
+  breakFence(seg, vel) {
+    if (!seg || seg.broken) return false;
+    seg.broken = true;
+    seg.body.setBodyType(this.R.RigidBodyType.Dynamic, true);
+    seg.body.setLinearDamping(0.4); seg.body.setAngularDamping(0.6);
+    const mass = seg.body.mass();
+    seg.body.applyImpulse({ x: vel.x * mass * 0.7, y: mass * 2.5, z: vel.z * mass * 0.7 }, true);
+    seg.body.applyTorqueImpulse({ x: (Math.random() - 0.5) * mass * 3, y: (Math.random() - 0.5) * mass * 2, z: (Math.random() - 0.5) * mass * 3 }, true);
+    this.brokenFences.push(seg);
+    return true;
   }
 
   _paddocks() {
@@ -200,29 +246,26 @@ export class World {
       const toWorld = (lx, lz) => [f.x + lx * cos + lz * sin, f.z - lx * sin + lz * cos];
       const hw = p.w / 2, hd = p.d / 2;
       const c = [toWorld(p.x - hw, p.z - hd), toWorld(p.x + hw, p.z - hd), toWorld(p.x + hw, p.z + hd), toWorld(p.x - hw, p.z + hd)];
-      const objs = [];
       for (let i = 0; i < 4; i++) {
         const a = c[i], b = c[(i + 1) % 4];
         if (i === 2 && p.w > 30) {
           // leave a gate gap on the far side so you can drive in
           const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
           const dir = [(b[0] - a[0]) / p.w, (b[1] - a[1]) / p.w];
-          this._fenceLine(p.fence, a[0], a[1], mid[0] - dir[0] * 5, mid[1] - dir[1] * 5, objs);
-          this._fenceLine(p.fence, mid[0] + dir[0] * 5, mid[1] + dir[1] * 5, b[0], b[1], objs);
-        } else this._fenceLine(p.fence, a[0], a[1], b[0], b[1], objs);
+          this._fenceLine(p.fence, a[0], a[1], mid[0] - dir[0] * 5, mid[1] - dir[1] * 5);
+          this._fenceLine(p.fence, mid[0] + dir[0] * 5, mid[1] + dir[1] * 5, b[0], b[1]);
+        } else this._fenceLine(p.fence, a[0], a[1], b[0], b[1]);
       }
-      const m = this._mergeStatic(objs, 'paddock');
-      m.userData.center = new THREE.Vector3(f.x, 0, f.z); m.userData.maxDist = 1200;
-      this.cells.push(m);
       const center = toWorld(p.x, p.z);
       const area = { cx: center[0], cz: center[1], hw: hw - 3, hd: hd - 3, rot };
       this.paddocks.push(area);
       for (const [model, n] of p.animals) for (let i = 0; i < n; i++) this._spawnAnimal(model, area, false);
     }
+    this._buildFences();
   }
 
   _spawnAnimal(model, area, wild) {
-    const a = new Animal({ lib: this.lib, model, area, terrain: this.terrain, rand: this.rand, wild });
+    const a = new Animal({ lib: this.lib, model, area, terrain: this.terrain, rand: this.rand, wild, onScare: () => this.onAnimalScared?.() });
     this.root.add(a.object);
     this.animals.push(a);
   }
@@ -385,6 +428,15 @@ export class World {
   // ------------------------------------------------------------ per frame
   update(dt, time, playerPos, vehicleSpeed, audio) {
     for (const s of this.spinners) s.node.rotation.z += dt * s.speed * 2.2;
+    if (this.brokenFences?.length) {
+      const m = new THREE.Matrix4(), tmp = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+      for (const sg of this.brokenFences) {
+        if (sg.body.isSleeping()) continue;
+        const t = sg.body.translation(), r = sg.body.rotation();
+        m.compose(v.set(t.x, t.y, t.z), q.set(r.x, r.y, r.z, r.w), one).multiply(sg.local);
+        for (const im of this.fenceMeshes[sg.model]) { im.setMatrixAt(sg.index, tmp.multiplyMatrices(m, im.userData.raw)); im.instanceMatrix.needsUpdate = true; }
+      }
+    }
     for (const d of this.dynamic) {
       if (d.body.isSleeping()) continue;
       const t = d.body.translation(), r = d.body.rotation();

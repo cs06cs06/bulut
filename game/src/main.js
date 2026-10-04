@@ -9,15 +9,18 @@ import { Terrain } from './world/terrain.js';
 import { ModelLibrary } from './world/models.js';
 import { World } from './world/world.js';
 import { GroundCover } from './world/grass.js';
+import { Weather } from './world/weather.js';
 import * as LAYOUT from './world/layout.js';
-import { Vehicle } from './game/vehicle.js';
+import { Vehicle, VEHICLES, UPGRADES } from './game/vehicle.js';
+import { Progress, ACHIEVEMENTS } from './game/progress.js';
+import { Delivery } from './game/delivery.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
 import { HUD } from './ui/hud.js';
 import { creditsHTML } from './credits.js';
 
-const MODELS = ['pickup', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
+const MODELS = ['pickup', 'suv', 'monster', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
   'fence', 'fence2', 'farm_barn', 'cistern', 'mailbox', 'hay_round', 'hay_cube', 'cart', 'barrel', 'pond', 'haybale', 'crate_pumpkin', 'pumpkin',
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',
   'tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5', 'pine_1', 'pine_2', 'pine_3', 'dead_1', 'dead_2', 'birch_1', 'maple_1', 'bush', 'bush_flowers',
@@ -31,6 +34,10 @@ const TIPS = [
   'İpucu: Haritada keşfettiğin noktalara ışınlanabilirsin.',
   'İpucu: Saman balyalarına çarp, uçuşlarını izle.',
   'İpucu: Bayrakların yanında F’ye basarak zamana karşı görevleri başlat.',
+  'İpucu: Çiftliklerdeki sarı ışıklı ilan panolarından teslimat işi al, yükü düşürmeden götür.',
+  'İpucu: Kazandığın parayla Garaj’dan motor, lastik ve süspansiyon geliştir.',
+  'İpucu: Uzun atlayışlar ve driftler para kazandırır.',
+  'İpucu: Gece modunda farlarını L tuşuyla açıp kapatabilirsin.',
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
@@ -52,6 +59,10 @@ class Game {
     this.clock = new THREE.Clock();
     this.acc = 0; this.time = 0;
     this.impactCooldown = 0;
+    this.progress = new Progress();
+    this.drift = { t: 0, grace: 0 };
+    this.photo = { dist: 9, fov: 50 };
+    this.air = { clear: 0 };
     $('credits').innerHTML = creditsHTML();
     let ti = Math.floor(Math.random() * TIPS.length);
     $('load-tip').textContent = TIPS[ti];
@@ -59,13 +70,13 @@ class Game {
   }
 
   _loadSettings() {
-    const def = { quality: 'high', master: 0.9, music: 0.5, sfx: 0.9, amb: 0.7, units: 'kmh', time: 'noon', paint: 'green' };
+    const def = { quality: 'high', master: 0.9, music: 0.5, sfx: 0.9, amb: 0.7, units: 'kmh', time: 'noon', paint: 'green', weather: 'dynamic' };
     if (MOBILE) def.quality = 'low';
     try { return Object.assign(def, JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}')); } catch { return def; }
   }
   _saveSettings() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings)); } catch { /* ignore */ } }
 
-  progress(p, text) {
+  loadProgress(p, text) {
     $('load-bar').style.width = `${Math.round(p * 100)}%`;
     if (text) $('load-text').textContent = text;
   }
@@ -75,7 +86,7 @@ class Game {
     const texLoader = new THREE.TextureLoader();
     const tasks = [];
     let done = 0;
-    const track = (p, w = 1) => { tasks.push({ p, w }); return p.then((v) => { done += w; this.progress(0.75 * done / totalW(), 'Varlıklar indiriliyor…'); return v; }); };
+    const track = (p, w = 1) => { tasks.push({ p, w }); return p.then((v) => { done += w; this.loadProgress(0.75 * done / totalW(), 'Varlıklar indiriliyor…'); return v; }); };
     const totalW = () => tasks.reduce((s, t) => s + t.w, 0);
 
     const physicsP = track(RAPIER.init(), 2);
@@ -93,10 +104,10 @@ class Game {
       texP('dirt_n', 'assets/textures/dirt_n.jpg', false), texP('rock', 'assets/textures/rock.jpg'), texP('rock_n', 'assets/textures/rock_n.jpg', false),
       texP('smoke', 'assets/particles/smoke_04.png', true, false), texP('debris', 'assets/particles/dirt_01.png', true, false),
       texP('star', 'assets/particles/star_06.png', true, false), texP('glow', 'assets/particles/circle_05.png', true, false),
-      texP('skid', 'assets/particles/skidmark.png', true, false), texP('sky', 'assets/sky/sky_4k.jpg', true, false),
-      texP('skySunset', 'assets/sky/sunset_4k.jpg', true, false),
+      texP('skid', 'assets/particles/skidmark.png', true, false), texP('streak', 'assets/particles/trace_01.png', true, false), texP('sky', 'assets/sky/sky_4k.jpg', true, false),
+      texP('skySunset', 'assets/sky/sunset_4k.jpg', true, false), texP('skyNight', 'assets/sky/night_4k.jpg', true, false), texP('skyStorm', 'assets/sky/storm_4k.jpg', true, false),
     ];
-    const hdrP = track(Promise.all([new HDRLoader().loadAsync('assets/sky/sky_1k.hdr'), new HDRLoader().loadAsync('assets/sky/sunset_1k.hdr')]), 3);
+    const hdrP = track(Promise.all(['sky', 'sunset', 'night'].map((n) => new HDRLoader().loadAsync(`assets/sky/${n}_1k.hdr`))), 4);
     const metaP = track(fetch('assets/terrain/terrain.json').then((r) => r.json()), 1);
     const hP = track(fetch('assets/terrain/height.bin').then((r) => r.arrayBuffer()), 3);
     const hoP = track(fetch('assets/terrain/height_outer.bin').then((r) => r.arrayBuffer()), 1);
@@ -108,10 +119,10 @@ class Game {
     const [meta, hBuf, hoBuf, hdr] = await Promise.all([metaP, hP, hoP, hdrP]);
     this.lib = lib; this.tex = tex;
 
-    this.progress(0.78, 'Palouse tepeleri şekilleniyor…');
+    this.loadProgress(0.78, 'Palouse tepeleri şekilleniyor…');
     await nextFrame();
     const rs = this.rs;
-    rs.setupLighting({ noon: { sky: tex.sky, hdr: hdr[0] }, sunset: { sky: tex.skySunset, hdr: hdr[1] } });
+    rs.setupLighting({ noon: { sky: tex.sky, hdr: hdr[0] }, sunset: { sky: tex.skySunset, hdr: hdr[1] }, night: { sky: tex.skyNight, hdr: hdr[2] } }, tex.skyStorm);
     const roads = LAYOUT.ROADS.map((r) => ({ ...r }));
     const layout = { roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: [
       ...LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r * 0.75, falloff: 30 })),
@@ -123,21 +134,22 @@ class Game {
     rs.scene.add(this.terrain.group);
     mark('terrain');
 
-    this.progress(0.86, 'Fizik dünyası kuruluyor…');
+    this.loadProgress(0.86, 'Fizik dünyası kuruluyor…');
     await nextFrame();
     this.physics = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
     this.physics.timestep = FIXED;
     this.events = new RAPIER.EventQueue(true);
     this.terrain.createCollider(RAPIER, this.physics);
 
-    this.progress(0.9, 'Çiftlikler ve ağaçlar yerleştiriliyor…');
+    this.loadProgress(0.9, 'Çiftlikler ve ağaçlar yerleştiriliyor…');
     await nextFrame();
     this.world = new World({ scene: rs.scene, terrain: this.terrain, lib, RAPIER, physics: this.physics, renderer: rs.renderer, sunDir: rs.sunDir, density: MOBILE ? 0.55 : 1 });
     this.world.build();
     mark('world');
     this.grass = new GroundCover({ lib, terrain: this.terrain, scene: rs.scene, quality: 'high' });
+    this.weather = new Weather({ scene: rs.scene, rs, terrain: this.terrain, audio: this.audio, streakTex: tex.streak, count: MOBILE ? 3000 : 7000 });
 
-    this.progress(0.95, 'Pikap hazırlanıyor…');
+    this.loadProgress(0.95, 'Pikap hazırlanıyor…');
     await nextFrame();
     // snap the spawn onto the nearest road sample
     let bestD = Infinity, best = null;
@@ -147,13 +159,16 @@ class Game {
     }
     SPAWN.x = best[0]; SPAWN.z = best[1];
     const sy = this.terrain.heightAt(SPAWN.x, SPAWN.z) + 1.2;
-    this.vehicle = new Vehicle({ RAPIER, world: this.physics, model: lib.gltf.pickup.scene, spawn: { x: SPAWN.x, y: sy, z: SPAWN.z }, heading: SPAWN.heading, config: { scale: 1.0 } });
-    rs.scene.add(this.vehicle.object);
-    this.vehicle.onShift = () => this.audio.play('gear', { volume: 0.25 });
+    this.RAPIER = RAPIER;
+    if (!this.progress.data.owned.includes(this.progress.data.current)) this.progress.data.current = 'pickup';
+    this.spawnVehicle(this.progress.data.current, { x: SPAWN.x, y: sy, z: SPAWN.z }, SPAWN.heading);
     this.cameraRig = new CameraRig(rs.camera, $('game'));
     this.dust = new Dust(rs.scene, { smoke: tex.smoke, dirt: tex.debris });
     this.tracks = new TireTracks(rs.scene, tex.skid);
     this.gameplay = new Gameplay({ scene: rs.scene, terrain: this.terrain, lib, tex, hud: this.hud, audio: this.audio, roads: this.terrain.roads });
+    this.delivery = new Delivery({ scene: rs.scene, physics: this.physics, RAPIER, lib, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress, glowTex: tex.glow });
+    this.hud.boards = this.delivery.boards;
+    this._wireProgress();
     mark('vehicle+gameplay');
     this.hud.buildMap(this.terrain);
     mark('map');
@@ -161,7 +176,7 @@ class Game {
     this.audio.onTrack = (t) => this.hud.nowPlaying(t);
 
     this.applySettings();
-    this.progress(0.98, 'Gölgeler ve ışık hazırlanıyor…');
+    this.loadProgress(0.98, 'Gölgeler ve ışık hazırlanıyor…');
     await nextFrame();
     this.terrain.update(this.vehicle.position, true);
     this.grass.update(this.vehicle.position);
@@ -169,7 +184,7 @@ class Game {
     this._menuCamera(0);
     await rs.renderer.compileAsync(rs.scene, rs.camera).catch(() => {});
     rs.render(0.016);
-    this.progress(1, 'Hazır!');
+    this.loadProgress(1, 'Hazır!');
     clearInterval(this._tipTimer);
     window.__game = this;
     this._bindUI();
@@ -196,6 +211,203 @@ class Game {
     } else this.loop();
   }
 
+  // ------------------------------------------------------------ garage / progression
+  spawnVehicle(id, pos, heading) {
+    const spec = VEHICLES[id] || VEHICLES.pickup;
+    if (this.vehicle) this.vehicle.dispose(this.rs.scene);
+    this.vehicle = new Vehicle({ RAPIER: this.RAPIER, world: this.physics, model: this.lib.gltf[spec.model].scene, spawn: pos, heading,
+      config: { ...spec }, upgrades: this.progress.data.upgrades });
+    this.vehicle.id = id;
+    this.rs.scene.add(this.vehicle.object);
+    this.vehicle.onShift = () => this.audio.play('gear', { volume: 0.25 });
+    this.vehicle.setPaint(this.settings.paint);
+    this.vehicle.setHeadlights(!!this.headlights);
+    this.vehicle.sync(1);
+    if (this.delivery?.job) { this.delivery.cancel(); this.hud.toast('Teslimat iptal edildi', 'Araç değişti', 'Yeni bir iş için ilan panosuna uğra.'); }
+    if (this.cameraRig) this.cameraRig.initialized = false;
+  }
+
+  _respawnSame() {
+    const v = this.vehicle, p = v.body.translation();
+    this.spawnVehicle(v.id, { x: p.x, y: this.terrain.heightAt(p.x, p.z) + 1.3, z: p.z }, v.heading());
+    this.delivery.cancel();
+  }
+
+  _wireProgress() {
+    const P = this.progress, hud = this.hud;
+    hud.setMoney(P.money);
+    P.onChange = () => { hud.setMoney(P.money); if (!$('overlay').classList.contains('hidden')) this._renderGarage(); };
+    P.onAchievement = (a) => {
+      hud.toast('Başarım Açıldı', a.name, `${a.desc} · +$${a.reward}`);
+      this.audio.play('discover', { bus: 'ui', volume: 0.9, rate: 1.2 });
+    };
+    this.gameplay.onDiscover = () => { P.addMoney(100); hud.popup('+$100 <small>keşif</small>'); };
+    this.gameplay.onCollect = () => { P.addMoney(50); hud.popup('+$50 <small>balkabağı</small>'); };
+    this.gameplay.onChallengeDone = (c, t, medal) => {
+      const order = { bronze: 1, silver: 2, gold: 3 }, pay = { bronze: 200, silver: 400, gold: 700 };
+      const medals = P.data.medals || (P.data.medals = {});
+      const prev = medals[c.id];
+      let money = 60;
+      if (medal && (!prev || order[medal] > order[prev])) {
+        money = pay[medal] - (prev ? pay[prev] : 0);
+        medals[c.id] = medal;
+        if (medal === 'gold') P.stat('golds', 1);
+      }
+      P.addMoney(money);
+      hud.popup(`+$${money} <small>${c.name}</small>`);
+    };
+    this.world.onAnimalScared = () => P.stat('scared', 1);
+  }
+
+  _renderGarage() {
+    const P = this.progress, d = P.data;
+    $('g-money').textContent = '$' + d.money.toLocaleString('tr-TR');
+    const vEl = $('g-vehicles');
+    vEl.innerHTML = '';
+    for (const [id, v] of Object.entries(VEHICLES)) {
+      const owned = d.owned.includes(id), cur = this.vehicle.id === id;
+      const div = document.createElement('div');
+      div.className = 'veh' + (cur ? ' current' : '');
+      const bar = (x) => `<span class="bar5"><i style="width:${Math.min(100, x * 100)}%"></i></span>`;
+      div.innerHTML = `<div class="vn">${v.name}</div><div class="vd">${v.desc}</div>
+        <div class="vs"><span>Güç</span>${bar(v.power / 1.7)}<span>Tutuş</span>${bar(v.grip / 1.2)}<span>Arazi</span>${bar(v.suspensionTravel / 0.75)}<span>Kasa</span><span>${v.bed ? 'Var' : 'Yok'}</span></div>`;
+      const b = document.createElement('button');
+      b.className = 'btn' + (owned ? '' : ' primary');
+      b.textContent = cur ? 'Kullanılıyor' : owned ? 'Seç' : `Satın al · $${v.price.toLocaleString('tr-TR')}`;
+      b.disabled = cur || (!owned && d.money < v.price);
+      b.onclick = () => {
+        if (!owned) { if (!P.spend(v.price)) return; d.owned.push(id); P.save(); this.audio.play('discover', { bus: 'ui', volume: 0.7 }); }
+        d.current = id; P.save();
+        const p = this.vehicle.body.translation();
+        this.spawnVehicle(id, { x: p.x, y: this.terrain.heightAt(p.x, p.z) + 1.5, z: p.z }, this.vehicle.heading());
+        this._renderGarage();
+      };
+      div.appendChild(b);
+      vEl.appendChild(div);
+    }
+    const uEl = $('g-upgrades');
+    uEl.innerHTML = '';
+    for (const [key, u] of Object.entries(UPGRADES)) {
+      const lvl = d.upgrades[key] || 0, price = u.prices[lvl];
+      const div = document.createElement('div');
+      div.className = 'upg';
+      div.innerHTML = `<div><div class="un">${u.name}</div><div class="ud">${u.desc}</div></div><div class="pips">${u.prices.map((_, i) => `<i class="${i < lvl ? 'on' : ''}"></i>`).join('')}</div>`;
+      const b = document.createElement('button');
+      b.className = 'btn';
+      b.textContent = price ? `Geliştir · $${price.toLocaleString('tr-TR')}` : 'Maksimum';
+      b.disabled = !price || d.money < price;
+      b.onclick = () => {
+        if (!P.spend(price)) return;
+        d.upgrades[key] = lvl + 1; P.save();
+        this.audio.play('ui_switch', { bus: 'ui', volume: 0.8 });
+        this._respawnSame();
+        this._renderGarage();
+      };
+      div.appendChild(b);
+      uEl.appendChild(div);
+    }
+  }
+
+  _renderAchievements() {
+    const P = this.progress, st = P.stats;
+    const stats = [
+      ['$' + st.earned.toLocaleString('tr-TR'), 'Toplam kazanç'], [st.deliveries, 'Teslimat'], [st.perfect, 'Hasarsız teslimat'],
+      [(st.distance / 1000).toFixed(1) + ' km', 'Toplam yol'], [Math.round(st.topSpeed) + ' km/sa', 'En yüksek hız'], [st.maxAir.toFixed(1) + ' sn', 'En uzun uçuş'],
+      [st.maxDrift.toFixed(1) + ' sn', 'En uzun drift'], [st.fences, 'Devrilen çit'], [st.scared, 'Ürkütülen hayvan'],
+    ];
+    $('g-stats').innerHTML = stats.map(([v, l]) => `<div class="stat"><b>${v}</b><span>${l}</span></div>`).join('');
+    $('g-ach').innerHTML = ACHIEVEMENTS.map((a) => {
+      const on = P.data.achievements.includes(a.id);
+      return `<div class="ach ${on ? 'on' : ''}"><div class="ai">${on ? '★' : '☆'}</div><div><div class="an">${a.name}</div><div class="ad">${a.desc}</div></div><div class="ar">$${a.reward}</div></div>`;
+    }).join('') + `<div class="muted">${P.data.achievements.length} / ${ACHIEVEMENTS.length} başarım</div>`;
+  }
+
+  // ------------------------------------------------------------ job board
+  openBoard(board) {
+    this.state = 'board';
+    this._board = board;
+    $('board').classList.remove('hidden');
+    $('board-title').textContent = `İş İlanları · ${board.farm.name}`;
+    $('board-msg').textContent = '';
+    const list = $('board-list');
+    list.innerHTML = '';
+    const D = this.delivery;
+    if (D.job) {
+      const j = D.job;
+      const div = document.createElement('div');
+      div.className = 'job active';
+      div.innerHTML = `<div class="ji">${j.cargo.icon}</div><div><div class="jt">Aktif iş: ${j.cargo.name} → ${j.dest.farm.name}</div><div class="jd">Yük ${D.kept}/${j.total} · ödül $${j.reward}</div></div>`;
+      const b = document.createElement('button'); b.className = 'btn'; b.textContent = 'İptal et';
+      b.onclick = () => { D.cancel(); this.audio.play('ui_click', { bus: 'ui' }); this.openBoard(board); };
+      div.appendChild(b); list.appendChild(div);
+    } else {
+      for (const o of D.offers(board)) {
+        const div = document.createElement('div');
+        div.className = 'job';
+        div.innerHTML = `<div class="ji">${o.cargo.icon}</div><div><div class="jt">${o.cargo.count} × ${o.cargo.name} → ${o.dest.farm.name}</div>
+          <div class="jd">${(o.dist / 1000).toFixed(1)} km · bonus süresi ${Math.floor(o.limit / 60)}:${String(Math.round(o.limit % 60)).padStart(2, '0')}</div></div>`;
+        const right = document.createElement('div');
+        right.innerHTML = `<div class="pay">$${o.reward}</div>`;
+        const b = document.createElement('button'); b.className = 'btn primary'; b.textContent = 'Kabul et';
+        b.onclick = () => {
+          const err = D.accept(o, this.vehicle);
+          if (err) { $('board-msg').textContent = err; this.audio.play('ui_click', { bus: 'ui', rate: 0.7 }); return; }
+          this.closeBoard();
+          this.hud.toast('Yük bindi', `${o.cargo.count} × ${o.cargo.name}`, `${o.dest.farm.name} çiftliğine götür. Yavaş git, yük düşmesin!`);
+        };
+        right.appendChild(b); div.appendChild(right); list.appendChild(div);
+      }
+    }
+  }
+
+  closeBoard() {
+    $('board').classList.add('hidden');
+    if (this.state === 'board') this.state = 'play';
+    this.clock.getDelta();
+  }
+
+  // ------------------------------------------------------------ photo mode
+  enterPhoto() {
+    this.state = 'photo';
+    this.hud.show(false);
+    $('touch').classList.add('hidden');
+    $('photo').classList.remove('hidden');
+    this.cameraRig.orbitPitch = 0.15;
+    this.photo = { dist: +$('ph-dist').value, fov: +$('ph-fov').value };
+  }
+
+  exitPhoto() {
+    $('photo').classList.add('hidden');
+    $('game').style.filter = '';
+    this.hud.show(true);
+    $('touch').classList.toggle('hidden', !this.input.touchEnabled);
+    this.state = 'play';
+    this.cameraRig.initialized = false;
+    this.clock.getDelta();
+  }
+
+  takePhoto() {
+    this.rs.render(0.016);
+    const src = this.rs.renderer.domElement;
+    const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+    const x = c.getContext('2d');
+    const f = $('ph-filter').value;
+    if (f !== 'none') x.filter = f;
+    x.drawImage(src, 0, 0);
+    x.filter = 'none';
+    x.font = `700 ${Math.round(c.height * 0.028)}px Rye, serif`; x.fillStyle = 'rgba(246,234,210,0.85)'; x.textAlign = 'right';
+    x.fillText('Tozlu Yollar', c.width - c.height * 0.03, c.height * 0.965);
+    c.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `tozlu-yollar-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    }, 'image/png');
+    const fl = document.createElement('div'); fl.className = 'photo-flash'; document.body.appendChild(fl); setTimeout(() => fl.remove(), 600);
+    this.audio.play('ui_click', { bus: 'ui', volume: 1, rate: 0.6 });
+  }
+
   applySettings() {
     const s = this.settings;
     this.rs.setQuality(s.quality);
@@ -207,8 +419,11 @@ class Game {
     if (this.rs.timeOfDay !== s.time) {
       this.rs.setTimeOfDay(s.time);
       this.world.impostors.material.uniforms.uTint.value.copy(this.rs.impostorTint);
+      this.headlights = this.rs.isNight;
+      this.vehicle.setHeadlights(this.headlights);
     }
     this.vehicle.setPaint(s.paint);
+    if (this.weather.mode !== s.weather) this.weather.setMode(s.weather);
     $('speed-unit').textContent = s.units === 'mph' ? 'mph' : 'km/sa';
     this.dust?.setViewport(innerHeight * this.rs.renderer.getPixelRatio(), this.rs.camera.fov);
   }
@@ -231,6 +446,8 @@ class Game {
     q.addEventListener('change', () => { this.settings.quality = q.value; this.applySettings(); this._saveSettings(); });
     const u = $('set-units'); u.value = this.settings.units;
     u.addEventListener('change', () => { this.settings.units = u.value; this.applySettings(); this._saveSettings(); });
+    const wx = $('set-weather'); wx.value = this.settings.weather;
+    wx.addEventListener('change', () => { this.settings.weather = wx.value; this.applySettings(); this._saveSettings(); });
     const tod = $('set-time'); tod.value = this.settings.time;
     tod.addEventListener('change', () => { this.settings.time = tod.value; this.applySettings(); this._saveSettings(); });
     document.querySelectorAll('.swatch').forEach((sw) => {
@@ -242,6 +459,16 @@ class Game {
       });
     });
     $('prompt').addEventListener('pointerdown', (e) => { e.preventDefault(); this.input.pressed.add('KeyF'); });
+    document.querySelector('[data-board="close"]').addEventListener('click', () => { click(); this.closeBoard(); });
+    $('ph-shot').addEventListener('click', () => this.takePhoto());
+    $('ph-exit').addEventListener('click', () => { click(); this.exitPhoto(); });
+    $('ph-dist').addEventListener('input', (e) => { this.photo.dist = +e.target.value; });
+    $('ph-fov').addEventListener('input', (e) => { this.photo.fov = +e.target.value; });
+    $('ph-filter').addEventListener('change', (e) => { $('game').style.filter = e.target.value === 'none' ? '' : e.target.value; });
+    $('reset-progress').addEventListener('click', () => {
+      if (!confirm('Tüm ilerleme (para, araçlar, keşifler, rekorlar) silinsin mi?')) return;
+      this.progress.reset(); this.gameplay.reset(); location.reload();
+    });
     $('bigmap').addEventListener('click', (e) => {
       const [x, z] = this.hud.bigMapToWorld(e);
       const near = LAYOUT.POIS.find((p) => this.gameplay.isFound(p.id) && Math.hypot(p.x - x, p.z - z) < 90);
@@ -253,6 +480,8 @@ class Game {
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === name));
     document.querySelectorAll('.tab-body').forEach((b) => b.classList.toggle('hidden', b.dataset.body !== name));
     if (name === 'map') { this.hud.drawBigMap(this.vehicle.position, this.vehicle.heading(), this.gameplay); this.hud.fillPoiList(this.gameplay, (p) => this.teleport(p)); }
+    if (name === 'garage') this._renderGarage();
+    if (name === 'achievements') this._renderAchievements();
   }
 
   startPlay() {
@@ -357,9 +586,11 @@ class Game {
 
     if (playing) this._handleKeys();
     else if (this.state === 'pause' && (inp.wasPressed('Escape') || inp.wasPressed('Tab'))) this.resume();
+    else if (this.state === 'board' && (inp.wasPressed('Escape') || inp.wasPressed('KeyF'))) this.closeBoard();
+    else if (this.state === 'photo' && (inp.wasPressed('Escape') || inp.wasPressed('KeyP'))) this.exitPhoto();
 
     // physics (keeps simulating in the menu so the truck idles naturally)
-    if (this.state !== 'pause') {
+    if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'photo') {
       let freeze = false;
       if (playing) freeze = this._gameplayResult?.freeze;
       const drive = playing && !freeze ? inp : { throttle: 0, brake: 0, steer: 0, handbrake: true, boost: false };
@@ -381,10 +612,12 @@ class Game {
     if (playing) {
       this.cameraRig.update(dt, v, this.terrain, inp);
       this._gameplayResult = this.gameplay.update(dt, v);
+      const dres = this.delivery.update(dt, v);
+      this.hud.extraTarget = dres?.target || null;
       this._effects(dt);
+      this._stunts(dt);
       this.hud.update(dt, v, this.gameplay, v.heading());
-      const near = this.gameplay.nearChallenge(v.position);
-      this.hud.prompt(near ? (this.input.touchEnabled ? `⚑ ${near.name} — başlamak için dokun` : `<kbd>F</kbd> ${near.name}`) : null);
+      this._prompts();
       if (v.lastLandingImpact > 0) {
         const k = v.lastLandingImpact;
         this.audio.play('land_thud', { volume: 0.3 + k * 0.7, rate: 0.9 + Math.random() * 0.2 });
@@ -393,6 +626,8 @@ class Game {
         v.lastLandingImpact = 0;
       }
     } else if (this.state === 'menu') this._menuCamera(this.time);
+    else if (this.state === 'photo') this.cameraRig.photo(dt, v, this.terrain, this.photo);
+    if (this.state !== 'play' && this.state !== 'pause' && this.state !== 'board') this.delivery.update(0, v);
 
     const cam = this.rs.camera;
     if (MANUAL && window.__camOverride) { const o = window.__camOverride; cam.position.set(...o.pos); cam.lookAt(...o.look); cam.fov = o.fov || 60; cam.updateProjectionMatrix(); }
@@ -410,6 +645,8 @@ class Game {
     this.lib.windUniform.value = this.time;
     this.terrain.setTime(this.time);
     this.dust.update(dt, { x: 1.2, z: 0.4 });
+    this.weather.update(dt, cam.position);
+    v.weatherGrip = 1 - this.weather.wet * 0.18;
     this.rs.updateSun(v.position);
     if (!skipRender) this.rs.render(dt);
     inp.endFrame();
@@ -423,12 +660,70 @@ class Game {
     if (inp.wasPressed('KeyM')) { const on = this.audio.toggleMusic(); this.hud.hint(on === false ? 'Müzik kapalı' : 'Müzik açık', 1.5); }
     if (inp.wasPressed('KeyN')) this.audio.nextTrack();
     if (inp.wasPressed('KeyF')) {
+      const board = this.delivery.boardNear(v.position);
       if (this.gameplay.active) this.gameplay.cancelChallenge();
+      else if (board && v.speed < 4) this.openBoard(board);
       else { const c = this.gameplay.nearChallenge(v.position); if (c) { this.gameplay.startChallenge(c, v); this.cameraRig.initialized = false; this.hud.toast('Görev', c.name, c.desc); } }
     }
+    if (inp.wasPressed('KeyL')) { this.headlights = !this.headlights; v.setHeadlights(this.headlights); this.audio.play('ui_switch', { volume: 0.4 }); }
+    if (inp.wasPressed('KeyP')) this.enterPhoto();
     const horn = inp.keys.has('KeyH') || inp.keys.has('PadKeyH') || inp.touch.horn;
     if (horn && !this.hornLoop) this.hornLoop = this.audio.loop('horn', 'sfx', { volume: 0.55, offset: 0.02 });
     if (!horn && this.hornLoop) { this.hornLoop.set(0, 1, 0.03); const h = this.hornLoop; setTimeout(() => h.stop(), 150); this.hornLoop = null; }
+  }
+
+  // airtime & drift scoring, distance / speed stats, achievements
+  _stunts(dt) {
+    const v = this.vehicle, P = this.progress, hud = this.hud;
+    P.stat('distance', v.speed * dt);
+    const kmh = v.speed * 3.6;
+    if (kmh > P.stats.topSpeed) P.stat('topSpeed', kmh, 'max');
+    if (v.contacts === 0) {
+      const clear = v.position.y - this.terrain.heightAt(v.position.x, v.position.z);
+      this.air.clear = Math.max(this.air.clear, clear);
+    }
+    if (v.landedAir) {
+      const t = v.landedAir; v.landedAir = 0;
+      if (t > 0.8 && this.air.clear > 1.8) {
+        const money = Math.round(t * t * 10 + t * 8);
+        P.addMoney(money); P.stat('maxAir', t, 'max');
+        hud.popup(`HAVA ${t.toFixed(1)} sn <small>+$${money}</small>`);
+      }
+      this.air.clear = 0;
+    }
+    const r = v.body.rotation(), lv = v.body.linvel();
+    const right = _tmpV.set(1, 0, 0).applyQuaternion(_tmpQ.set(r.x, r.y, r.z, r.w));
+    const lateral = Math.abs(lv.x * right.x + lv.y * right.y + lv.z * right.z);
+    const d = this.drift;
+    if (v.contacts >= 3 && v.speed > 9 && lateral > 3.2) { d.t += dt; d.grace = 0.45; }
+    else if (d.t > 0) {
+      d.grace -= dt;
+      if (d.grace <= 0) {
+        if (d.t > 1.2) {
+          const money = Math.round(d.t * 12);
+          P.addMoney(money); P.stat('maxDrift', d.t, 'max');
+          hud.popup(`DRIFT ${d.t.toFixed(1)} sn <small>+$${money}</small>`);
+        }
+        d.t = 0;
+      }
+    }
+    this._checkT = (this._checkT || 0) - dt;
+    if (this._checkT <= 0) { this._checkT = 0.5; P.check(this.gameplay); }
+  }
+
+  _prompts() {
+    const v = this.vehicle, hud = this.hud, touch = this.input.touchEnabled;
+    const board = !this.gameplay.active && this.delivery.boardNear(v.position);
+    const near = this.gameplay.nearChallenge(v.position);
+    let msg = null;
+    if (board) msg = touch ? `$ ${board.farm.name} ilan panosu — dokun` : `<kbd>F</kbd> İlan panosu`;
+    else if (near) msg = touch ? `⚑ ${near.name} — başlamak için dokun` : `<kbd>F</kbd> ${near.name}`;
+    hud.prompt(msg);
+    hud.showBoards = !this.delivery.job;
+    if (!this.delivery.job && !this.gameplay.active) {
+      if (this.progress.stats.deliveries === 0) hud.objective({ title: 'İlk işin', lines: ['Çiftliklerdeki sarı ışıklı <b>$</b> panodan teslimat işi al.', 'Miller Çiftliği’nin panosu evin önünde.'] });
+      else hud.objective(null);
+    }
   }
 
   _resetVehicle() {
@@ -446,6 +741,15 @@ class Game {
       const c1 = this.physics.getCollider(e.collider1()), c2 = this.physics.getCollider(e.collider2());
       const other = c1?.userData?.kind === 'vehicle' ? c2 : c1;
       const kind = other?.userData?.kind || 'terrain';
+      if (kind === 'cargo' || kind === 'vehicle') return;
+      if (kind === 'fence' && this.vehicle.speed > 3) {
+        if (this.world.breakFence(other.userData.seg, this.vehicle.body.linvel())) {
+          this.progress.stat('fences', 1);
+          this.audio.play('impact_wood', { volume: 0.8, rate: 0.85 + Math.random() * 0.3 });
+          this.cameraRig.addShake(0.35);
+        }
+        return;
+      }
       const k = Math.min(1, (mag - 9000) / 60000);
       if (k <= 0.02) return;
       this.impactCooldown = this.time + 0.25;
@@ -474,11 +778,12 @@ class Game {
       // dust
       const rate = (Math.max(0, sp - 3) * 0.05 * (0.2 + dusty) + w.slip * 1.2) * dt * 60;
       let n = Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0);
-      const col = dusty > 0.5 ? [0.78, 0.66, 0.5] : [0.62, 0.6, 0.45];
+      const wet = this.weather.wet;
+      const col = wet > 0.4 ? [0.36, 0.28, 0.2] : dusty > 0.5 ? [0.78, 0.66, 0.5] : [0.62, 0.6, 0.45];
       while (n-- > 0) {
         tmpV.set((Math.random() - 0.5) * 2 + fwd.x * sp * 0.25, 0.5 + Math.random() * 1.0, (Math.random() - 0.5) * 2 + fwd.z * sp * 0.25);
-        this.dust.emit(w.pos, tmpV, { size: 1.6 + Math.random() * 2 + sp * 0.04, life: 1.4 + Math.random() * 1.4, alpha: (0.1 + dusty * 0.18) * (0.6 + w.slip), color: col, tex: 0 });
-        if (w.slip > 0.4 && Math.random() < 0.25) {
+        if (wet < 0.4) this.dust.emit(w.pos, tmpV, { size: 1.6 + Math.random() * 2 + sp * 0.04, life: 1.4 + Math.random() * 1.4, alpha: (0.1 + dusty * 0.18) * (0.6 + w.slip) * (1 - wet), color: col, tex: 0 });
+        if ((w.slip > 0.4 && Math.random() < 0.25) || (wet > 0.4 && Math.random() < 0.35)) {
           tmpV.set((Math.random() - 0.5) * 3 - fwd.x * 3, 2 + Math.random() * 2, (Math.random() - 0.5) * 3 - fwd.z * 3);
           this.dust.emit(w.pos, tmpV, { size: 0.8, life: 0.9, alpha: 0.9, color: [0.5, 0.4, 0.3], tex: 1 });
         }
@@ -487,6 +792,7 @@ class Game {
   }
 }
 
+const _tmpV = new THREE.Vector3(), _tmpQ = new THREE.Quaternion();
 if (MOBILE) document.documentElement.classList.add('mobile');
 const game = new Game();
 game.load().catch((e) => {

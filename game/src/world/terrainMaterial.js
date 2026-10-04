@@ -10,7 +10,7 @@ export function createTerrainMaterial(tex, splatA, splatB, origin, size, outer =
     tDirt: { value: tex.dirt }, tDirtN: { value: tex.dirt_n },
     tRock: { value: tex.rock }, tRockN: { value: tex.rock_n },
     tSplatA: { value: splatA }, tSplatB: { value: splatB },
-    uOrigin: { value: origin }, uSize: { value: size }, uOuter: { value: outer ? 1 : 0 }, uTime: { value: 0 }, uCloud: { value: 1 },
+    uOrigin: { value: origin }, uSize: { value: size }, uOuter: { value: outer ? 1 : 0 }, uTime: { value: 0 }, uCloud: { value: 1 }, uWet: { value: 0 },
   };
   mat.userData.uniforms = uniforms;
   mat.onBeforeCompile = (shader) => {
@@ -22,7 +22,7 @@ export function createTerrainMaterial(tex, splatA, splatB, origin, size, outer =
       .replace('#include <common>', `#include <common>
 varying vec3 vWPos; varying vec3 vWNor;
 uniform sampler2D tGrass, tGrassN, tDirt, tDirtN, tRock, tRockN, tSplatA, tSplatB;
-uniform float uOrigin, uSize, uOuter, uTime, uCloud;
+uniform float uOrigin, uSize, uOuter, uTime, uCloud, uWet;
 float th(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float vnoise(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.0-2.0*f);
   return mix(mix(th(i), th(i+vec2(1,0)), f.x), mix(th(i+vec2(0,1)), th(i+vec2(1,1)), f.x), f.y); }
@@ -95,7 +95,11 @@ col = mix(col, dirt, sA.r);
 col *= mix(0.92, 1.06, macro);
 // drifting cloud shadows
 float cl = fbm3((vWPos.xz + vec2(uTime * 9.0, uTime * 4.0)) * 0.0022);
-col *= mix(1.0, 0.72, smoothstep(0.52, 0.68, cl) * uCloud);
+col *= mix(1.0, 0.72, smoothstep(0.52, 0.68, cl) * uCloud * (1.0 - uWet * 0.8));
+// rain: darker soil, puddles collect on flat dirt
+float puddle = uWet * smoothstep(0.55, 0.75, fbm3(wuv * 0.09 + 3.0)) * max(sA.r, max(sB.b, sA.a)) * (1.0 - smoothstep(0.0, 0.08, 1.0 - vWNor.y));
+col *= mix(1.0, 0.66, uWet * (1.0 - sA.g * 0.4));
+col = mix(col, col * vec3(0.55, 0.6, 0.68), puddle);
 diffuseColor.rgb *= col;
 `)
       .replace('#include <normal_fragment_maps>', `
@@ -119,6 +123,8 @@ diffuseColor.rgb *= col;
       .replace('#include <roughnessmap_fragment>', `
 float roughnessFactor = roughness;
 roughnessFactor = mix(roughnessFactor, 0.8, sA.g);
+roughnessFactor = mix(roughnessFactor, 0.5, uWet);
+roughnessFactor = mix(roughnessFactor, 0.06, puddle);
 `);
   };
   mat.customProgramCacheKey = () => 'terrain_v1';

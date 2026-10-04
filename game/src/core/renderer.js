@@ -6,6 +6,7 @@ import { N8AOPostPass } from 'n8ao';
 export const TIME_PRESETS = {
   noon: { sunColor: 0xfff0d6, sunIntensity: 2.7, env: 0.75, bg: 1, hemi: [0xcfe3ff, 0x8a7350, 0.35], minElev: 40, maxElev: 55, fogNear: 650, fogFar: 4800, fogTint: 0xb7cbe0, impostorTint: 0xdbdbd6 },
   sunset: { sunColor: 0xffb46e, sunIntensity: 2.5, env: 0.85, bg: 1, hemi: [0xffd9b0, 0x5a4636, 0.32], minElev: 11, maxElev: 22, fogNear: 450, fogFar: 4200, fogTint: 0xf0c49a, impostorTint: 0xe8c4a0 },
+  night: { sunColor: 0x9db4ff, sunIntensity: 0.55, env: 0.55, bg: 0.7, hemi: [0x4a5a88, 0x16130f, 0.28], minElev: 32, maxElev: 50, fogNear: 180, fogFar: 2400, fogTint: 0x161c2c, fogMix: 0.75, impostorTint: 0x3c4458, night: true },
 };
 
 // brightest texel of an equirect HDR → sun azimuth/elevation (three.js equirect convention)
@@ -36,6 +37,8 @@ function horizonColor(img) {
   return new THREE.Color().setRGB(r / n / 255, g / n / 255, b / n / 255, THREE.SRGBColorSpace);
 }
 
+const _rainFog = new THREE.Color();
+
 export const QUALITY = {
   low: { pixelRatio: 1, shadow: 1024, ao: false, bloom: false, smaa: false, grass: 'low', shadowRange: 50 },
   medium: { pixelRatio: 1, shadow: 2048, ao: false, bloom: true, smaa: true, grass: 'medium', shadowRange: 80 },
@@ -57,13 +60,14 @@ export class RenderSystem {
   }
 
   // skies: { noon: {sky, hdr}, sunset: {sky, hdr} } — background JPG + HDR for image-based lighting
-  setupLighting(skies) {
+  setupLighting(skies, stormSky) {
     const s = this.scene;
+    this._buildDome(stormSky);
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.skies = {};
     for (const [name, { sky, hdr }] of Object.entries(skies)) {
-      sky.mapping = THREE.EquirectangularReflectionMapping;
       sky.colorSpace = THREE.SRGBColorSpace;
+      sky.generateMipmaps = false; sky.minFilter = THREE.LinearFilter; // no mip seam at the atan wrap
       hdr.mapping = THREE.EquirectangularReflectionMapping;
       const sun = findSun(hdr);
       const env = pmrem.fromEquirectangular(hdr).texture;
@@ -84,7 +88,8 @@ export class RenderSystem {
 
   setTimeOfDay(name) {
     const P = TIME_PRESETS[name] || TIME_PRESETS.noon, sky = this.skies[name] || this.skies.noon, s = this.scene;
-    s.background = sky.sky;
+    s.background = null;
+    this.dome.material.uniforms.tA.value = sky.sky;
     s.environment = sky.env;
     s.environmentIntensity = P.env;
     s.backgroundIntensity = P.bg;
@@ -93,10 +98,55 @@ export class RenderSystem {
     this.sunDir = new THREE.Vector3(Math.cos(el) * Math.cos(sky.sunAz), Math.sin(el), Math.cos(el) * Math.sin(sky.sunAz)).normalize();
     this.sun.color.set(P.sunColor); this.sun.intensity = P.sunIntensity;
     this.hemi.color.set(P.hemi[0]); this.hemi.groundColor.set(P.hemi[1]); this.hemi.intensity = P.hemi[2];
-    s.fog.color.copy(sky.horizon).lerp(new THREE.Color(P.fogTint), 0.35);
+    s.fog.color.copy(sky.horizon).lerp(new THREE.Color(P.fogTint), P.fogMix ?? 0.35);
+    this.isNight = !!P.night;
     s.fog.near = P.fogNear; s.fog.far = P.fogFar;
     this.timeOfDay = name;
     this.impostorTint = new THREE.Color(P.impostorTint);
+    this._base = { sun: P.sunIntensity, env: P.env, bg: P.bg, hemi: P.hemi[2], fogNear: P.fogNear, fogFar: P.fogFar, fog: s.fog.color.clone() };
+    this.applyWeather(this._wet || 0, 0);
+  }
+
+  // Sky dome: equirect day/sunset/night sky blended with an overcast storm sky while it rains
+  _buildDome(storm) {
+    for (const t of [storm]) { t.colorSpace = THREE.SRGBColorSpace; t.generateMipmaps = false; t.minFilter = THREE.LinearFilter; }
+    const mat = new THREE.ShaderMaterial({
+      uniforms: { tA: { value: null }, tB: { value: storm }, uMix: { value: 0 }, uIntA: { value: 1 }, uIntB: { value: 0.6 } },
+      vertexShader: `varying vec3 vDir; void main(){ vDir = position; vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position = p.xyww; }`,
+      fragmentShader: `uniform sampler2D tA, tB; uniform float uMix, uIntA, uIntB; varying vec3 vDir;
+        void main(){
+          vec3 d = normalize(vDir);
+          vec2 uv = vec2(atan(d.z, d.x) * 0.15915494 + 0.5, asin(clamp(d.y, -1.0, 1.0)) * 0.31830989 + 0.5);
+          vec3 a = texture2D(tA, uv).rgb * uIntA;
+          vec3 b = texture2D(tB, uv).rgb * uIntB;
+          gl_FragColor = vec4(mix(a, b, uMix), 1.0);
+        }`,
+      side: THREE.BackSide, depthWrite: false, fog: false,
+    });
+    this.dome = new THREE.Mesh(new THREE.SphereGeometry(100, 64, 32), mat);
+    this.dome.frustumCulled = false;
+    this.dome.renderOrder = -10;
+    this.dome.name = 'sky';
+    this.dome.onBeforeRender = (r, sc, cam) => { this.dome.position.copy(cam.position); this.dome.updateMatrixWorld(); };
+    this.scene.add(this.dome);
+  }
+
+  // rain darkens sky and sun, thickens greyer fog; lightning briefly floods the scene
+  applyWeather(w, flash = 0) {
+    const b = this._base, s = this.scene;
+    if (!b) return;
+    this._wet = w;
+    const night = this.isNight;
+    const u = this.dome.material.uniforms;
+    u.uMix.value = Math.min(1, w * 1.15);
+    u.uIntA.value = b.bg + flash * 0.8;
+    u.uIntB.value = (night ? 0.07 : 0.62) + flash * (night ? 0.9 : 0.5);
+    this.sun.intensity = b.sun * (1 - w * 0.78) + flash * (night ? 4 : 2);
+    s.environmentIntensity = b.env * (1 - w * 0.5) + flash * 0.6;
+    this.hemi.intensity = b.hemi * (1 - w * 0.2) + flash * 1.5;
+    s.fog.near = b.fogNear * (1 - w * 0.7);
+    s.fog.far = b.fogFar * (1 - w * 0.6);
+    s.fog.color.copy(b.fog).lerp(_rainFog.set(night ? 0x14181f : 0x8b939b), w * 0.75);
   }
 
   setQuality(q) {

@@ -5,7 +5,7 @@ export const CREDITS = [
   ] },
   { h: '3B Modeller', items: [
     ['Farm Buildings, Ultimate Animated Animals, Stylized Nature MegaKit, Ultimate Stylized Nature, Ultimate Nature', 'Quaternius — CC0', 'https://quaternius.com'],
-    ['Pikap (Free Low Poly Vehicles Pack)', 'Rgsdev — CC0', 'https://opengameart.org/content/free-low-poly-vehicles-pack'],
+    ['Pikap, Arazi SUV, Canavar Kamyon (Free Low Poly Vehicles Pack)', 'Rgsdev — CC0', 'https://opengameart.org/content/free-low-poly-vehicles-pack'],
     ['Traktör (Low Poly Tractor)', 'Rubik Fish — CC0', 'https://rubikfish.itch.io/low-poly-tractor'],
     ['Cozy Farm (posta kutusu, saman, araba, gölet, tabela)', 'styloo — CC0', 'https://styloo.itch.io/farm'],
     ['Lowpoly Farm Pack (saman balyası, kasa, balkabağı)', 'xra7en — CC BY 4.0', 'https://xra7en.itch.io/lowpoly-farm-pack'],
@@ -17,7 +17,9 @@ export const CREDITS = [
     ['2K Handpainted Style Textures (çimen, toprak, kaya)', 'rubberduck — CC0', 'https://opengameart.org/content/2k-handpainted-style-textures'],
     ['Kloofendal 48d Partly Cloudy (Pure Sky) HDRI', 'Poly Haven — CC0', 'https://polyhaven.com/a/kloofendal_48d_partly_cloudy_puresky'],
     ['Kloppenheim 06 (Pure Sky) HDRI — gün batımı', 'Poly Haven — CC0', 'https://polyhaven.com/a/kloppenheim_06_puresky'],
-    ['Particle Pack (toz, parıltı), Racing Pack (lastik izi)', 'Kenney — CC0', 'https://kenney.nl'],
+    ['Rogland Clear Night HDRI — yıldızlı gece', 'Poly Haven — CC0', 'https://polyhaven.com/a/rogland_clear_night'],
+    ['Overcast Soil (Pure Sky) HDRI — fırtına', 'Poly Haven — CC0', 'https://polyhaven.com/a/overcast_soil_puresky'],
+    ['Particle Pack (toz, parıltı, yağmur), Racing Pack (lastik izi)', 'Kenney — CC0', 'https://kenney.nl'],
     ['Rye, Barlow Condensed yazı tipleri', 'Google Fonts — SIL OFL', 'https://fonts.google.com'],
   ] },
   { h: 'Müzik', items: [
@@ -31,6 +33,7 @@ export const CREDITS = [
     ['Crash Collision, Impact sesleri', 'qubodup — CC0', 'https://opengameart.org/content/crash-collision'],
     ['Car Engine Start 01', 'looneybits — CC0', 'https://opengameart.org/content/car-engine-start-01'],
     ['Freesound CC0: motor rölanti (RichieMcMullen), dizel döngü (qubodup), çakıl yolu (mpuffenbarger), patinaj (alexftw123), kuşlar (hargissssound), kır ambiyansı (brunoboselli), buğday tarlası (florianreichelt), rüzgâr (dhallcomposer), inek (felix.blume, Zozzy), tavuk (Breviceps), horoz (BenjaminNelan), korna (keweldog), vites (E-Audio), süspansiyon (nmscher), yere çarpma (leonelmail), metal çarpma (craigsmith), kapı (looneybits)', 'freesound.org — CC0', 'https://freesound.org'],
+    ['Slowly Raining Loop (unfa), Thunder (lennyboy), thunder (netaj)', 'freesound.org — CC0', 'https://freesound.org/s/177479/'],
     ['Interface Sounds, Impact Sounds', 'Kenney — CC0', 'https://kenney.nl'],
   ] },
   { h: 'Teknoloji', items: [

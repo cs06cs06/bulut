@@ -7,7 +7,9 @@ const $ = (id) => document.getElementById(id);
 export class HUD {
   constructor() {
     this.el = { hud: $('hud'), speed: $('speed'), gear: $('gear'), unit: $('speed-unit'), toast: $('toast'), hint: $('hint'), prompt: $('prompt'),
-      disc: $('hud-disc'), coll: $('hud-coll'), chall: $('hud-challenge'), np: $('now-playing'), npT: $('np-title'), npA: $('np-artist') };
+      disc: $('hud-disc'), coll: $('hud-coll'), chall: $('hud-challenge'), np: $('now-playing'), npT: $('np-title'), npA: $('np-artist'),
+      money: $('hud-money'), obj: $('objective'), popups: $('popups') };
+    this.boards = []; this.extraTarget = null;
     this.speedo = $('speedo-canvas').getContext('2d');
     this.mm = $('minimap').getContext('2d');
     this.big = $('bigmap');
@@ -39,6 +41,33 @@ export class HUD {
     }
     ctx.putImageData(img, 0, 0);
     this.mapCanvas = c; this.mapSize = terrain.size; this.mapHalf = terrain.half;
+  }
+
+  setMoney(n) {
+    const el = this.el.money;
+    const prev = this._money ?? n;
+    this._money = n;
+    el.textContent = '$' + n.toLocaleString('tr-TR');
+    if (n !== prev) { el.parentElement.classList.remove('bump'); void el.offsetWidth; el.parentElement.classList.add('bump'); }
+  }
+
+  // floating feedback text (stunts, money, warnings)
+  popup(text, kind = 'good') {
+    const d = document.createElement('div');
+    d.className = `popup ${kind}`;
+    d.innerHTML = text;
+    this.el.popups.appendChild(d);
+    setTimeout(() => d.remove(), 2300);
+  }
+
+  objective(o) {
+    const el = this.el.obj;
+    if (!o) { el.classList.add('hidden'); this._objKey = ''; return; }
+    const key = o.title + o.lines.join('|');
+    if (key === this._objKey) return;
+    this._objKey = key;
+    el.classList.remove('hidden');
+    el.innerHTML = `<div class="o-t">${o.title}</div>${o.lines.map((l) => `<div class="o-l">${l}</div>`).join('')}`;
   }
 
   updateCounts(gp) {
@@ -152,7 +181,9 @@ export class HUD {
     for (const p of POIS) icon(p.x, p.z, gp.isFound(p.id) ? p.icon : '?', gp.isFound(p.id) ? '#f6ead2' : '#e8b04a');
     for (const ch of CHALLENGES) icon(ch.start.x, ch.start.z, '⚑', '#ff7a50');
     for (const k of gp.pumpkins) if (k.g.visible && Math.hypot(k.x - pos.x, k.z - pos.z) < 150) icon(k.x, k.z, '●', '#ff9a2e');
+    for (const b of this.boards) icon(b.x, b.z, '$', '#ffd36b', !this.extraTarget && !gp.nextTarget && this.showBoards);
     if (gp.nextTarget) icon(gp.nextTarget[0], gp.nextTarget[1], '◆', '#7fd4ff', true);
+    if (this.extraTarget) icon(this.extraTarget[0], this.extraTarget[1], '▼', '#9fe0ff', true);
     // player arrow
     c.save(); c.translate(110, 110);
     c.beginPath(); c.moveTo(0, -10); c.lineTo(7, 8); c.lineTo(0, 4); c.lineTo(-7, 8); c.closePath();
@@ -178,6 +209,8 @@ export class HUD {
       if (f) { c.font = '700 15px "Barlow Condensed"'; c.strokeText(p.name, x, y + 18); c.fillText(p.name, x, y + 18); c.font = '700 22px "Barlow Condensed"'; }
     }
     for (const ch of CHALLENGES) { const [x, y] = toPx(ch.start.x, ch.start.z); c.fillStyle = '#ff7a50'; c.strokeText('⚑', x, y); c.fillText('⚑', x, y); }
+    for (const b of this.boards) { const [x, y] = toPx(b.x, b.z); c.fillStyle = '#ffd36b'; c.strokeText('$', x + 14, y - 10); c.fillText('$', x + 14, y - 10); }
+    if (this.extraTarget) { const [x, y] = toPx(this.extraTarget[0], this.extraTarget[1]); c.fillStyle = '#9fe0ff'; c.strokeText('▼', x, y - 16); c.fillText('▼', x, y - 16); }
     const [px, py] = toPx(pos.x, pos.z);
     c.save(); c.translate(px, py); c.rotate(-heading + Math.PI);
     c.beginPath(); c.moveTo(0, -13); c.lineTo(9, 10); c.lineTo(0, 5); c.lineTo(-9, 10); c.closePath();

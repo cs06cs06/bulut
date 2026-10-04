@@ -113,6 +113,20 @@ export class CameraRig {
     this._fov(m.fov + Math.min(16, Math.max(0, speed - 8) * 0.38) + (input.boost ? 4 : 0), dt);
   }
 
+  // free orbit around the vehicle for photo mode (no auto-recentre)
+  photo(dt, vehicle, terrain, p) {
+    const o = vehicle.object.position;
+    const yaw = vehicle.heading() + this.orbitYaw, pitch = 0.1 + this.orbitPitch;
+    const dist = p.dist * (this.zoom || 1);
+    const cam = this.camera;
+    cam.up.set(0, 1, 0);
+    cam.position.set(o.x - Math.sin(yaw) * Math.cos(pitch) * dist, o.y + 1.2 + Math.sin(pitch) * dist, o.z - Math.cos(yaw) * Math.cos(pitch) * dist);
+    const gh = terrain.heightAt(cam.position.x, cam.position.z) + 0.6;
+    if (cam.position.y < gh) cam.position.y = gh;
+    cam.lookAt(o.x, o.y + 1.1, o.z);
+    cam.fov = p.fov; cam.updateProjectionMatrix();
+  }
+
   _fov(f, dt) {
     this.camera.fov += (f - this.camera.fov) * Math.min(1, dt * 3);
     this.camera.updateProjectionMatrix();

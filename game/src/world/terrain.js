@@ -344,6 +344,8 @@ export class Terrain {
     this.group.add(mesh);
   }
 
+  setWet(w) { this.material.userData.uniforms.uWet.value = w; this.outerMaterial.userData.uniforms.uWet.value = w * 0.8; }
+
   setTime(t) { this.material.userData.uniforms.uTime.value = t; this.outerMaterial.userData.uniforms.uTime.value = t; }
 
   // Rapier heightfield (column-major: index = xi * G + zi)
