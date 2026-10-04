@@ -5,7 +5,7 @@ import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dedup, prune, weld, textureCompress, resample, getBounds } from '@gltf-transform/functions';
 import sharp from 'sharp';
 import fs from 'fs';
-const M = process.argv[2], K = process.argv[3];
+const M = process.argv[2], K = process.argv[3], M2 = M.replace(/models$/, 'models2');
 const OUT = 'public/assets/models/';
 fs.mkdirSync(OUT, { recursive: true });
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
@@ -37,6 +37,19 @@ const L = {
   ...Object.fromEntries(['a', 'e', 'g', 'h', 'r'].map(t => ['farmhouse_' + t, `${K}/kenney_city-kit-suburban_20/Models/GLB format/building-type-${t}.glb`])),
   // Kenney Car Kit — drivable farm tractor
   tractor_k: `${K}/kenney_car-kit/Models/GLB format/tractor.glb`,
+  // Town, roadside & industry (see CREDITS.md) — M2 = scratchpad/models2
+  pole: `${M2}/kenney_city-kit-roads/glb/electricity-pole-single.glb`, wires: `${M2}/kenney_city-kit-roads/glb/electricity-wires.glb`,
+  turbine: `${M2}/kenney_city-kit-industrial/glb/windmill.glb`, water_tower2: `${M2}/kenney_city-kit-industrial/glb/water-tower.glb`,
+  grain_bin: `${M2}/kenney_city-kit-industrial/glb/detail-tank-large.glb`, warehouse: `${M2}/oga_warehouse/glb/warehouse.glb`,
+  jeep: `${M2}/oga_sovietjeep/glb/gaz67.glb`, streetlight: `${M2}/q_zombie/glb/StreetLights.glb`,
+  gas_canopy: `${M2}/itch_elbolillo_gasstation/glb_main/The_ceiling.glb`, gas_shop: `${M2}/itch_elbolillo_gasstation/glb_main/6twelve.glb`,
+  gas_sign: `${M2}/itch_elbolillo_gasstation/glb_main/6twelve_Sign.glb`, store: `${M2}/oga_townstore/glb/town_store.glb`,
+  ...Object.fromEntries(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].map(k => ['shop_' + k.toLowerCase(), `${M2}/kaykit_citybuilder/glb/building_${k}_withoutBase.glb`])),
+  house_s_a: `${M2}/kenney_modular-buildings/glb/building-sample-house-a.glb`, house_s_c: `${M2}/kenney_modular-buildings/glb/building-sample-house-c.glb`,
+  bench: `${M2}/kaykit_citybuilder/glb/bench.glb`, hydrant: `${M2}/kaykit_citybuilder/glb/firehydrant.glb`, trash: `${M2}/kaykit_citybuilder/glb/trash_A.glb`,
+  picnic: `${M2}/oga_picnictable/glb/picnic_table.glb`, pallet: `${M2}/kaykit_resource/glb/Pallet_Wood_Covered_A.glb`,
+  fuel_barrels: `${M2}/kaykit_resource/glb/Fuel_A_Barrels.glb`, logs: `${M2}/kaykit_resource/glb/Wood_Log_Stack.glb`,
+  cone: `${M2}/q_zombie/glb/TrafficCone_1.glb`, sign_stop: `${M2}/kenney_city-kit-roads/glb/road-sign-stop.glb`,
   // Kenney Platformer Kit — challenge flags & signs
   flag: `${K}/platformer/Models/GLB format/flag.glb`, sign: `${K}/platformer/Models/GLB format/sign.glb`, arrow: `${K}/platformer/Models/GLB format/arrow.glb`,
   billboard: 'styloo_cozyfarm/glb/billboard.glb',
@@ -45,7 +58,7 @@ const L = {
   donkey: 'ultimateanimatedanimals/glb/Donkey.glb', alpaca: 'ultimateanimatedanimals/glb/Alpaca.glb', deer: 'ultimateanimatedanimals/glb/Deer.glb', chicken: 'oga_chicken_mess110/Chicken.glb',
 };
 // styloo's Cozy Farm props are authored far from their pivot; move them back to the origin
-const RECENTER = new Set(['barrel', 'billboard', 'cart', 'hay_cube', 'hay_round', 'mailbox', 'pond']);
+const RECENTER = new Set(['barrel', 'billboard', 'cart', 'hay_cube', 'hay_round', 'mailbox', 'pond', 'warehouse', 'gas_canopy', 'gas_shop']);
 function recenter(doc) {
   const scene = doc.getRoot().listScenes()[0];
   const b = getBounds(scene);

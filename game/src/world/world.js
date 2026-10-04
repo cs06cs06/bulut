@@ -3,10 +3,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { buildInstances } from './models.js';
 import { bakeImpostorAtlas, ImpostorField } from './impostors.js';
 import { createNoise2D, fbm, mulberry32, smoothstep } from '../util/noise.js';
-import { FARMS, FARM_BUILDINGS, PADDOCKS, POIS, POI_PROPS, HERDS } from './layout.js';
+import { FARMS, FARM_BUILDINGS, PADDOCKS, POIS, POI_PROPS, HERDS, TOWN } from './layout.js';
 import { Animal } from '../game/animals.js';
 
 const DEG = Math.PI / 180;
+const _up = new THREE.Vector3(0, 1, 0);
 const _rq = {};
 const DYNAMIC_PROPS = new Set(['haybale', 'barrel', 'hay_cube', 'crate_pumpkin']);
 
@@ -34,6 +35,9 @@ export class World {
     this._poiProps();
     this._kickerProps();
     this.blockers = [];
+    this._town();
+    this._powerLines();
+    this._turbines();
     this._countryside();
     this._buildFences();
     this._vegetation();
@@ -167,7 +171,12 @@ export class World {
     obj.userData.spinner = true;
     let blades = null;
     obj.traverse((o) => { if (!blades && /blade|fan|wheel|rotor/i.test(o.name)) blades = o; });
-    if (blades) this.spinners.push({ node: blades, speed: 0.8 + this.rand() * 0.8 });
+    if (blades) {
+      // spin around the thinnest axis of the blade disc
+      const b = new THREE.Box3().setFromObject(blades), sz = b.getSize(new THREE.Vector3());
+      const axis = sz.x < sz.z && sz.x < sz.y ? 'x' : 'z';
+      this.spinners.push({ node: blades, speed: 0.8 + this.rand() * 0.8, axis });
+    }
   }
 
   // Fence segments are individual fixed bodies drawn with instancing; a hard hit turns one dynamic.
@@ -381,6 +390,145 @@ export class World {
     }
   }
 
+  // ------------------------------------------------------------ town, power lines, wind farm
+  // road frame `t` metres south of the anchor along the named road: {x, z, dx, dz} (direction of travel)
+  _roadFrame(roadName, anchor, t) {
+    const r = this.terrain.roads.roads.find((rr) => rr.name === roadName), pts = r.points;
+    let ai = 0, bd = Infinity;
+    pts.forEach((p, i) => { const d = (p[0] - anchor[0]) ** 2 + (p[1] - anchor[1]) ** 2; if (d < bd) { bd = d; ai = i; } });
+    let i = ai, acc = 0;
+    while (i > 1 && acc < t) { acc += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); i--; }
+    const a = pts[Math.min(pts.length - 1, i + 1)], b = pts[Math.max(0, i - 1)];
+    const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1;
+    return { x: pts[i][0], z: pts[i][1], dx: dx / l, dz: dz / l, hw: r.width / 2 };
+  }
+
+  _town() {
+    const T = TOWN, objs = [];
+    this.blockers.push([T.center[0], T.center[1], T.radius + 10]);
+    // frame → world: side +1 is to the right of the travel direction (heading south)
+    const at = (t, side, off) => { const f = this._roadFrame(T.road, T.anchor, t); const rx = -f.dz * side, rz = f.dx * side; return { x: f.x + rx * (f.hw + off), z: f.z + rz * (f.hw + off), rx, rz, f }; };
+    const face = (p) => Math.atan2(-p.rx, -p.rz) * 180 / Math.PI; // model +Z towards the road
+    for (const [model, t, side, setback, sc = 1] of T.buildings) {
+      const b = this.lib.bounds(model, sc), depth = b.max.z - b.min.z;
+      const p = at(t, side, setback + depth / 2);
+      const r = this.place(model, p.x, p.z, face(p), sc);
+      if (r.object) objs.push(r.object);
+    }
+    for (const [model, t, side, setback, rot = 0] of T.props) {
+      const p = at(t, side, setback);
+      const r = this.place(model, p.x, p.z, face(p) + rot, 1);
+      if (r.object) objs.push(r.object);
+    }
+    // street lights on both sides, arm over the road
+    for (let t = 40; t <= 180; t += 24) for (const side of [-1, 1]) {
+      const p = at(t + (side > 0 ? 12 : 0), side, 1.5);
+      const o = this.lib.clone('streetlight');
+      o.position.set(p.x, this.terrain.heightAt(p.x, p.z) - 0.05, p.z);
+      o.rotation.y = Math.atan2(-p.rx, -p.rz);
+      objs.push(o);
+      this.physics.createCollider(this.R.ColliderDesc.cylinder(3.3, 0.18).setTranslation(p.x, o.position.y + 3.3, p.z)).userData = { kind: 'tree' };
+      (this.streetLights = this.streetLights || []).push(new THREE.Vector3(p.x - p.rx * 2.6, o.position.y + 6.4, p.z - p.rz * 2.6));
+    }
+    // post office: mailbox + start point for the mail route
+    const po = T.postOffice, pb = at(po[1], po[2], 1.6);
+    this.place('mailbox', pb.x + pb.f.dx * 4, pb.z + pb.f.dz * 4, face(pb), 1);
+    this.mailboxes.pop(); // the office box is the start, not a delivery target
+    this.postOffice = { x: pb.x, z: pb.z };
+    // gas station: canopy with pumps (pump islands collide, the roof does not), shop behind it, price sign at the road
+    const g = T.gas, gc = at(g.t, g.side, g.setback + 7.5);
+    const canopy = this.lib.clone('gas_canopy');
+    const gy = this.groundY(gc.x, gc.z, 6);
+    canopy.position.set(gc.x, gy, gc.z); canopy.rotation.y = Math.atan2(gc.f.dx, gc.f.dz);
+    objs.push(canopy);
+    canopy.updateMatrixWorld(true);
+    for (const [px, pz] of [[7.1, 2.8], [7.1, -2.7], [-6.9, 2.8], [-6.9, -2.7]]) {
+      const w = new THREE.Vector3(px, 0, pz).applyMatrix4(canopy.matrixWorld);
+      this.physics.createCollider(this.R.ColliderDesc.cuboid(0.5, 1.3, 0.8).setTranslation(w.x, gy + 1.3, w.z).setRotation(canopy.quaternion)).userData = { kind: 'prop' };
+    }
+    const gsb = this.lib.bounds('gas_shop'), gs = at(g.t, g.side, g.setback + 15 + (gsb.max.z - gsb.min.z) / 2 + 4);
+    const shop = this.place('gas_shop', gs.x, gs.z, face(gs), 1);
+    if (shop.object) objs.push(shop.object);
+    const sg = at(g.t - 16, g.side, 1.5);
+    const sign = this.place('gas_sign', sg.x, sg.z, face(sg) + 90, 1);
+    if (sign.object) objs.push(sign.object);
+    for (const [dt, off] of [[-6, 22], [-2, 23]]) { const pp = at(g.t + dt, g.side, g.setback + off); const r = this.place('picnic', pp.x, pp.z, face(pp), 1); if (r.object) objs.push(r.object); }
+    this.gasStation = { x: gc.x, z: gc.z };
+    const m = this._mergeStatic(objs, 'town');
+    m.userData.center = new THREE.Vector3(T.center[0], 0, T.center[1]); m.userData.maxDist = 2600;
+    this.cells.push(m);
+  }
+
+  // wooden power poles along the main roads with sagging wires between them
+  _powerLines() {
+    const T = this.terrain, S = 20, poles = [], wires = [];
+    for (const name of ['Palouse Yolu', 'Doğu Yolu', 'Batı Yolu', 'Güney Yolu', 'Tepe Yolu']) {
+      const r = T.roads.roads.find((rr) => rr.name === name);
+      if (!r) continue;
+      const pts = r.points, hw = r.width / 2 + 7;
+      let acc = 0, prev = null;
+      const line = [];
+      for (let i = 1; i < pts.length - 1; i++) {
+        acc += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+        if (acc < 42) continue;
+        acc = 0;
+        const dx = pts[i + 1][0] - pts[i - 1][0], dz = pts[i + 1][1] - pts[i - 1][1], l = Math.hypot(dx, dz) || 1;
+        const x = pts[i][0] + dz / l * hw, z = pts[i][1] - dx / l * hw; // left side of the road
+        const ok = Math.abs(x) < T.half - 30 && Math.abs(z) < T.half - 30 && T.slopeAt(x, z) < 0.3 && !this.kickerNear(x, z)
+          && FARMS.every((f) => Math.hypot(x - f.x, z - f.z) > f.r * 0.7) && T.roadWeight(x, z) < 0.05;
+        if (!ok) { prev = null; continue; }
+        const y = T.heightAt(x, z) - 0.1;
+        const p = { x, y, z, yaw: Math.atan2(-dz, dx) };
+        line.push([prev, p]);
+        prev = p;
+      }
+      for (const [a, b] of line) {
+        poles.push(new THREE.Matrix4().compose(new THREE.Vector3(b.x, b.y, b.z), new THREE.Quaternion().setFromAxisAngle(_up, b.yaw), new THREE.Vector3(S, S, S)));
+        this.physics.createCollider(this.R.ColliderDesc.cylinder(5, 0.3).setTranslation(b.x, b.y + 5, b.z)).userData = { kind: 'tree' };
+        if (!a) continue;
+        const dx = b.x - a.x, dz = b.z - a.z, len = Math.hypot(dx, dz);
+        if (len > 70) continue;
+        const yaw = Math.atan2(-dz, dx), q = new THREE.Quaternion().setFromAxisAngle(_up, yaw)
+          .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.atan2(b.y - a.y, len)));
+        const sx = len / 0.5;
+        const mid = new THREE.Vector3((a.x + b.x) / 2, (a.y + b.y) / 2, (a.z + b.z) / 2).add(new THREE.Vector3(0.03 * sx, 0, 0).applyQuaternion(q));
+        wires.push(new THREE.Matrix4().compose(mid, q, new THREE.Vector3(sx, S, S)));
+      }
+    }
+    this.cells.push(...buildInstances(this.lib, 'pole', poles, { group: this.veg, cell: 400, maxDist: 1500 }));
+    this.cells.push(...buildInstances(this.lib, 'wires', wires, { group: this.veg, cell: 400, maxDist: 1300, castShadow: false }));
+    this.powerPoleCount = poles.length;
+  }
+
+  // modern wind turbines on the high ridges (Palouse wind farm)
+  _turbines() {
+    const T = this.terrain, cands = [];
+    for (let x = -T.half + 200; x < T.half - 200; x += 60) for (let z = -T.half + 200; z < T.half - 200; z += 60) {
+      if (Math.hypot(x + 805, z + 831) < 650) continue; // keep the butte clear
+      const h = T.heightAt(x, z);
+      let avg = 0; for (let k = 0; k < 8; k++) { const a = k / 8 * Math.PI * 2; avg += T.heightAt(x + Math.cos(a) * 160, z + Math.sin(a) * 160); }
+      avg /= 8;
+      const q = T.roads.query(x, z, _rq);
+      if (T.slopeAt(x, z) > 0.15 || (q && q.dist < 45) || FARMS.some((f) => Math.hypot(x - f.x, z - f.z) < f.r + 80)) continue;
+      cands.push({ x, z, score: h - avg + h * 0.02 });
+    }
+    cands.sort((a, b) => b.score - a.score);
+    const picked = [];
+    for (const c of cands) {
+      if (picked.length >= 8) break;
+      if (picked.every((p) => Math.hypot(p.x - c.x, p.z - c.z) > 200) && this.blockers.every((b) => Math.hypot(c.x - b[0], c.z - b[1]) > b[2])) picked.push(c);
+    }
+    for (const c of picked) {
+      const res = this.place('turbine', c.x, c.z, 90 + (this.rand() - 0.5) * 20, 0.9 + this.rand() * 0.2, { collider: false });
+      this._registerSpinner(res.object);
+      this.static.add(res.object);
+      const y = T.heightAt(c.x, c.z);
+      this.physics.createCollider(this.R.ColliderDesc.cylinder(25, 1.6).setTranslation(c.x, y + 25, c.z)).userData = { kind: 'building' };
+      this.blockers.push([c.x, c.z, 25]);
+    }
+    this.turbines = picked;
+  }
+
   kickerNear(x, z) { return (this.terrain.kickers || []).some((k) => Math.hypot(x - k.x, z - k.z) < 40); }
 
   _kickerProps() {
@@ -532,7 +680,7 @@ export class World {
 
   // ------------------------------------------------------------ per frame
   update(dt, time, playerPos, vehicleSpeed, audio) {
-    for (const s of this.spinners) s.node.rotation.z += dt * s.speed * 2.2;
+    for (const s of this.spinners) s.node.rotation[s.axis || 'z'] += dt * s.speed * (s.axis === 'x' ? 1.2 : 2.2);
     if (this.brokenFences?.length) {
       const m = new THREE.Matrix4(), tmp = new THREE.Matrix4(), v = new THREE.Vector3(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
       for (const sg of this.brokenFences) {

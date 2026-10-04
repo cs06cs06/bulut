@@ -27,6 +27,12 @@ export const VEHICLES = {
     suspensionRest: 0.42, suspensionTravel: 0.3, stiffness: 36, compression: 3.8, relaxation: 4.6,
     bed: null, paint: /^$/,
   },
+  jeep: {
+    name: 'Eski Cip', model: 'jeep', price: 3500, desc: 'Hafif, çevik, dört çeker. Dar patikalarda ve driftte rakipsiz.',
+    scale: 1.3, yaw: Math.PI, mass: 1350, power: 1.15, grip: 1.2, maxSteer: 0.7, top: 4, pitch: 1.15,
+    suspensionRest: 0.5, suspensionTravel: 0.45, stiffness: 28, compression: 3.2, relaxation: 4.0,
+    bed: null, paint: /khaki/i,
+  },
   monster: {
     name: 'Canavar Kamyon', model: 'monster', price: 6000, desc: 'Dev tekerler, uzun süspansiyon. Her tepeye çıkar, kasası da var.',
     mass: 2500, power: 1.6, grip: 1.15, maxSteer: 0.55, top: 5, pitch: 0.78,
@@ -87,6 +93,7 @@ export class Vehicle {
     this.object.name = 'vehicle';
     const root = model.clone(true);
     root.scale.setScalar(s);
+    if (this.cfg.yaw) root.rotation.y = this.cfg.yaw; // models authored facing -Z
     root.updateMatrixWorld(true);
     this.wheels = [];
     const names = [['front', 'left'], ['front', 'right'], [/back|rear/, 'left'], [/back|rear/, 'right']];
@@ -94,11 +101,16 @@ export class Vehicle {
     root.traverse((o) => {
       if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
       const n = o.name.toLowerCase();
-      if (n.includes('wheel') && o.isMesh) {
+      // wheel nodes may be meshes or groups (multi-material); keep the top-most match
+      if (n.includes('wheel') && (o.isMesh || o.children.length)) {
+        let idx = -1;
         for (let i = 0; i < 4; i++) {
           const a = names[i][0];
-          if ((typeof a === 'string' ? n.includes(a) : a.test(n)) && n.includes(names[i][1])) found[i] = o;
+          if ((typeof a === 'string' ? n.includes(a) : a.test(n)) && n.includes(names[i][1])) idx = i;
         }
+        const short = n.match(/(?:^|[^a-z])(fl|fr|rl|rr)(?:$|[^a-z])/); // e.g. "wheel FL" (loader turns spaces into _)
+        if (short) idx = ['fl', 'fr', 'rl', 'rr'].indexOf(short[1]);
+        if (idx >= 0 && !found[idx]) found[idx] = o;
       }
     });
     this.object.add(root);

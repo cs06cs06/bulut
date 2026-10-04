@@ -23,6 +23,18 @@ All assets were downloaded from the external sources below.
 | Tavuk | [mess110](https://opengameart.org/content/chicken-3) | CC0 |
 | City Kit Suburban (çiftlik evleri; çatı rengi yeniden boyandı) | [Kenney](https://kenney.nl/assets/city-kit-suburban) | CC0 |
 | Platformer Kit (bayrak, tabela, ok) | [Kenney](https://kenney.nl/assets/platformer-kit) | CC0 |
+| City Kit Roads (elektrik direkleri, teller, dur tabelası) | [Kenney](https://kenney.nl/assets/city-kit-roads) | CC0 |
+| City Kit Industrial (rüzgâr türbini, su kulesi, tahıl silosu) | [Kenney](https://kenney.nl/assets/city-kit-industrial) | CC0 |
+| Modular Buildings (kasaba evleri) | [Kenney](https://kenney.nl/assets/modular-buildings) | CC0 |
+| Car Kit (Çiftlik Traktörü) | [Kenney](https://kenney.nl/assets/car-kit) | CC0 |
+| City Builder Bits (kasaba dükkânları, bank, yangın musluğu, çöp kutusu) | [Kay Lousberg](https://kaylousberg.itch.io/city-builder-bits) | CC0 |
+| Resource Bits (palet, yakıt varilleri, kütük yığını) | [Kay Lousberg](https://kaylousberg.itch.io/resource-bits) | CC0 |
+| Zombie Apocalypse Kit (sokak lambası, trafik konisi) | [Quaternius](https://quaternius.com/packs/zombieapocalypsekit.html) | CC0 |
+| Gas Station (benzinlik kanopisi, market, fiyat tabelası) | [elbolilloduro](https://elbolilloduro.itch.io/gas-station) | CC0 |
+| Low-Poly Warehouse (depo) | [Acheron](https://opengameart.org/content/low-poly-warehouse) | CC0 |
+| Picnic Table (piknik masası) | [Teh_Bucket](https://opengameart.org/content/picnic-table) | CC0 |
+| Lowpoly soviet jeep (GAZ-67 → Cip) | [artie31](https://opengameart.org/content/lowpoly-soviet-jeep) | CC0 |
+| Low Poly Town Store (kasaba bakkalı) | [T Allen Studios](https://opengameart.org/content/low-poly-town-store) | **CC BY 4.0** — https://creativecommons.org/licenses/by/4.0/ |
 
 ## Dokular, gökyüzü, efektler / Textures, sky, effects
 | Varlık | Yazar / Kaynak | Lisans |

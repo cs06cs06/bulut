@@ -16,13 +16,16 @@ import { Progress, ACHIEVEMENTS, DAILY_POOL } from './game/progress.js';
 import { Delivery } from './game/delivery.js';
 import { StuntZones } from './game/stunts.js';
 import { Traffic } from './game/traffic.js';
+import { PostalRoute } from './game/postal.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
 import { HUD } from './ui/hud.js';
 import { creditsHTML } from './credits.js';
 
-const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
+const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'jeep', 'pole', 'wires', 'turbine', 'water_tower2', 'grain_bin', 'warehouse', 'streetlight',
+  'gas_canopy', 'gas_shop', 'gas_sign', 'store', 'shop_a', 'shop_b', 'shop_c', 'shop_d', 'shop_e', 'shop_f', 'shop_g', 'shop_h', 'house_s_a', 'house_s_c',
+  'bench', 'hydrant', 'trash', 'picnic', 'pallet', 'fuel_barrels', 'logs', 'cone', 'sign_stop', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
   'fence', 'fence2', 'farm_barn', 'cistern', 'mailbox', 'hay_round', 'hay_cube', 'cart', 'barrel', 'pond', 'haybale', 'crate_pumpkin', 'pumpkin',
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',
   'tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5', 'pine_1', 'pine_2', 'pine_3', 'dead_1', 'dead_2', 'birch_1', 'maple_1', 'bush', 'bush_flowers',
@@ -40,6 +43,10 @@ const TIPS = [
   'İpucu: Kazandığın parayla Garaj’dan motor, lastik ve süspansiyon geliştir.',
   'İpucu: Uzun atlayışlar ve driftler para kazandırır.',
   'İpucu: Gece modunda farlarını L tuşuyla açıp kapatabilirsin.',
+  'İpucu: Steptoe Kasabası’ndaki postanede F’ye bas, posta turuna çık.',
+  'İpucu: Benzinlikte durunca nitro deposu dolar; F ile aracını yıkatabilirsin.',
+  'İpucu: Nitro (Shift) biter, sürmeden bırakınca yavaşça dolar.',
+  'İpucu: Garaj’daki Cip ve traktör de satın alınabilir; her biri farklı sürülür.',
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
@@ -127,7 +134,9 @@ class Game {
     const rs = this.rs;
     rs.setupLighting({ noon: { sky: tex.sky, hdr: hdr[0] }, sunset: { sky: tex.skySunset, hdr: hdr[1] }, night: { sky: tex.skyNight, hdr: hdr[2] } }, tex.skyStorm);
     const roads = LAYOUT.ROADS.map((r) => ({ ...r }));
-    const layout = { jumps: LAYOUT.JUMPS, roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: [
+    const TW = LAYOUT.TOWN;
+    const layout = { jumps: LAYOUT.JUMPS, roads, farmyards: [...LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), { x: TW.center[0], z: TW.center[1], r: TW.radius * 0.8 }], flatten: [
+      { x: TW.center[0], z: TW.center[1], r: TW.radius, falloff: 40 },
       ...LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r * 0.75, falloff: 30 })),
       ...LAYOUT.POI_FLATTEN.map(([id, r]) => { const p = LAYOUT.POIS.find((pp) => pp.id === id); return { x: p.x, z: p.z, r, falloff: 12 }; }),
     ] };
@@ -174,6 +183,9 @@ class Game {
     this.hud.boards = this.delivery.boards;
     this.stunts = new StuntZones({ scene: rs.scene, lib, terrain: this.terrain, hud: this.hud, progress: this.progress, audio: this.audio, glowTex: tex.glow });
     this.hud.stuntZones = this.stunts;
+    this.postal = new PostalRoute({ scene: rs.scene, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress, glowTex: tex.glow,
+      office: this.world.postOffice, mailboxes: this.world.mailboxes });
+    this._buildStreetGlow(tex.glow);
     this.traffic = new Traffic({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio });
     this._wireProgress();
     mark('vehicle+gameplay');
@@ -352,6 +364,35 @@ class Game {
     }).join('') + `<div class="muted">${P.data.achievements.length} / ${ACHIEVEMENTS.length} başarım</div>`;
   }
 
+  // ------------------------------------------------------------ gas station & street lights
+  _gasStation() {
+    const g = this.world.gasStation, v = this.vehicle;
+    this._atGas = Math.hypot(v.position.x - g.x, v.position.z - g.z) < 16;
+    if (this._atGas && this.nitro < 99.5) {
+      this.nitro = 100;
+      this.hud.popup('Nitro dolduruldu ⛽', 'info');
+      this.audio.play('ui_switch', { bus: 'ui', volume: 0.6, rate: 0.8 });
+    }
+  }
+
+  _washCar() {
+    const v = this.vehicle;
+    if (v.dirt < 0.05) { this.hud.hint('Araç zaten tertemiz.', 2); return; }
+    if (!this.progress.spend(25)) { this.hud.hint('Yeterli paran yok.', 2); return; }
+    v.dirt = 0; v.setDirt(0);
+    this.hud.popup('Araç yıkandı ✨ <small>-$25</small>', 'info');
+    this.audio.play('ui_switch', { bus: 'ui', volume: 0.8 });
+  }
+
+  // additive glow sprites under each street lamp head, visible at night
+  _buildStreetGlow(glow) {
+    const mat = new THREE.SpriteMaterial({ map: glow, color: 0xffd9a0, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
+    this.streetGlow = new THREE.Group();
+    for (const p of this.world.streetLights || []) { const sp = new THREE.Sprite(mat); sp.position.copy(p); sp.scale.setScalar(5); this.streetGlow.add(sp); }
+    this.streetGlow.visible = false;
+    this.rs.scene.add(this.streetGlow);
+  }
+
   // ------------------------------------------------------------ waypoint
   setWaypoint(p) {
     this.waypoint = p;
@@ -465,6 +506,7 @@ class Game {
       this.world.impostors.material.uniforms.uTint.value.copy(this.rs.impostorTint);
       this.headlights = this.rs.isNight;
       this.vehicle.setHeadlights(this.headlights);
+      if (this.streetGlow) this.streetGlow.visible = this.rs.isNight;
     }
     this.vehicle.setPaint(s.paint);
     if (this.weather.mode !== s.weather) this.weather.setMode(s.weather);
@@ -668,7 +710,9 @@ class Game {
       this.cameraRig.update(dt, v, this.terrain, inp);
       this._gameplayResult = this.gameplay.update(dt, v);
       const dres = this.delivery.update(dt, v);
-      this.hud.extraTarget = dres?.target || null;
+      const pres = this.postal.update(dt, v);
+      this.hud.extraTarget = dres?.target || pres?.target || null;
+      this._gasStation(dt);
       this._effects(dt);
       this._stunts(dt);
       this.stunts.update(dt, v);
@@ -719,7 +763,11 @@ class Game {
     if (inp.wasPressed('KeyF')) {
       const board = this.delivery.boardNear(v.position);
       if (this.gameplay.active) this.gameplay.cancelChallenge();
-      else if (board && v.speed < 4) this.openBoard(board);
+      else if (this.postal.near(v.position) && v.speed < 4) {
+        if (this.delivery.job) this.hud.hint('Önce aktif teslimatını bitir.', 2.5);
+        else this.postal.start();
+      } else if (this._atGas && v.speed < 4) this._washCar();
+      else if (board && v.speed < 4 && !this.postal.active) this.openBoard(board);
       else { const c = this.gameplay.nearChallenge(v.position); if (c) { this.gameplay.startChallenge(c, v); this.cameraRig.initialized = false; this.hud.toast('Görev', c.name, c.desc); } }
     }
     if (inp.wasPressed('KeyL')) { this.headlights = !this.headlights; v.setHeadlights(this.headlights); this.audio.play('ui_switch', { volume: 0.4 }); }
@@ -785,6 +833,8 @@ class Game {
     const near = this.gameplay.nearChallenge(v.position);
     let msg = null;
     if (board) msg = touch ? `$ ${board.farm.name} ilan panosu — dokun` : `<kbd>F</kbd> İlan panosu`;
+    else if (this.postal.near(v.position)) msg = touch ? '✉ Posta turu başlat — dokun' : '<kbd>F</kbd> Posta turu başlat';
+    else if (this._atGas) msg = touch ? `⛽ Aracı yıka ($25) — dokun` : '<kbd>F</kbd> Aracı yıka ($25)';
     else if (near) msg = touch ? `⚑ ${near.name} — başlamak için dokun` : `<kbd>F</kbd> ${near.name}`;
     hud.prompt(msg);
     hud.showBoards = !this.delivery.job;
@@ -792,13 +842,13 @@ class Game {
       const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
       if (dist < 22) { this.setWaypoint(null); hud.popup('Yer işaretine vardın', 'info'); this.audio.play('ui_switch', { bus: 'ui', volume: 0.6 }); }
     }
-    if (!this.delivery.job && !this.gameplay.active) {
+    if (!this.delivery.job && !this.gameplay.active && !this.postal.active) {
       if (this.waypoint) {
         const dist = Math.hypot(v.position.x - this.waypoint[0], v.position.z - this.waypoint[1]);
         hud.objective({ title: 'Yer işareti', lines: [dist < 1000 ? `${Math.round(dist)} m` : `${(dist / 1000).toFixed(1)} km`] });
       } else if (this.progress.stats.deliveries === 0) hud.objective({ title: 'İlk işin', lines: ['Çiftliklerdeki sarı ışıklı <b>$</b> panodan teslimat işi al.', 'Miller Çiftliği’nin panosu evin önünde.'] });
       else hud.objective(null);
-    } else if (!this.delivery.job) hud.objective(null);
+    } else if (!this.delivery.job && !this.postal.active) hud.objective(null);
   }
 
   _resetVehicle() {
