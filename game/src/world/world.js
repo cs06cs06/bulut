@@ -265,7 +265,11 @@ export class World {
     const lists = {};
     const push = (name, m) => { (lists[name] = lists[name] || []).push(m); };
     for (const m of [...(this._windbreak || []), ...(this._extraTrees || [])]) push(m.userData.name, m);
-    const farAway = (x, z, extra = 0) => FARMS.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 12 + extra) && POIS.every(p => Math.hypot(x - p.x, z - p.z) > 14);
+    const inPaddock = (x, z) => (this.paddocks || []).some((a) => {
+      const dx = x - a.cx, dz = z - a.cz, c = Math.cos(a.rot), s = Math.sin(a.rot);
+      return Math.abs(dx * c - dz * s) < a.hw + 8 && Math.abs(dx * s + dz * c) < a.hd + 8;
+    });
+    const farAway = (x, z, extra = 0) => FARMS.every(f => Math.hypot(x - f.x, z - f.z) > f.r + 12 + extra) && POIS.every(p => Math.hypot(x - p.x, z - p.z) > 14) && !inPaddock(x, z);
     const trees = ['tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5'];
     const colliders = [];
 
