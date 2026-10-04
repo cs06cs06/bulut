@@ -507,7 +507,7 @@ const CREDITS = [
   ['', 'gap'],
   ['SENARYO', 'head'], ['Claude', 'small'], ['', 'gap'],
   ['GÖRÜNTÜ', 'head'], ['three.js ile kare kare çizildi', 'small'], ['', 'gap'],
-  ['SESLER', 'head'], ['piper (tr_TR-dfki) sentetik seslendirme', 'small'], ['', 'gap'],
+  ['SESLER', 'head'], [META.voices || 'piper (tr_TR-dfki) sentetik seslendirme', 'small'], ['', 'gap'],
   ['Bu çalışma resmi bir Gibi bölümü değildir;', 'small'], ['diziye duyulan sevgiyle yapılmış bir hayran işidir.', 'small'],
   ['', 'gap'],
   [(META.outro || ['Kapıyı kapatmayı unutmayın.'])[0], 'mid'],

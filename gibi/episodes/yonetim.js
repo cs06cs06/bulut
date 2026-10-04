@@ -20,6 +20,7 @@ export const meta = {
     ['Sevim Hanım', 'eski yönetici'], ['Necmi Bey', 'sekiz numara'], ['Kapıcı Remzi', 'otomat sorumlusu'],
   ],
   outro: ['Aidatınızı ödeyin.', 'Asansör gelirse diye.'],
+  voices: 'Microsoft neural sesler (Edge TTS) · Türkçe ve çok dilli sesler',
 };
 
 // Neural sesler (Microsoft Edge TTS). rate/pitch: karakterin temel ayarı;
