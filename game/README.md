@@ -7,6 +7,10 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 ▶ **Oyna:** https://cs06cs06.github.io/bulut/tozlu-yollar/
 
 ## Özellikler
+- **Palouse’un insanları:** Kasabanın kaldırımlarında dolaşan, dükkân önlerinde sohbet eden, banklarda oturan kasabalılar; panayırda satıcılar ve ziyaretçiler; göl kıyısında kamp ateşinin başında kampçılar ve oltacı; vadide piknik yapan aile; çiftliklerde çalışan çiftçiler; yol kenarında koşanlar. Araba yaklaşınca kenara kaçarlar (animasyonlu Kenney Mini Characters).
+- **Komşularla sohbet:** Earl (benzinlik), Rosie (postane), Şerif Dale (devriye arabasının yanında), Martha (Su Kulesi Çiftliği) ve Hank (Kuzey Sprinti bayrağı) dünyada isim etiketleriyle durur; yanlarına gidip F ile konuşursun.
+- **Otostopçular:** Yol kenarında el sallayanları arabaya al, gideceği yere bırak; mesafeye göre ücret, zamanında varırsan bahşiş, sarsarsan şikâyet.
+- **Daha dolu harita:** Göl Kampı, Kasaba Panayırı (tezgâhlar, fenerler gece yanar), Vadi Pikniği, göl kıyısında oltacı; trafikte şerifin devriye arabası, sedan, hatchback, kargo kamyoneti ve taksi.
 - **Hikâye — “Palouse’a Dönüş”:** Deden Walt’ın çiftliğini ve emektar pikabını miras aldın. 8 bölüm boyunca tamirci Earl, komşu Martha, postacı Rosie ve Şerif Dale sana iş verir; çiftliğe göz diken Dawson ailesinin oğlu Hank ile yarışırsın; dedenin kayıp kamyonunu bir ahırda bulup restore edersin. Diyalog paneli, bölüm hedefleri ve harita işaretleri.
 - **Ahır buluntuları (Forza Horizon’dan):** Haritadaki kesikli dairelerde söylentiler var; eski ahırda paslanmış bir araç bulup garajda restore et (Dedenin Kamyonu, Eski Minibüs).
 - **Beceri zinciri:** Drift, uçuş, kıl payı geçiş, hız, arazi koşusu, çit kırma ve hayvan ürkütme tek bir puanda birleşir; her numara çarpanı ×0,1 artırır, 4 saniye ara verince puan paraya dönüşür, çarpışma zinciri kırar.
@@ -36,7 +40,7 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 - **Günlük görevler:** Her gün 3 yeni görev (teslimat, drift, atlayış, hız kapanı…), hepsine +$500 bonus.
 - **Çamur:** Arazide sürdükçe araç alttan yukarı çamurlanır (yağmurda daha hızlı); Söğüt Göleti’nden geçerek veya garajda yıkanır.
 - **Yer işareti:** Büyük haritaya tıklayınca dünyada yeşil ışık sütunu ve mini haritada hedef.
-- **Keşif:** 19 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 22 başarım ve istatistik ekranı.
+- **Keşif:** 22 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 23 başarım ve istatistik ekranı.
 - **Canlı dünya:** Tarlaların üzerinde dönen kuş sürüleri (yakınından geçince havalanır), gece ateş böcekleri, gölette su sıçraması; 8 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
 - **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.
 - **Ses:** Devre göre katmanlı motor sesi, çakıl/patinaj, çarpışma, yağmur ve gök gürültüsü, kır ambiyansı, Kevin MacLeod'un country/bluegrass parçaları.

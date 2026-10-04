@@ -37,6 +37,7 @@ export class World {
     this.blockers = [];
     this._town();
     this._landmarks();
+    this._leisure();
     this._powerLines();
     this._turbines();
     this._countryside();
@@ -414,14 +415,18 @@ export class World {
     // frame → world: side +1 is to the right of the travel direction (heading south)
     const at = (t, side, off) => { const f = this._roadFrame(T.road, T.anchor, t); const rx = -f.dz * side, rz = f.dx * side; return { x: f.x + rx * (f.hw + off), z: f.z + rz * (f.hw + off), rx, rz, f }; };
     const face = (p) => Math.atan2(-p.rx, -p.rz) * 180 / Math.PI; // model +Z towards the road
+    this.townSpots = {}; this.benches = [];
     for (const [model, t, side, setback, sc = 1] of T.buildings) {
       const b = this.lib.bounds(model, sc), depth = b.max.z - b.min.z;
       const p = at(t, side, setback + depth / 2);
+      const fr = at(t, side, Math.max(1.8, setback - 1.2)); // pavement in front of the door
+      this.townSpots[model] = { x: fr.x, z: fr.z, rx: fr.rx, rz: fr.rz, dx: fr.f.dx, dz: fr.f.dz };
       const r = this.place(model, p.x, p.z, face(p), sc);
       if (r.object) objs.push(r.object);
     }
     for (const [model, t, side, setback, rot = 0] of T.props) {
       const p = at(t, side, setback);
+      if (model === 'bench') this.benches.push({ x: p.x, z: p.z, yaw: Math.atan2(-p.rx, -p.rz) + rot * Math.PI / 180 });
       const r = this.place(model, p.x, p.z, face(p) + rot, 1);
       if (r.object) objs.push(r.object);
     }
@@ -458,10 +463,51 @@ export class World {
     const sign = this.place('gas_sign', sg.x, sg.z, face(sg) + 90, 1);
     if (sign.object) objs.push(sign.object);
     for (const [dt, off] of [[-6, 22], [-2, 23]]) { const pp = at(g.t + dt, g.side, g.setback + off); const r = this.place('picnic', pp.x, pp.z, face(pp), 1); if (r.object) objs.push(r.object); }
-    this.gasStation = { x: gc.x, z: gc.z };
+    const gf = at(g.t, g.side, g.setback + 17);
+    this.gasStation = { x: gc.x, z: gc.z, shop: { x: gf.x, z: gf.z, yaw: Math.atan2(-gf.rx, -gf.rz) } };
+    this.townFrame = { at, face };
     const m = this._mergeStatic(objs, 'town');
     m.userData.center = new THREE.Vector3(T.center[0], 0, T.center[1]); m.userData.maxDist = 2600;
     this.cells.push(m);
+  }
+
+  // campsite by the pond, county fair beside the town, fishing spot, valley picnic (people live in world/people.js)
+  _leisure() {
+    const objs = [], P = (id) => POIS.find((p) => p.id === id), put = (m, x, z, rot = 0, sc = 1, opts) => { const r = this.place(m, x, z, rot, sc, opts); if (r.object) objs.push(r.object); return r; };
+    this.leisure = {};
+    // camp: two tents, a fire ring with log seats, bedrolls
+    const c = P('camp');
+    this.blockers.push([c.x, c.z, 26]);
+    put('tent', c.x - 7, c.z - 5, 30); put('tent2', c.x + 6, c.z - 7, -20); put('bedroll', c.x - 3, c.z + 7, 80, 1, { collider: false });
+    put('campfire', c.x, c.z, 0, 1, { collider: false });
+    const seats = [];
+    for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + 0.4, x = c.x + Math.cos(a) * 3.2, z = c.z + Math.sin(a) * 3.2; put('log_seat', x, z, 90 - a * 180 / Math.PI + 90, 1, { collider: false }); seats.push({ x, z, yaw: Math.atan2(c.x - x, c.z - z) }); }
+    this.leisure.camp = { x: c.x, z: c.z, seats };
+    // fishing spot on the west shore of the pond
+    const pd = P('pond'), fx = pd.x - 13, fz = pd.z + 3;
+    put('canoe', fx + 2, fz + 5, 70, 1, { collider: false }); put('fish_stand', fx - 1.5, fz - 1, 0, 1, { collider: false }); put('bucket', fx + 1.2, fz - 1.2, 0, 1, { collider: false });
+    put('log_seat', fx, fz, 90, 1, { collider: false });
+    this.leisure.fisher = { x: fx, z: fz, yaw: Math.atan2(pd.x - fx, pd.z - fz) };
+    // county fair: a ring of stalls with lanterns, hay and pumpkins
+    const fa = P('fair'), stalls = [];
+    const kinds = ['stall_red', 'stall_green', 'stall', 'stall_red', 'stall_green', 'stall'];
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2, x = fa.x + Math.cos(a) * 15, z = fa.z + Math.sin(a) * 15;
+      put(kinds[i], x, z, (-a * 180 / Math.PI) - 90);
+      stalls.push({ x: fa.x + Math.cos(a) * 11.5, z: fa.z + Math.sin(a) * 11.5, yaw: Math.atan2(fa.x - x, fa.z - z) + Math.PI, vendor: { x: fa.x + Math.cos(a) * 16.5, z: fa.z + Math.sin(a) * 16.5, yaw: Math.atan2(fa.x - x, fa.z - z) } });
+      const la = a + Math.PI / 6;
+      put('lantern', fa.x + Math.cos(la) * 14, fa.z + Math.sin(la) * 14, 0, 1, { collider: false });
+    }
+    for (const [m, dx, dz, r] of [['hay_round', 0, 0, 0], ['crate_pumpkin', 3, 2, 20], ['crate_pumpkin', -3, 2.5, -30], ['pumpkin', 2, -3, 0], ['pumpkin', -2, -3.4, 0], ['stall_bench', 6, -6, 45], ['stall_bench', -6, 6, 45]])
+      put(m, fa.x + dx, fa.z + dz, r);
+    this.leisure.fair = { x: fa.x, z: fa.z, stalls };
+    this.lanterns = Array.from({ length: 6 }, (_, i) => { const la = i / 6 * Math.PI * 2 + Math.PI / 6; return new THREE.Vector3(fa.x + Math.cos(la) * 14, this.terrain.heightAt(fa.x + Math.cos(la) * 14, fa.z + Math.sin(la) * 14) + 2.5, fa.z + Math.sin(la) * 14); });
+    // valley picnic: table and a blanket
+    const pi = P('picnic');
+    put('picnic', pi.x, pi.z, 15); put('bedroll', pi.x + 4, pi.z + 2, 100, 1.4, { collider: false }); put('bucket', pi.x + 1.5, pi.z - 1.5, 0, 1, { collider: false });
+    this.leisure.picnic = { x: pi.x, z: pi.z };
+    this.blockers.push([fa.x, fa.z, 24], [pi.x, pi.z, 14], [fx, fz, 6]);
+    if (objs.length) this._mergeStatic(objs, 'leisure').userData.maxDist = 99999;
   }
 
   // barn-find barns and lookout towers (gameplay lives in game/barns.js and game/explore.js)

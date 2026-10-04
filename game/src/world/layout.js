@@ -14,7 +14,10 @@ export const MODEL_SCALE = {
   pole: 1, wires: 1, turbine: 35, water_tower2: 10, grain_bin: 9, warehouse: 1, jeep: 1, streetlight: 1,
   gas_canopy: 0.85, gas_shop: 0.8, gas_sign: 0.8, store: 1.6, house_s_a: 6.5, house_s_c: 6.5,
   shop_a: 5.5, shop_b: 5.5, shop_c: 5.5, shop_d: 5.5, shop_e: 5.5, shop_f: 5.5, shop_g: 5.5, shop_h: 5.5,
-  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, bird: 1, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
+  bench: 5, hydrant: 5, trash: 5, picnic: 1.5, pallet: 1, fuel_barrels: 1, logs: 1, cone: 1, sign_stop: 5, tractor_k: 1.9, bird: 1,
+  char_m_a: 2.9, char_m_b: 2.9, char_m_c: 2.9, char_m_d: 2.9, char_m_e: 2.9, char_m_f: 2.9, char_f_a: 2.9, char_f_b: 2.9, char_f_c: 2.9, char_f_d: 2.9, char_f_e: 2.9, char_f_f: 2.9,
+  tent: 4.5, tent2: 5.5, campfire: 3, log_seat: 3, canoe: 3.5, bedroll: 3, fish_stand: 3, bucket: 3, stall: 4.5, stall_green: 4.5, stall_red: 4.5, stall_bench: 4, stall_stool: 4, banner_red: 3.5, banner_green: 3.5, lantern: 1.7,
+  k_sedan: 1.65, k_hatchback: 1.65, k_police: 1.65, k_delivery: 1.65, k_taxi: 1.65, chapel: 10, diner: 9, market: 7, wheelbarrow: 3, sack: 3, crate: 3,
   cow: 0.33, bull: 0.34, horse: 0.36, horse_white: 0.36, donkey: 0.3, alpaca: 0.32, deer: 0.33, chicken: 1.0,
 };
 
@@ -160,6 +163,9 @@ export const POIS = [
   { id: 'poplar', name: 'Kavak Çiftliği', desc: 'Balkabağı tarlalarıyla ünlü.', x: -830, z: 1215, r: 50, icon: '⌂' },
   { id: 'town', name: 'Steptoe Kasabası', desc: 'Dükkânlar, posta ofisi ve tahıl deposu. Palouse’un kalbi.', x: 392, z: 545, r: 70, icon: '⌂' },
   { id: 'gas', name: 'Benzinlik', desc: 'Nitro deposunu doldur, aracını yıkat.', x: 403, z: 455, r: 30, icon: '⛽' },
+  { id: 'camp', name: 'Göl Kampı', desc: 'Söğüt Göleti’nin kıyısında çadırlar ve çıtırdayan bir kamp ateşi.', x: -652, z: 902, r: 30, icon: '▲' },
+  { id: 'fair', name: 'Kasaba Panayırı', desc: 'Tezgâhlar, fenerler, balkabakları: Steptoe’nun cumartesi panayırı.', x: 318, z: 566, r: 32, icon: '✦' },
+  { id: 'picnic', name: 'Vadi Pikniği', desc: 'Kuzey Vadisi’nde piknik yapan bir aile.', x: 285, z: -1362, r: 25, icon: '♣' },
   { id: 'chapel', name: 'Kır Şapeli', desc: 'Kasabanın güney ucunda, kırmızı çatılı küçük şapel. Pazar tezgâhı hemen karşısında.', x: 376, z: 623, r: 28, icon: '✝' },
   { id: 'windmill', name: 'Yalnız Değirmen', desc: 'Tepedeki değirmen hâlâ dönüyor.', x: 760, z: -610, r: 40, icon: '✣' },
   { id: 'pond', name: 'Söğüt Göleti', desc: 'Serin su, kurbağalar ve gölge.', x: -700, z: 930, r: 40, icon: '◍' },

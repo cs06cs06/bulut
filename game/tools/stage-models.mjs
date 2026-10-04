@@ -55,6 +55,14 @@ const L = {
   ...Object.fromEntries(['wheelbarrow', 'sack', 'crate_A_big'].map((k) => [k.replace('_A_big', ''), `${M2}/kaykit_hex/KayKit_Medieval_Hexagon_Pack_1.0_FREE/Assets/gltf/decoration/props/${k}.gltf`])),
   // OGA pigeon (mujtaba-io, CC0), exported from .blend with a flat slate-grey body
   bird: `${M2}/oga_pigeon/pigeon.glb`,
+  // Kenney Mini Characters (people, animated), Nature / Survival kits (camp), Fantasy Town (fair), Car Kit (traffic)
+  ...Object.fromEntries(['a', 'b', 'c', 'd', 'e', 'f'].flatMap((k) => [['char_m_' + k, `${M2}/kenney_mini/Models/GLB format/character-male-${k}.glb`], ['char_f_' + k, `${M2}/kenney_mini/Models/GLB format/character-female-${k}.glb`]])),
+  tent: `${K}/kenney_nature-kit/Models/GLTF format/tent_detailedOpen.glb`, tent2: `${K}/kenney_survival-kit/Models/GLB format/tent-canvas.glb`,
+  campfire: `${K}/kenney_nature-kit/Models/GLTF format/campfire_stones.glb`, log_seat: `${K}/kenney_nature-kit/Models/GLTF format/log.glb`,
+  canoe: `${K}/kenney_nature-kit/Models/GLTF format/canoe.glb`, bedroll: `${K}/kenney_survival-kit/Models/GLB format/bedroll.glb`,
+  fish_stand: `${K}/kenney_survival-kit/Models/GLB format/campfire-fishing-stand.glb`, bucket: `${K}/kenney_survival-kit/Models/GLB format/bucket.glb`,
+  ...Object.fromEntries(['stall', 'stall-green', 'stall-red', 'stall-bench', 'stall-stool', 'banner-red', 'banner-green', 'lantern'].map((k) => [k.replace('-', '_'), `${K}/kenney_fantasy-town-kit_2.0/Models/GLB format/${k}.glb`])),
+  ...Object.fromEntries(['sedan', 'hatchback-sports', 'police', 'delivery', 'taxi'].map((k) => ['k_' + k.split('-')[0], `${K}/kenney_car-kit/Models/GLB format/${k}.glb`])),
   // Kenney Platformer Kit — challenge flags & signs
   flag: `${K}/platformer/Models/GLB format/flag.glb`, sign: `${K}/platformer/Models/GLB format/sign.glb`, arrow: `${K}/platformer/Models/GLB format/arrow.glb`,
   billboard: 'styloo_cozyfarm/glb/billboard.glb',

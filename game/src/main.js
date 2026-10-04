@@ -11,6 +11,7 @@ import { World } from './world/world.js';
 import { GroundCover } from './world/grass.js';
 import { Weather } from './world/weather.js';
 import { Birds } from './world/birds.js';
+import { People } from './world/people.js';
 import * as LAYOUT from './world/layout.js';
 import { Vehicle, VEHICLES, UPGRADES } from './game/vehicle.js';
 import { Progress, ACHIEVEMENTS, DAILY_POOL, PAINT_LEVELS } from './game/progress.js';
@@ -25,6 +26,7 @@ import { Story } from './game/story.js';
 import { SkillChain } from './game/skills.js';
 import { Winch } from './game/winch.js';
 import { PhotoBounties } from './game/photos.js';
+import { Townsfolk } from './game/npcs.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks, Fireflies } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
@@ -38,7 +40,10 @@ const MODELS = ['pickup', 'suv', 'monster', 'tractor_k', 'jeep', 'pole', 'wires'
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',
   'tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5', 'pine_1', 'pine_2', 'pine_3', 'dead_1', 'dead_2', 'birch_1', 'maple_1', 'bush', 'bush_flowers',
   'grass_short', 'grass_tall', 'grass_wispy', 'flower_3', 'flower_4', 'fern', 'rock_1', 'rock_2', 'rock_3',
-  'cow', 'bull', 'horse', 'horse_white', 'donkey', 'alpaca', 'deer', 'chicken', 'bird'];
+  'cow', 'bull', 'horse', 'horse_white', 'donkey', 'alpaca', 'deer', 'chicken', 'bird',
+  'char_m_a', 'char_m_b', 'char_m_c', 'char_m_d', 'char_m_e', 'char_m_f', 'char_f_a', 'char_f_b', 'char_f_c', 'char_f_d', 'char_f_e', 'char_f_f',
+  'tent', 'tent2', 'campfire', 'log_seat', 'canoe', 'bedroll', 'fish_stand', 'bucket', 'stall', 'stall_green', 'stall_red', 'stall_bench', 'stall_stool', 'lantern',
+  'k_sedan', 'k_hatchback', 'k_police', 'k_delivery', 'k_taxi'];
 
 const TIPS = [
   'İpucu: Boşluk tuşu ile el frenini çekip toprak yolda drift yapabilirsin.',
@@ -65,6 +70,10 @@ const TIPS = [
   'İpucu: Saplandın mı? X ile vinci en yakın ağaca bağla, Q ile düşük vitese geç.',
   'İpucu: T’yi basılı tutarak son 10 saniyeyi geri sarabilirsin.',
   'İpucu: Gözetleme kulelerine gidince haritanın büyük bir kısmı açılır.',
+  'İpucu: Yol kenarında el sallayan otostopçuları arabaya al; zamanında bırakırsan bahşiş verirler.',
+  'İpucu: Earl, Rosie, Şerif Dale, Martha ve Hank ile yanlarına gidip F’ye basarak sohbet edebilirsin.',
+  'İpucu: Kasabada yavaş sür, yayalar kaçışırken şapkalarını düşürüyor!',
+  'İpucu: Gece Göl Kampı’nda ateş yanar, panayırın fenerleri ışıldar.',
 ];
 const FIXED = 1 / 60;
 const MANUAL = new URLSearchParams(location.search).has('manual'); // test hook: frames advanced by window.__advance
@@ -73,6 +82,7 @@ const MOBILE = new URLSearchParams(location.search).has('mobile') || (matchMedia
 const SPAWN = { x: 431, z: 338, heading: Math.PI };
 const SETTINGS_KEY = 'tozlu-yollar-settings-v1';
 const DAY_LEN = 24 * 60; // seconds per in-game day
+const NPC_NAMES = { earl: 'Earl', rosie: 'Rosie', dale: 'Şerif Dale', martha: 'Martha', hank: 'Hank' };
 
 const $ = (id) => document.getElementById(id);
 const nextFrame = () => new Promise((r) => requestAnimationFrame(() => setTimeout(r, 0)));
@@ -212,6 +222,8 @@ class Game {
     this.races = new Races({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud, dust: this.dust, progress: this.progress, glowTex: tex.glow });
     this.hud.races = this.races.races;
     this.races.isNight = () => this.rs.isNight;
+    this.people = new People({ scene: rs.scene, lib, terrain: this.terrain, world: this.world, density: MOBILE ? 0.55 : 1 });
+    this._carVel = new THREE.Vector3();
     this.barnFinds = new BarnFinds({ scene: rs.scene, lib, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress });
     this.races.onStart = (r) => { this.traffic.suspendRoad(r.road); this.delivery.cancel(); this.postal.cancel(); this.cameraRig.initialized = false; };
     this.races.onEnd = () => { this.traffic.suspendRoad(null); this.hud.rivals = null; };
@@ -226,6 +238,7 @@ class Game {
     this.rewindBuf = [];
     this.winch = new Winch({ scene: rs.scene, physics: this.physics, RAPIER, audio: this.audio, hud: this.hud });
     this.photos = new PhotoBounties({ game: this });
+    this.townsfolk = new Townsfolk({ game: this });
     this.races.onFinish = (place, id, beatHank) => this.story.event('race', { id, place, beatHank });
     mark('map');
     this.hud.updateCounts(this.gameplay);
@@ -474,9 +487,35 @@ class Game {
   _buildStreetGlow(glow) {
     const mat = new THREE.SpriteMaterial({ map: glow, color: 0xffd9a0, transparent: true, opacity: 0.9, depthWrite: false, blending: THREE.AdditiveBlending });
     this.streetGlow = new THREE.Group();
-    for (const p of this.world.streetLights || []) { const sp = new THREE.Sprite(mat); sp.position.copy(p); sp.scale.setScalar(5); this.streetGlow.add(sp); }
+    for (const p of [...(this.world.streetLights || []), ...(this.world.lanterns || [])]) { const sp = new THREE.Sprite(mat); sp.position.copy(p); sp.scale.setScalar(5); this.streetGlow.add(sp); }
     this.streetGlow.visible = false;
     this.rs.scene.add(this.streetGlow);
+  }
+
+  // campfire at the lake camp: flickering flame sprites and drifting smoke
+  _campfire(dt) {
+    const c = this.world.leisure?.camp;
+    if (!c) return;
+    if (!this._fire) {
+      const g = new THREE.Group(), y = this.terrain.heightAt(c.x, c.z);
+      for (const [col, sc, h] of [[0xff7a2a, 2.2, 0.6], [0xffb24a, 1.4, 0.9], [0xffe08a, 0.8, 0.7], [0xff9a40, 6, 1]]) {
+        const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.tex.glow, color: col, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending }));
+        sp.scale.setScalar(sc); sp.position.y = h; sp.userData.base = sc; g.add(sp);
+      }
+      g.position.set(c.x, y, c.z);
+      this.rs.scene.add(g);
+      this._fire = g;
+    }
+    const v = this.vehicle.position, near = Math.hypot(v.x - c.x, v.z - c.z) < 400;
+    this._fire.visible = near;
+    if (!near) return;
+    const t = this.time;
+    this._fire.children.forEach((sp, i) => {
+      const f = 0.85 + Math.sin(t * (9 + i * 3)) * 0.08 + Math.sin(t * (23 + i * 5)) * 0.05;
+      sp.scale.setScalar(sp.userData.base * f * (i === 3 ? (this.rs.isNight ? 1.4 : 0.6) : 1));
+      sp.material.opacity = i === 3 ? (this.rs.isNight ? 0.5 : 0.15) : 0.75;
+    });
+    if (Math.random() < dt * 4) this.dust.emit(_tmpV.set(c.x + (Math.random() - 0.5) * 0.4, this._fire.position.y + 1.2, c.z), { x: 0.3, y: 1.4 + Math.random(), z: 0.2 }, { size: 1.6, life: 3, alpha: 0.22, color: [0.45, 0.43, 0.42], tex: 0 });
   }
 
   // ------------------------------------------------------------ waypoint
@@ -838,10 +877,12 @@ class Game {
       const pres = this.postal.update(dt, v);
       this._raceResult = this.races.update(dt, v);
       this.barnFinds.update(dt, v.position);
+      this._rideResult = this.townsfolk.update(dt);
       this.explore.update(dt, v.position);
       this.hud.rivals = this._raceResult?.cars || null;
-      this.hud.extraTarget = this._raceResult?.target || dres?.target || pres?.target || (this.gameplay.active ? null : this.story.target) || null;
+      this.hud.extraTarget = this._raceResult?.target || this._rideResult?.target || dres?.target || pres?.target || (this.gameplay.active ? null : this.story.target) || null;
       this._gasStation(dt);
+      this._campfire(dt);
       this._effects(dt);
       this._stunts(dt);
       this.stunts.update(dt, v);
@@ -876,6 +917,8 @@ class Game {
     if (this.state !== 'pause' && this.state !== 'board' && this.state !== 'dialogue') this.traffic.update(dt, v.position, v.speed);
     this.grass.update(v.position);
     this.birds.update(dt, this.time, cam.position, v.position, v.speed);
+    { const lv = v.body.linvel(); this._carVel.set(lv.x, lv.y, lv.z); }
+    this.people.update(dt, cam.position, { pos: v.position, vel: this._carVel, speed: v.speed });
     this.terrain.update(cam.position);
     this.lib.windUniform.value = this.time;
     this.terrain.setTime(this.time);
@@ -897,9 +940,14 @@ class Game {
     if (inp.wasPressed('KeyN')) this.audio.nextTrack();
     if (inp.wasPressed('KeyF')) {
       const board = this.delivery.boardNear(v.position);
-      const race = this.races.nearRace(v.position);
+      const race = this.races.nearRace(v.position), npc = this.townsfolk.nearNpc(v.position), hitch = this.townsfolk.nearHitcher(v.position);
       if (this.races.active) this.races.cancel();
       else if (this.gameplay.active) this.gameplay.cancelChallenge();
+      else if (npc && v.speed < 4) this.townsfolk.talk(npc);
+      else if (hitch && v.speed < 4) {
+        if (this.delivery.job || this.postal.active) this.hud.hint('Önce aktif işini bitir.', 2.5);
+        else this.townsfolk.pickUp(hitch);
+      }
       else if (race && v.speed < 6) { this.races.start(race, v); this.hud.toast('Yarış', race.name, race.desc); }
       else if (this.postal.near(v.position) && v.speed < 4) {
         if (this.delivery.job) this.hud.hint('Önce aktif teslimatını bitir.', 2.5);
@@ -1028,7 +1076,10 @@ class Game {
     const board = !this.gameplay.active && !this.races.active && this.delivery.boardNear(v.position);
     const near = this.gameplay.nearChallenge(v.position);
     let msg = null;
-    if (board) msg = touch ? `$ ${board.farm.name} ilan panosu — dokun` : `<kbd>F</kbd> İlan panosu`;
+    const npc = !this.races.active && this.townsfolk.nearNpc(v.position), hitch = !this.races.active && this.townsfolk.nearHitcher(v.position);
+    if (npc) msg = touch ? `💬 ${NPC_NAMES[npc.key]} ile konuş — dokun` : `<kbd>F</kbd> Konuş: ${NPC_NAMES[npc.key]}`;
+    else if (hitch) msg = touch ? `👍 Otostopçu ${hitch.riderName}: arabaya al — dokun` : `<kbd>F</kbd> Otostopçuyu al: ${hitch.riderName}`;
+    else if (board) msg = touch ? `$ ${board.farm.name} ilan panosu — dokun` : `<kbd>F</kbd> İlan panosu`;
     else if (this.postal.near(v.position)) msg = touch ? '✉ Posta turu başlat — dokun' : '<kbd>F</kbd> Posta turu başlat';
     else if (!this.races.active && this.races.nearRace(v.position)) { const r = this.races.nearRace(v.position); msg = touch ? `🏁 Yarış: ${r.name} — dokun` : `<kbd>F</kbd> Yarış: ${r.name} · 3 rakip`; }
     else if (this._atGas) {
@@ -1044,6 +1095,7 @@ class Game {
     }
     const so = this.story.objective();
     if (this.races.active) hud.objective(null);
+    else if (this.townsfolk.ride) { /* the ride sets its own objective */ }
     else if (!this.delivery.job && !this.gameplay.active && !this.postal.active) {
       if (so) hud.objective(so);
       else if (this.waypoint) {
@@ -1088,6 +1140,7 @@ class Game {
       this.audio.play(name, { volume: 0.35 + k * 0.65, rate: 0.9 + Math.random() * 0.2 });
       this.cameraRig.addShake(0.3 + k * 0.8);
       if (k > 0.3 && kind !== 'terrain') this.skills.crash();
+      this.townsfolk?.bump(k);
       // bodywork: walls, trees, rocks, rivals dent the car; only hard tumbles count on open ground
       if ((kind !== 'terrain' || k > 0.5) && k > 0.12 && this._velBefore.lengthSq() > 9) {
         const before = this.vehicle.damage;

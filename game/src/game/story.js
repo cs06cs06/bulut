@@ -3,13 +3,14 @@ import { TOWERS } from '../world/layout.js';
 // Story campaign "Palouse'a Dönüş": you inherit grandpa Walt's farm and old pickup. Neighbours
 // give you work, the Dawsons want the farm, and grandpa's long-lost truck waits in a barn.
 // Chapters reuse the open-world activities; dialogue pauses the game.
-const NPC = {
+export const NPC = {
   walt: { name: 'Dede Walt · mektup', init: '✉', color: '#8a5a2b' },
   earl: { name: 'Earl Hobbs · tamirci', init: 'EH', color: '#3a6ea5' },
   martha: { name: 'Martha Jensen · Su Kulesi Çiftliği', init: 'MJ', color: '#5a8a3a' },
   rosie: { name: 'Rosie · postacı', init: 'R', color: '#c27a2a' },
   hank: { name: 'Hank Dawson · rakip', init: 'HD', color: '#a3241c' },
   dale: { name: 'Şerif Dale', init: '★', color: '#6b5a3a' },
+  rider: { name: 'Yolcu', init: '👍', color: '#4a7a8a' },
 };
 
 export const CHAPTERS = [
@@ -157,7 +158,7 @@ export class Story {
   update(dt) {
     if (this.done || this.speaking || this.g.state !== 'play') return;
     const g = this.g, c = this.chapter, st = this.state;
-    const busy = g.races.active || g.gameplay.active || g.postal.active || g.delivery.job;
+    const busy = g.races.active || g.gameplay.active || g.postal.active || g.delivery.job || g.townsfolk?.ride;
     if (st.stage === 'intro') {
       this.delay -= dt;
       if (this.delay > 0 || busy) return;

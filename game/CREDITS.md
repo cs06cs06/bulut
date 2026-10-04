@@ -26,7 +26,11 @@ All assets were downloaded from the external sources below.
 | City Kit Roads (elektrik direkleri, teller, dur tabelası) | [Kenney](https://kenney.nl/assets/city-kit-roads) | CC0 |
 | City Kit Industrial (rüzgâr türbini, su kulesi, tahıl silosu) | [Kenney](https://kenney.nl/assets/city-kit-industrial) | CC0 |
 | Modular Buildings (kasaba evleri) | [Kenney](https://kenney.nl/assets/modular-buildings) | CC0 |
-| Car Kit (Çiftlik Traktörü) | [Kenney](https://kenney.nl/assets/car-kit) | CC0 |
+| Car Kit (Çiftlik Traktörü; trafikteki sedan, hatchback, şerif aracı, kargo kamyoneti, taksi) | [Kenney](https://kenney.nl/assets/car-kit) | CC0 |
+| Mini Characters (kasaba halkı, çiftçiler, yolcular, hikâye karakterleri; animasyonlu) | [Kenney](https://kenney.nl/assets/mini-characters) | CC0 |
+| Nature Kit (kamp çadırı, kamp ateşi, kütük, kano) | [Kenney](https://kenney.nl/assets/nature-kit) | CC0 |
+| Survival Kit (kanvas çadır, uyku tulumu, balık standı, kova) | [Kenney](https://kenney.nl/assets/survival-kit) | CC0 |
+| Fantasy Town Kit (panayır tezgâhları, banklar, fenerler) | [Kenney](https://kenney.nl/assets/fantasy-town-kit) | CC0 |
 | City Builder Bits (kasaba dükkânları, bank, yangın musluğu, çöp kutusu) | [Kay Lousberg](https://kaylousberg.itch.io/city-builder-bits) | CC0 |
 | Resource Bits (palet, yakıt varilleri, kütük yığını) | [Kay Lousberg](https://kaylousberg.itch.io/resource-bits) | CC0 |
 | Zombie Apocalypse Kit (sokak lambası, trafik konisi) | [Quaternius](https://quaternius.com/packs/zombieapocalypsekit.html) | CC0 |

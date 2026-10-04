@@ -8,6 +8,13 @@ const ROUTES = [
   { model: 'truck', road: 'Batı Yolu', speed: 11, axle: 'x', yaw: 0, start: 0.2 },
   { model: 'tractor', road: 'Güney Yolu', speed: 5.5, axle: 'z', yaw: Math.PI / 2, start: 0.6 },
   { model: 'van', road: 'Doğu Yolu', speed: 13, axle: 'x', yaw: 0, start: 0.5 },
+  // Kenney Car Kit: the sheriff's patrol and townsfolk running errands
+  { model: 'k_police', road: 'Palouse Yolu', speed: 15, axle: 'x', yaw: 0, start: 0.62, sound: 'engine_low' },
+  { model: 'k_sedan', road: 'Tepe Yolu', speed: 13, axle: 'x', yaw: 0, start: 0.35, sound: 'engine_low' },
+  { model: 'k_hatchback', road: 'Güney Yolu', speed: 14, axle: 'x', yaw: 0, start: 0.75, sound: 'engine_low' },
+  { model: 'k_delivery', road: 'Doğu Yolu', speed: 12, axle: 'x', yaw: 0, start: 0.15, sound: 'engine_low' },
+  { model: 'k_taxi', road: 'Butte Yolu', speed: 11, axle: 'x', yaw: 0, start: 0.5, sound: 'engine_low' },
+  { model: 'k_sedan', road: 'Değirmen Yolu', speed: 12, axle: 'x', yaw: 0, start: 0.4, sound: 'engine_low' },
 ];
 
 export class Traffic {
@@ -46,7 +53,8 @@ export class Traffic {
       const col = physics.createCollider(RAPIER.ColliderDesc.cuboid(size.x / 2 * 0.95, size.y / 2 * 0.9, size.z / 2 * 0.95).setTranslation(ctr.x, ctr.y, ctr.z).setFriction(0.6), body);
       col.userData = { kind: 'building' };
       const car = { ...r, root, model, spins, body, pts, cum, len: cum[cum.length - 1], s: cum[cum.length - 1] * (r.start || 0.1), dir: 1, v: 0, turn: 0, halfLen: size.z / 2 };
-      if (audio.buffers.engine_diesel) car.sound = audio.loop('engine_diesel', 'sfx', { volume: 0 });
+      const snd = r.sound || 'engine_diesel';
+      if (audio.buffers[snd]) car.sound = audio.loop(snd, 'sfx', { volume: 0 });
       this.cars.push(car);
       this._place(car, 0);
     }

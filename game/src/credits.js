@@ -13,6 +13,7 @@ export const CREDITS = [
     ['Tavuk', 'mess110 — CC0', 'https://opengameart.org/content/chicken-3'],
     ['City Kit Suburban (çiftlik evleri), Platformer Kit (bayrak, tabela)', 'Kenney — CC0', 'https://kenney.nl'],
     ['City Kit Roads, City Kit Industrial, Modular Buildings, Car Kit (elektrik direkleri, rüzgâr türbinleri, su kulesi, kasaba evleri, traktör)', 'Kenney — CC0', 'https://kenney.nl'],
+    ['Mini Characters (kasaba halkı, çiftçiler, yolcular), Nature Kit, Survival Kit, Fantasy Town Kit (kamp, panayır), Car Kit (trafik)', 'Kenney — CC0', 'https://kenney.nl/assets/mini-characters'],
     ['City Builder Bits, Resource Bits (kasaba dükkânları, sokak eşyaları, palet, kütük)', 'Kay Lousberg — CC0', 'https://kaylousberg.itch.io/city-builder-bits'],
     ['Zombie Apocalypse Kit (sokak lambası, koni)', 'Quaternius — CC0', 'https://quaternius.com/packs/zombieapocalypsekit.html'],
     ['Gas Station (benzinlik; dokular düz renge dönüştürüldü)', 'elbolilloduro — CC0', 'https://elbolilloduro.itch.io/gas-station'],
