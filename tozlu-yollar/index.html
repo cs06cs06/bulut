@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#2c1b10" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tozlu Yollar" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
+  <title>Tozlu Yollar — Palouse Offroad</title>
+  <meta name="description" content="Stilize, açık dünya bir country offroad sürüş oyunu. Gerçek Palouse (Washington) arazisinde pikabınla keşfe çık." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%BB%3C/text%3E%3C/svg%3E" />
+  <script type="module" crossorigin src="./assets/index-c21_A2_v.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-DB93g880.css">
+</head>
+<body>
+  <canvas id="game"></canvas>
+
+  <!-- Loading -->
+  <div id="loading" class="screen">
+    <div class="loading-inner">
+      <div class="brand">
+        <div class="brand-small">Palouse Tepeleri</div>
+        <h1 class="title">Tozlu Yollar</h1>
+        <div class="brand-sub">açık dünya · offroad · country</div>
+      </div>
+      <div class="progress"><div class="bar" id="load-bar"></div></div>
+      <div class="load-text" id="load-text">Yükleniyor…</div>
+      <div class="tip" id="load-tip"></div>
+    </div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="menu" class="screen hidden">
+    <div class="menu-panel">
+      <div class="brand">
+        <div class="brand-small">Palouse Tepeleri</div>
+        <h1 class="title">Tozlu Yollar</h1>
+        <div class="brand-sub">açık dünya · offroad · country</div>
+      </div>
+      <nav class="menu-buttons">
+        <button data-action="play" class="btn primary">Sürüşe Başla</button>
+        <button data-action="settings" class="btn">Ayarlar</button>
+        <button data-action="controls" class="btn">Kontroller</button>
+        <button data-action="credits" class="btn">Emeği Geçenler</button>
+      </nav>
+      <div class="menu-foot">Gerçek arazi verisi: Steptoe Butte, Washington, ABD</div>
+    </div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top-left">
+      <div class="chip"><span class="chip-ico">★</span><span id="hud-disc">0/0</span><small>Keşif</small></div>
+      <div class="chip"><span class="chip-ico">●</span><span id="hud-coll">0/0</span><small>Balkabağı</small></div>
+      <div id="hud-challenge" class="challenge hidden"></div>
+    </div>
+    <div class="hud-top-right">
+      <div id="now-playing" class="now-playing"><span class="np-ico">♪</span><div><div id="np-title"></div><div id="np-artist"></div></div></div>
+    </div>
+    <div id="minimap-wrap"><canvas id="minimap" width="220" height="220"></canvas><div class="mm-n">K</div></div>
+    <div id="speedo">
+      <canvas id="speedo-canvas" width="240" height="240"></canvas>
+      <div class="speed-num"><span id="speed">0</span><small id="speed-unit">km/sa</small></div>
+      <div class="gear" id="gear">1</div>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div id="hint" class="hint"></div>
+    <div id="prompt" class="prompt hidden"></div>
+    <div id="touch" class="touch hidden">
+      <div id="t-stick" class="t-stick"><div class="t-track"></div><div class="t-knob">⟷</div></div>
+      <div class="t-pedals">
+        <div class="t-col">
+          <button data-t="boost" class="t-small">TURBO</button>
+          <button data-t="hb" class="t-small">EL FRENİ</button>
+        </div>
+        <button data-t="brake" class="t-brake">FREN</button>
+        <button data-t="gas" class="t-gas">GAZ</button>
+      </div>
+      <div class="t-top">
+        <button data-k="Escape" title="Harita">☰</button>
+        <button data-k="KeyC" title="Kamera">◉</button>
+        <button data-k="KeyR" title="Düzelt">⟲</button>
+        <button data-t="horn" title="Korna">♫</button>
+        <button data-k="KeyN" title="Sonraki şarkı">♪</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pause / map / settings overlay -->
+  <div id="overlay" class="screen hidden">
+    <div class="overlay-panel">
+      <div class="tabs">
+        <button data-tab="map" class="tab active">Harita</button>
+        <button data-tab="settings" class="tab">Ayarlar</button>
+        <button data-tab="controls" class="tab">Kontroller</button>
+        <button data-tab="credits" class="tab">Emeği Geçenler</button>
+      </div>
+      <div class="tab-body" data-body="map">
+        <div class="map-layout">
+          <div class="bigmap-wrap"><canvas id="bigmap" width="720" height="720"></canvas></div>
+          <div class="map-side">
+            <h3>Keşif Noktaları</h3>
+            <ul id="poi-list"></ul>
+            <p class="muted">Keşfettiğin bir noktaya tıklayarak oraya ışınlanabilirsin.</p>
+          </div>
+        </div>
+      </div>
+      <div class="tab-body hidden" data-body="settings">
+        <div class="settings">
+          <label>Grafik kalitesi
+            <select id="set-quality"><option value="low">Düşük</option><option value="medium">Orta</option><option value="high" selected>Yüksek</option><option value="ultra">Ultra</option></select>
+          </label>
+          <label>Ana ses <input type="range" id="set-master" min="0" max="1" step="0.01" /></label>
+          <label>Müzik <input type="range" id="set-music" min="0" max="1" step="0.01" /></label>
+          <label>Efektler <input type="range" id="set-sfx" min="0" max="1" step="0.01" /></label>
+          <label>Ortam sesleri <input type="range" id="set-amb" min="0" max="1" step="0.01" /></label>
+          <label>Günün saati
+            <select id="set-time"><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option></select>
+          </label>
+          <label>Pikap rengi
+            <span class="swatches">
+              <button class="swatch" data-paint="green" style="--c:#1f6b2e" title="Orman yeşili"></button>
+              <button class="swatch" data-paint="red" style="--c:#a3241c" title="Ahır kırmızısı"></button>
+              <button class="swatch" data-paint="blue" style="--c:#24508f" title="Kot mavisi"></button>
+              <button class="swatch" data-paint="cream" style="--c:#e6d7b0" title="Krem"></button>
+              <button class="swatch" data-paint="orange" style="--c:#d06a1c" title="Balkabağı turuncusu"></button>
+              <button class="swatch" data-paint="black" style="--c:#23262b" title="Gece siyahı"></button>
+            </span>
+          </label>
+          <label class="row">Ölçü birimi
+            <select id="set-units"><option value="kmh">km/sa</option><option value="mph">mph</option></select>
+          </label>
+        </div>
+      </div>
+      <div class="tab-body hidden" data-body="controls">
+        <div class="controls-grid">
+          <div><kbd>W</kbd> <kbd>↑</kbd></div><div>Gaz</div>
+          <div><kbd>S</kbd> <kbd>↓</kbd></div><div>Fren / Geri vites</div>
+          <div><kbd>A</kbd> <kbd>D</kbd></div><div>Direksiyon</div>
+          <div><kbd>Boşluk</kbd></div><div>El freni (drift)</div>
+          <div><kbd>Shift</kbd></div><div>Turbo</div>
+          <div><kbd>R</kbd></div><div>Aracı düzelt</div>
+          <div><kbd>C</kbd></div><div>Kamera değiştir</div>
+          <div><kbd>H</kbd></div><div>Korna</div>
+          <div><kbd>F</kbd></div><div>Görev başlat (bayrak yanında)</div>
+          <div><kbd>M</kbd> / <kbd>N</kbd></div><div>Müzik aç-kapa / sonraki parça</div>
+          <div><kbd>Tab</kbd> <kbd>Esc</kbd></div><div>Harita / Duraklat</div>
+          <div><kbd>Fare</kbd></div><div>Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır</div>
+          <div><kbd>🎮</kbd></div><div>Gamepad: RT gaz, LT fren, A el freni, Y düzelt, RB kamera</div>
+          <div><kbd>📱</kbd></div><div>Dokunmatik: sol çubuk direksiyon, sağda GAZ / FREN / EL FRENİ / TURBO, boş ekranı sürükle: kamera, üstte harita · kamera · düzelt · korna · şarkı</div>
+        </div>
+      </div>
+      <div class="tab-body hidden" data-body="credits">
+        <div id="credits" class="credits"></div>
+      </div>
+      <div class="overlay-foot">
+        <button class="btn primary" data-action="resume">Devam Et</button>
+        <button class="btn" data-action="menu">Ana Menü</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rotate"><div class="rotate-ico">⟳</div><div>Daha iyi bir deneyim için<br>telefonunu yatay çevir</div></div>
+  <div id="fade"></div>
+</body>
+</html>
