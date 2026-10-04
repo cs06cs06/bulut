@@ -13,8 +13,8 @@
   <title>Tozlu Yollar — Palouse Offroad</title>
   <meta name="description" content="Stilize, açık dünya bir country offroad sürüş oyunu. Gerçek Palouse (Washington) arazisinde pikabınla keşfe çık." />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%BB%3C/text%3E%3C/svg%3E" />
-  <script type="module" crossorigin src="./assets/index-c21_A2_v.js"></script>
-  <link rel="stylesheet" crossorigin href="./assets/index-DB93g880.css">
+  <script type="module" crossorigin src="./assets/index-CBKlCx13.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-cQTB4r4s.css">
 </head>
 <body>
   <canvas id="game"></canvas>
@@ -54,10 +54,13 @@
   <!-- HUD -->
   <div id="hud" class="hidden">
     <div class="hud-top-left">
+      <div class="chip money"><span class="chip-ico">$</span><span id="hud-money">0</span></div>
       <div class="chip"><span class="chip-ico">★</span><span id="hud-disc">0/0</span><small>Keşif</small></div>
       <div class="chip"><span class="chip-ico">●</span><span id="hud-coll">0/0</span><small>Balkabağı</small></div>
       <div id="hud-challenge" class="challenge hidden"></div>
+      <div id="objective" class="objective hidden"></div>
     </div>
+    <div id="popups" class="popups"></div>
     <div class="hud-top-right">
       <div id="now-playing" class="now-playing"><span class="np-ico">♪</span><div><div id="np-title"></div><div id="np-artist"></div></div></div>
     </div>
@@ -86,6 +89,7 @@
         <button data-k="KeyR" title="Düzelt">⟲</button>
         <button data-t="horn" title="Korna">♫</button>
         <button data-k="KeyN" title="Sonraki şarkı">♪</button>
+        <button data-k="KeyP" title="Fotoğraf modu">▣</button>
       </div>
     </div>
   </div>
@@ -95,6 +99,8 @@
     <div class="overlay-panel">
       <div class="tabs">
         <button data-tab="map" class="tab active">Harita</button>
+        <button data-tab="garage" class="tab">Garaj</button>
+        <button data-tab="achievements" class="tab">Başarımlar</button>
         <button data-tab="settings" class="tab">Ayarlar</button>
         <button data-tab="controls" class="tab">Kontroller</button>
         <button data-tab="credits" class="tab">Emeği Geçenler</button>
@@ -109,6 +115,28 @@
           </div>
         </div>
       </div>
+      <div class="tab-body hidden" data-body="garage">
+        <div class="garage">
+          <div class="g-money">Bakiye: <b id="g-money">$0</b></div>
+          <h3>Araçlar</h3>
+          <div id="g-vehicles" class="g-vehicles"></div>
+          <h3>Geliştirmeler</h3>
+          <div id="g-upgrades" class="g-upgrades"></div>
+          <h3>Boya</h3>
+          <span class="swatches">
+            <button class="swatch" data-paint="green" style="--c:#1f6b2e" title="Orman yeşili"></button>
+            <button class="swatch" data-paint="red" style="--c:#a3241c" title="Ahır kırmızısı"></button>
+            <button class="swatch" data-paint="blue" style="--c:#24508f" title="Kot mavisi"></button>
+            <button class="swatch" data-paint="cream" style="--c:#e6d7b0" title="Krem"></button>
+            <button class="swatch" data-paint="orange" style="--c:#d06a1c" title="Balkabağı turuncusu"></button>
+            <button class="swatch" data-paint="black" style="--c:#23262b" title="Gece siyahı"></button>
+          </span>
+        </div>
+      </div>
+      <div class="tab-body hidden" data-body="achievements">
+        <div id="g-stats" class="g-stats"></div>
+        <div id="g-ach" class="g-ach"></div>
+      </div>
       <div class="tab-body hidden" data-body="settings">
         <div class="settings">
           <label>Grafik kalitesi
@@ -118,19 +146,13 @@
           <label>Müzik <input type="range" id="set-music" min="0" max="1" step="0.01" /></label>
           <label>Efektler <input type="range" id="set-sfx" min="0" max="1" step="0.01" /></label>
           <label>Ortam sesleri <input type="range" id="set-amb" min="0" max="1" step="0.01" /></label>
+          <label>Hava durumu
+            <select id="set-weather"><option value="dynamic">Değişken</option><option value="clear">Açık</option><option value="rain">Yağmurlu</option></select>
+          </label>
           <label>Günün saati
-            <select id="set-time"><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option></select>
+            <select id="set-time"><option value="noon">Öğle güneşi</option><option value="sunset">Gün batımı</option><option value="night">Yıldızlı gece</option></select>
           </label>
-          <label>Pikap rengi
-            <span class="swatches">
-              <button class="swatch" data-paint="green" style="--c:#1f6b2e" title="Orman yeşili"></button>
-              <button class="swatch" data-paint="red" style="--c:#a3241c" title="Ahır kırmızısı"></button>
-              <button class="swatch" data-paint="blue" style="--c:#24508f" title="Kot mavisi"></button>
-              <button class="swatch" data-paint="cream" style="--c:#e6d7b0" title="Krem"></button>
-              <button class="swatch" data-paint="orange" style="--c:#d06a1c" title="Balkabağı turuncusu"></button>
-              <button class="swatch" data-paint="black" style="--c:#23262b" title="Gece siyahı"></button>
-            </span>
-          </label>
+          <label>İlerleme <button class="btn small-btn" id="reset-progress">Sıfırla</button></label>
           <label class="row">Ölçü birimi
             <select id="set-units"><option value="kmh">km/sa</option><option value="mph">mph</option></select>
           </label>
@@ -146,8 +168,10 @@
           <div><kbd>R</kbd></div><div>Aracı düzelt</div>
           <div><kbd>C</kbd></div><div>Kamera değiştir</div>
           <div><kbd>H</kbd></div><div>Korna</div>
-          <div><kbd>F</kbd></div><div>Görev başlat (bayrak yanında)</div>
+          <div><kbd>F</kbd></div><div>İlan panosu ($) / görev başlat (bayrak)</div>
           <div><kbd>M</kbd> / <kbd>N</kbd></div><div>Müzik aç-kapa / sonraki parça</div>
+          <div><kbd>L</kbd></div><div>Farlar</div>
+          <div><kbd>P</kbd></div><div>Fotoğraf modu</div>
           <div><kbd>Tab</kbd> <kbd>Esc</kbd></div><div>Harita / Duraklat</div>
           <div><kbd>Fare</kbd></div><div>Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır</div>
           <div><kbd>🎮</kbd></div><div>Gamepad: RT gaz, LT fren, A el freni, Y düzelt, RB kamera</div>
@@ -162,6 +186,26 @@
         <button class="btn" data-action="menu">Ana Menü</button>
       </div>
     </div>
+  </div>
+
+  <div id="board" class="screen hidden">
+    <div class="board-panel">
+      <div class="board-head"><h2 id="board-title">İş İlanları</h2><button class="btn" data-board="close">Kapat</button></div>
+      <div id="board-list" class="board-list"></div>
+      <div id="board-msg" class="board-msg"></div>
+    </div>
+  </div>
+
+  <div id="photo" class="hidden">
+    <div class="photo-bar">
+      <span class="photo-title">FOTOĞRAF MODU</span>
+      <label>Uzaklık <input type="range" id="ph-dist" min="3" max="40" step="0.5" value="9" /></label>
+      <label>Görüş <input type="range" id="ph-fov" min="20" max="90" step="1" value="50" /></label>
+      <select id="ph-filter"><option value="none">Normal</option><option value="sepia(0.75) contrast(1.05)">Sepya</option><option value="grayscale(1) contrast(1.15)">Siyah-Beyaz</option><option value="saturate(1.45) contrast(1.08)">Canlı</option><option value="sepia(0.3) saturate(1.3) hue-rotate(-12deg) contrast(1.1)">Western</option></select>
+      <button class="btn primary" id="ph-shot">Çek</button>
+      <button class="btn" id="ph-exit">Çıkış</button>
+    </div>
+    <div class="photo-hint">Sürükle: kamerayı döndür · Tekerlek / kaydırıcı: uzaklık</div>
   </div>
 
   <div id="rotate"><div class="rotate-ico">⟳</div><div>Daha iyi bir deneyim için<br>telefonunu yatay çevir</div></div>
