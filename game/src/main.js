@@ -14,13 +14,15 @@ import * as LAYOUT from './world/layout.js';
 import { Vehicle, VEHICLES, UPGRADES } from './game/vehicle.js';
 import { Progress, ACHIEVEMENTS } from './game/progress.js';
 import { Delivery } from './game/delivery.js';
+import { StuntZones } from './game/stunts.js';
+import { Traffic } from './game/traffic.js';
 import { CameraRig } from './game/cameraRig.js';
 import { Dust, TireTracks } from './game/effects.js';
 import { Gameplay } from './game/gameplay.js';
 import { HUD } from './ui/hud.js';
 import { creditsHTML } from './credits.js';
 
-const MODELS = ['pickup', 'suv', 'monster', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
+const MODELS = ['pickup', 'suv', 'monster', 'van', 'truck', 'tractor', 'barn', 'barn_big', 'barn_small', 'barn_open', 'silo', 'silo_house', 'windmill', 'water_tower', 'chicken_coop', 'well',
   'fence', 'fence2', 'farm_barn', 'cistern', 'mailbox', 'hay_round', 'hay_cube', 'cart', 'barrel', 'pond', 'haybale', 'crate_pumpkin', 'pumpkin',
   'farmhouse_a', 'farmhouse_e', 'farmhouse_g', 'farmhouse_h', 'farmhouse_r', 'flag', 'sign', 'arrow', 'billboard',
   'tree_1', 'tree_2', 'tree_3', 'tree_4', 'tree_5', 'pine_1', 'pine_2', 'pine_3', 'dead_1', 'dead_2', 'birch_1', 'maple_1', 'bush', 'bush_flowers',
@@ -124,7 +126,7 @@ class Game {
     const rs = this.rs;
     rs.setupLighting({ noon: { sky: tex.sky, hdr: hdr[0] }, sunset: { sky: tex.skySunset, hdr: hdr[1] }, night: { sky: tex.skyNight, hdr: hdr[2] } }, tex.skyStorm);
     const roads = LAYOUT.ROADS.map((r) => ({ ...r }));
-    const layout = { roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: [
+    const layout = { jumps: LAYOUT.JUMPS, roads, farmyards: LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r })), flatten: [
       ...LAYOUT.FARMS.map((f) => ({ x: f.x, z: f.z, r: f.r * 0.75, falloff: 30 })),
       ...LAYOUT.POI_FLATTEN.map(([id, r]) => { const p = LAYOUT.POIS.find((pp) => pp.id === id); return { x: p.x, z: p.z, r, falloff: 12 }; }),
     ] };
@@ -168,6 +170,9 @@ class Game {
     this.gameplay = new Gameplay({ scene: rs.scene, terrain: this.terrain, lib, tex, hud: this.hud, audio: this.audio, roads: this.terrain.roads });
     this.delivery = new Delivery({ scene: rs.scene, physics: this.physics, RAPIER, lib, terrain: this.terrain, hud: this.hud, audio: this.audio, progress: this.progress, glowTex: tex.glow });
     this.hud.boards = this.delivery.boards;
+    this.stunts = new StuntZones({ scene: rs.scene, lib, terrain: this.terrain, hud: this.hud, progress: this.progress, audio: this.audio, glowTex: tex.glow });
+    this.hud.stuntZones = this.stunts;
+    this.traffic = new Traffic({ scene: rs.scene, lib, terrain: this.terrain, physics: this.physics, RAPIER, audio: this.audio });
     this._wireProgress();
     mark('vehicle+gameplay');
     this.hud.buildMap(this.terrain);
@@ -616,6 +621,7 @@ class Game {
       this.hud.extraTarget = dres?.target || null;
       this._effects(dt);
       this._stunts(dt);
+      this.stunts.update(dt, v);
       this.hud.update(dt, v, this.gameplay, v.heading());
       this._prompts();
       if (v.lastLandingImpact > 0) {
@@ -640,6 +646,7 @@ class Game {
     }
 
     this.world.update(dt, this.time, v.position, v.speed, playing ? this.audio : null);
+    if (this.state !== 'pause' && this.state !== 'board') this.traffic.update(dt, v.position, v.speed);
     this.grass.update(v.position);
     this.terrain.update(cam.position);
     this.lib.windUniform.value = this.time;

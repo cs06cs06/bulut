@@ -11,7 +11,7 @@ fs.mkdirSync(OUT, { recursive: true });
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const L = {
   // vehicles
-  pickup: 'oga_rgsdev_vehicles/glb/Pickup.glb', suv: 'oga_rgsdev_vehicles/glb/SUV.glb', monster: 'oga_rgsdev_vehicles/glb/Monster_Truck.glb',
+  pickup: 'oga_rgsdev_vehicles/glb/Pickup.glb', suv: 'oga_rgsdev_vehicles/glb/SUV.glb', van: 'oga_rgsdev_vehicles/glb/Van.glb', truck: 'oga_rgsdev_vehicles/glb/Truck.glb', monster: 'oga_rgsdev_vehicles/glb/Monster_Truck.glb',
   tractor: 'itch_rubikfish_tractor/tractor_scaled.glb',
   // farm buildings
   barn: 'farmbuildings/glb/Barn.glb', barn_big: 'farmbuildings/glb/BigBarn.glb', barn_small: 'farmbuildings/glb/SmallBarn.glb', barn_open: 'farmbuildings/glb/OpenBarn.glb',

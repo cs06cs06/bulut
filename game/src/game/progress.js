@@ -15,6 +15,8 @@ export const ACHIEVEMENTS = [
   { id: 'fences', name: 'Çit Kırıcı', desc: '25 çit parçası devir.', reward: 150, test: (s) => s.fences >= 25 },
   { id: 'cowboy', name: 'Kovboy', desc: 'Hayvanları 15 kez ürküt.', reward: 150, test: (s) => s.scared >= 15 },
   { id: 'garage', name: 'Garaj Sahibi', desc: 'Yeni bir araç satın al.', reward: 300, test: (s, g, p) => p.data.owned.length >= 2 },
+  { id: 'trap', name: 'Radar Avcısı', desc: 'Bir hız kapanından 130 km/sa ile geç.', reward: 300, test: (s) => s.maxTrap >= 130 },
+  { id: 'jump', name: 'Uçan Kamyon', desc: 'Bir atlama noktasında 45 metre uç.', reward: 400, test: (s) => s.maxJump >= 45 },
   { id: 'distance', name: 'Uzun Yol', desc: 'Toplam 40 km yol yap.', reward: 500, test: (s) => s.distance >= 40000 },
 ];
 
@@ -28,7 +30,7 @@ export class Progress {
   _load() {
     const def = {
       money: 250, owned: ['pickup'], current: 'pickup', upgrades: { engine: 0, tires: 0, susp: 0 },
-      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0 },
+      stats: { deliveries: 0, perfect: 0, cargoLost: 0, maxAir: 0, maxDrift: 0, topSpeed: 0, distance: 0, fences: 0, scared: 0, golds: 0, earned: 0, maxTrap: 0, maxJump: 0 },
       achievements: [],
     };
     try {

@@ -7,14 +7,17 @@ Tarayıcıda çalışır (three.js + Rapier fizik motoru, WebGL2). **Bilgisayard
 ▶ **Oyna:** https://cs06cs06.github.io/bulut/tozlu-yollar/
 
 ## Özellikler
-- **Gerçek arazi:** AWS Terrain Tiles yükseklik verisinden üretilmiş heightfield, çok seviyeli (LOD) arazi parçaları ve Rapier heightfield çarpışması.
-- **Stilize görünüm:** El boyaması dokular, kalibre edilmiş country renk paleti, buğday/sürülmüş/yeşil tarla parselleri, sürülmüş toprakta sıra desenleri, hareket eden bulut gölgeleri, HDRI gökyüzü ve ışık, AO, bloom, ton eşleme.
-- **Dış kaynaklı varlıklar:** Tüm modeller, dokular, müzik ve sesler indirilmiş paketlerden gelir ([CREDITS.md](CREDITS.md)). Sahnede kodla çizilmiş bina/ağaç/çit yoktur.
-- **Araç fiziği:** Raycast süspansiyon, 4x4 çekiş, tork eğrili otomatik şanzıman, el freniyle drift, havada kontrol, takla düzeltme, yüzeye göre tutuş.
-- **Canlı dünya:** 5 çiftlik (ahırlar, silolar, değirmenler, su kuleleri), animasyonlu inekler, atlar, eşekler, alpakalar, tavuklar; araç yaklaşınca kaçan geyik sürüleri. Rüzgârda sallanan bitki örtüsü, uzak ağaçlar için impostor (billboard) sistemi.
-- **Oynanış:** 13 keşif noktası, 27 gizli balkabağı, iki zamana karşı görev (*Zirve Tırmanışı* — spiral yoldan Butte zirvesine, *Çiftlik Rallisi*), haritadan hızlı seyahat; ilerleme tarayıcıda saklanır.
-- **Ses:** Devre göre çapraz geçişli çok katmanlı motor sesi, çakıl/patinaj döngüleri, çarpışma ve iniş sesleri, kuşlar, rüzgâr, inek ve tavuk sesleri, Kevin MacLeod'un country/bluegrass parçaları.
-- **Arayüz:** Analog hız göstergesi, yöne dönen mini harita, büyük harita, Türkçe menüler, grafik kalitesi (Düşük–Ultra), öğle/gün batımı seçimi, pikap rengi, ses ayarları, gamepad ve dokunmatik kontroller.
+- **Gerçek arazi:** AWS Terrain Tiles yükseklik verisinden üretilmiş 3,3 km'lik heightfield, LOD arazi parçaları, Rapier çarpışması; yollara oyulmuş toprak rampalar.
+- **Stilize görünüm:** El boyaması dokular, kalibre edilmiş country paleti, buğday/sürülmüş/yeşil tarla parselleri, bulut gölgeleri, AO, bloom; uzak ağaçlar için impostor sistemi.
+- **Hava ve zaman:** Öğle, gün batımı ve yıldızlı gece (farlarla); değişken hava: fırtına gökyüzü, yağmur, su birikintileri, kayganlaşan yol, gök gürültüsü ve şimşek.
+- **Teslimat işleri:** Çiftliklerdeki ilan panolarından saman balyası, balkabağı kasası ve süt varili taşı. Yük kasada fiziksel olarak durur; sert sürüşte düşer. Ödeme mesafeye, sağlam kalan yüke ve süre bonusuna göre.
+- **Ekonomi ve garaj:** Kazandığın parayla Arazi SUV ve Canavar Kamyon satın al; motor, lastik ve süspansiyon geliştir; boya seç.
+- **Görevler:** 4 zamana karşı parkur (Zirve Tırmanışı, Zirve İnişi, Çiftlik Rallisi, Vadi Turu) altın/gümüş/bronz madalyalarla; 5 hız kapanı ve 4 atlama rampası (rekor ve yıldızlar); havada kalma ve drift puanı.
+- **Keşif:** 13 keşif noktası, 27 gizli balkabağı, haritadan hızlı seyahat; 16 başarım ve istatistik ekranı.
+- **Canlı dünya:** 5 çiftlik, animasyonlu inek/at/eşek/alpaka/tavuk, kaçan geyik sürüleri, yollarda dolaşan traktör/kamyonet/kamyon trafiği, devrilebilir çitler, itilebilir saman balyaları.
+- **Fotoğraf modu:** Serbest kamera, filtreler (Sepya, Siyah-Beyaz, Canlı, Western), PNG kaydetme.
+- **Ses:** Devre göre katmanlı motor sesi, çakıl/patinaj, çarpışma, yağmur ve gök gürültüsü, kır ambiyansı, Kevin MacLeod'un country/bluegrass parçaları.
+- **Platformlar:** Masaüstü (klavye/fare/gamepad) ve mobil (dokunmatik direksiyon çubuğu, pedallar, tam ekran, PWA).
 
 ## Çalıştırma
 ```bash
@@ -37,7 +40,9 @@ npm run preview
 | R | Aracı düzelt |
 | C | Kamera (takip / uzak / kaput) |
 | H | Korna |
-| F | Bayrak yanında görev başlat / iptal |
+| L | Farlar |
+| P | Fotoğraf modu |
+| F | İlan panosu ($) / bayrakta görev başlat / iptal |
 | M / N | Müzik aç-kapa / sonraki parça |
 | Tab / Esc | Harita ve duraklatma menüsü |
 | Fare | Sürükleyerek kamerayı döndür, tekerlek ile yakınlaştır |

@@ -326,3 +326,16 @@ html, body { touch-action: none; overscroll-behavior: none; -webkit-touch-callou
 }
 .mobile .objective { position: fixed; left: 50%; transform: translateX(-50%); top: calc(64px + env(safe-area-inset-top)); margin: 0; }
 .mobile .popups { top: 46%; }
+
+/* mobile: chips in one row, minimap below them, objective under the speedometer */
+.mobile .hud-top-left { flex-direction: row; flex-wrap: wrap; max-width: 46vw; gap: 6px; }
+.mobile .hud-top-left .chip { font-size: 15px; padding: 3px 10px 3px 7px; }
+.mobile .hud-top-left .chip small { display: none; }
+.mobile #minimap-wrap { top: calc(56px + env(safe-area-inset-top)); width: 140px; height: 140px; }
+.mobile #minimap { width: 140px; height: 140px; }
+.mobile .objective { position: fixed; left: auto; transform: none; right: calc(16px + env(safe-area-inset-right)); top: calc(162px + env(safe-area-inset-top)); max-width: 240px; }
+.mobile .hint { top: auto; bottom: calc(150px + env(safe-area-inset-bottom)); }
+.mobile .challenge { position: fixed; left: calc(170px + env(safe-area-inset-left)); top: calc(56px + env(safe-area-inset-top)); margin: 0; }
+.mobile .hud-top-right { top: calc(204px + env(safe-area-inset-top)); bottom: auto; right: auto; left: calc(16px + env(safe-area-inset-left)); }
+.mobile .now-playing { transform: translateX(-140%); padding: 6px 12px; border-left: none; border-right: 4px solid var(--gold); }
+.mobile .now-playing.show { transform: none; }

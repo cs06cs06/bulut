@@ -182,6 +182,10 @@ export class HUD {
     for (const ch of CHALLENGES) icon(ch.start.x, ch.start.z, '⚑', '#ff7a50');
     for (const k of gp.pumpkins) if (k.g.visible && Math.hypot(k.x - pos.x, k.z - pos.z) < 150) icon(k.x, k.z, '●', '#ff9a2e');
     for (const b of this.boards) icon(b.x, b.z, '$', '#ffd36b', !this.extraTarget && !gp.nextTarget && this.showBoards);
+    if (this.stuntZones) {
+      for (const t of this.stuntZones.traps) icon(t.x, t.z, '»', '#7fd4ff');
+      for (const j of this.stuntZones.jumps) icon(j.x, j.z, '⌃', '#ffa04a');
+    }
     if (gp.nextTarget) icon(gp.nextTarget[0], gp.nextTarget[1], '◆', '#7fd4ff', true);
     if (this.extraTarget) icon(this.extraTarget[0], this.extraTarget[1], '▼', '#9fe0ff', true);
     // player arrow
@@ -210,6 +214,10 @@ export class HUD {
     }
     for (const ch of CHALLENGES) { const [x, y] = toPx(ch.start.x, ch.start.z); c.fillStyle = '#ff7a50'; c.strokeText('⚑', x, y); c.fillText('⚑', x, y); }
     for (const b of this.boards) { const [x, y] = toPx(b.x, b.z); c.fillStyle = '#ffd36b'; c.strokeText('$', x + 14, y - 10); c.fillText('$', x + 14, y - 10); }
+    if (this.stuntZones) {
+      for (const t of this.stuntZones.traps) { const [x, y] = toPx(t.x, t.z); c.fillStyle = '#7fd4ff'; c.strokeText('»', x, y); c.fillText('»', x, y); }
+      for (const j of this.stuntZones.jumps) { const [x, y] = toPx(j.x, j.z); c.fillStyle = '#ffa04a'; c.strokeText('⌃', x, y); c.fillText('⌃', x, y); }
+    }
     if (this.extraTarget) { const [x, y] = toPx(this.extraTarget[0], this.extraTarget[1]); c.fillStyle = '#9fe0ff'; c.strokeText('▼', x, y - 16); c.fillText('▼', x, y - 16); }
     const [px, py] = toPx(pos.x, pos.z);
     c.save(); c.translate(px, py); c.rotate(-heading + Math.PI);

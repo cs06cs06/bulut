@@ -7,6 +7,7 @@ import { FARMS, FARM_BUILDINGS, PADDOCKS, POIS, POI_PROPS, HERDS } from './layou
 import { Animal } from '../game/animals.js';
 
 const DEG = Math.PI / 180;
+const _rq = {};
 const DYNAMIC_PROPS = new Set(['haybale', 'barrel', 'hay_cube', 'crate_pumpkin']);
 
 // Populates the terrain with farms, fences, vegetation, physics props and animals.
@@ -323,6 +324,9 @@ export class World {
       const x = gx + (this.rand() - 0.5) * step, z = gz + (this.rand() - 0.5) * step;
       const s = T.splatAt(x, z);
       if (s.road > 0.05 || s.yard > 0.1) continue;
+      // keep trunks a few metres clear of the road edge
+      const rq = T.roads.query(x, z, _rq);
+      if (rq && rq.dist < rq.halfWidth + 4) continue;
       const crop = s.wheat + s.plowed + s.green + s.fallow;
       const h = T.heightAt(x, z);
       const slope = T.slopeAt(x, z);

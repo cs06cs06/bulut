@@ -121,6 +121,9 @@ export const CHALLENGES = [
   },
 ];
 
+// Dirt kickers sculpted into the road (x, z, approach direction dx, dz)
+export const JUMPS = [[205, 1080, 0.2, -1], [560, 752, 1, 0.1], [-700, 392, 1, -0.25], [830, 70, 1, -1]];
+
 // Small flattened pads under POI props
 export const POI_FLATTEN = [['pond', 14], ['haystack', 14], ['tractor', 10], ['windmill', 8], ['summit', 12]];
 

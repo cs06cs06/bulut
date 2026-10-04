@@ -27,6 +27,13 @@ export class Terrain {
     for (const r of layout.roads) if (r.spiral && !r.points) r.points = resolveSpiral(r.spiral, (x, z) => this.baseHeight(x, z));
     this.roads = new RoadNetwork(layout.roads);
     this.roads.computeProfiles((x, z) => this.baseHeight(x, z));
+    // resolve kickers onto the nearest road segment direction
+    this.kickers = (layout.jumps || []).map(([x, z, ax, az]) => {
+      const q = this.roads.query(x, z, {}) || { dirX: ax, dirZ: az, halfWidth: 3 };
+      let dx = q.dirX, dz = q.dirZ;
+      if (dx * ax + dz * az < 0) { dx = -dx; dz = -dz; }
+      return { x, z, dx, dz, hw: (q.halfWidth || 3) + 0.5 };
+    });
     this._buildHeights();
     this._buildSplat();
     this.material = createTerrainMaterial(textures, this.splatA, this.splatB, -this.half, this.size);
@@ -104,6 +111,7 @@ export class Terrain {
           roadW[j * G + i] = 1 - smoothstep(inner - 1.2, inner + 1.0, r.dist);
         }
         detail *= 1 - flatW * 0.85;
+        h += this._kicker(x, z);
         H[j * G + i] = h + detail;
       }
     }
@@ -112,6 +120,21 @@ export class Terrain {
     let mn = Infinity, mx = -Infinity;
     for (let i = 0; i < H.length; i++) { if (H[i] < mn) mn = H[i]; if (H[i] > mx) mx = H[i]; }
     this.minH = mn; this.maxH = mx;
+  }
+
+  // motocross-style dirt kicker: 14 m ramp up to a 2.4 m lip, then a short drop
+  _kicker(x, z) {
+    let add = 0;
+    for (const k of this.kickers) {
+      const dx = x - k.x, dz = z - k.z;
+      if (dx * dx + dz * dz > 900) continue;
+      const s = dx * k.dx + dz * k.dz, t = Math.abs(-dx * k.dz + dz * k.dx);
+      if (s < -16 || s > 4 || t > k.hw + 3) continue;
+      const lat = 1 - Math.max(0, Math.min(1, (t - k.hw) / 3));
+      const up = s <= 0 ? Math.pow((s + 16) / 16, 1.6) : Math.max(0, 1 - s / 4);
+      add = Math.max(add, 2.4 * up * lat * lat);
+    }
+    return add;
   }
 
   heightAt(x, z) {
