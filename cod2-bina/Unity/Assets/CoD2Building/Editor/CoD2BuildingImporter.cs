@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Import settings for the CoD2 Normandy house: mesh colliders on every submesh,
 /// repeating textures, and materials wired to Models/Textures/&lt;material&gt;.png
-/// for both the Built-in (Standard) and URP (Lit) pipelines.
+/// (or the TripoSR atlas next to the model) for both the Built-in (Standard) and URP (Lit) pipelines.
 /// </summary>
 public class CoD2BuildingImporter : AssetPostprocessor
 {
@@ -36,7 +36,10 @@ public class CoD2BuildingImporter : AssetPostprocessor
     void OnPostprocessMaterial(Material material)
     {
         if (!assetPath.StartsWith(Root)) return;
-        var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(TextureDir + material.name + ".png");
+        // texture next to the model (TripoSR atlas) first, then the shared tileable set
+        var modelDir = System.IO.Path.GetDirectoryName(assetPath).Replace('\\', '/') + "/";
+        var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(modelDir + material.name + ".png");
+        if (texture == null) texture = AssetDatabase.LoadAssetAtPath<Texture2D>(TextureDir + material.name + ".png");
         if (texture == null) return;
 
         if (material.HasProperty("_BaseMap")) material.SetTexture("_BaseMap", texture);

@@ -1,10 +1,10 @@
 # CoD2 Temalı Bina: Savaşta Hasar Görmüş Normandiya Evi
 
-Unity FPS oyunu için Call of Duty 2 (1944, Carentan) havasında, **içine girilebilen** iki katlı bir taş ev.
+Unity FPS oyunu için Call of Duty 2 (1944, Carentan) havasında iki katlı bir taş ev. **Hiçbir API anahtarı gerekmez**, her şey yerelde CPU üzerinde çalışır.
 İki parçası var:
 
 1. **Prosedürel, oynanabilir bina** (`generator/`): kapılar, merdiven, iç duvarlar ve collider'larla FPS'e hazır OBJ.
-2. **[image-blaster](https://github.com/neilsonnn/image-blaster) köprüsü** (`image-blaster/blast.sh`): binanın render'ını image-blaster'a verir. Nano-banana bu render'ı gerçekçi bir CoD2 evi görseline çevirir, Hunyuan 3D de o görselden PBR dokulu bir mesh üretir.
+2. **[TripoSR](https://github.com/VAST-AI-Research/TripoSR) ile görselden 3D** (`triposr/`): VAST-AI ve Stability AI'nin MIT lisanslı açık kaynak modeli, tek bir görselden dokulu mesh üretir. Binanın render'ı ondan geçirilerek daha organik, el yapımı görünümlü bir dış cephe modeli elde edildi. Bu model arka plan binası ya da uzak bina olarak kullanılabilir.
 
 ![Ön cephe](previews/on_cephe.png)
 
@@ -51,17 +51,28 @@ cd generator/preview
 node render.mjs ../../glb ../../previews '{"on_cephe":"cam=-13,6,-17,0,3.5,0"}'
 ```
 
-## image-blaster ile Gerçekçi Mesh Üretme
+## TripoSR ile Görselden Bina (API anahtarı yok)
 
-image-blaster tek bir görselden 3D model üretir. Burada girdi olarak binanın beyaz arka planlı render'ını (`previews/referans.png`) kullanıyoruz:
+![TripoSR çıktısı](previews/triposr_on.png)
+
+`Unity/Assets/CoD2Building/TripoSR/normandy_house_triposr.obj` dosyası `previews/referans.png` görselinden üretildi. Mesh 40.000 üçgen, 2048 px dokulu, boyutu 9,6 × 10,5 × 9,6 m. Ön cephesi -Z yönüne bakıyor, yani prosedürel evle aynı yönde. Tek parça ve içi dolu olduğu için içine girilemez. Arka plan veya uzak bina olarak kullanmaya uygun.
 
 ```bash
-export FAL_KEY=...            # https://fal.ai
-./image-blaster/blast.sh      # varsayılan girdi: previews/referans.png
-# ./image-blaster/blast.sh benim_cod2_ekran_goruntum.png   # kendi referans görselinizle
-# ./image-blaster/blast.sh --reference-only                # sadece görsel düzenleme adımı
+cd triposr
+./setup.sh                                   # TripoSR'ı klonlar, CPU için PyTorch ve bağımlılıkları kurar (yaklaşık 2 GB)
+./run.sh ../previews/referans.png --yaw 90 --out ../Unity/Assets/CoD2Building/TripoSR
+./run.sh cod2_ekran_goruntusu.jpg --remove-bg --height 9   # kendi fotoğrafın veya ekran görüntün
 ```
 
-Script image-blaster'ı `image-blaster/.image-blaster/` altına klonlar, CoD2'ye özel bir image-edit prompt'u ile `generate-single-asset.mjs` scriptini çalıştırır (Hunyuan 3D, 150k yüz, PBR) ve çıktıları `Unity/Assets/CoD2Building/Blasted/` klasörüne kopyalar. `.glb` dosyasını Unity'de açmak için [glTFast](https://docs.unity3d.com/Packages/com.unity.cloud.gltfast@latest) paketi gerekir.
+GPU gerekmez. 4 çekirdekli bir CPU'da bir bina yaklaşık 75 saniyede çıkıyor. Model ağırlıkları (`stabilityai/TripoSR`, yaklaşık 1,7 GB) ilk çalıştırmada Hugging Face'ten anahtarsız olarak iner.
 
-Not: Hunyuan çıktısı tek parça, içi dolu bir mesh'tir. Bu yüzden arka plan, siper veya uzak bina olarak kullanmaya uygundur. Oyuncunun içine girdiği bina için prosedürel OBJ'yi kullanın.
+`image_to_building.py` TripoSR çıktısına şu adımları uygular:
+- **CPU desteği:** `torchmcubes` CUDA derlemesi istiyor. `torchmcubes_shim.py` yerine PyMCubes kullanıyor.
+- **Temizlik:** yüzen küçük parçaları atıyor, mesh'i `--faces` hedefine indiriyor (varsayılan 40k).
+- **Doku:** dokuyu sadeleştirilmiş mesh'e TripoSR'ın nöral alanından yeniden pişiriyor (`--texture-resolution`). Dikiş taşmasını önlemek için kenarları genişletiyor.
+- **Yön:** giriş kamerasından gelen eğimi düzeltiyor, tabanı X/Z eksenlerine hizalıyor, Y'yi yukarı alıyor. `--yaw` ile yüzü istediğin yöne çevirebilirsin.
+- **Ölçek ve çıktı:** `--height` metre ölçeğine getirip tabanı y=0'a oturtuyor. OBJ + MTL + PNG (Unity) ve GLB yazıyor.
+
+İpuçları:
+- Beyaz ya da şeffaf arka planlı, binayı 3/4 açıdan gösteren görseller en iyi sonucu verir.
+- Fotoğraf veya oyun ekran görüntüsü kullanıyorsan `--remove-bg` ekle.

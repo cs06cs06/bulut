@@ -21,7 +21,7 @@ sun.shadow.bias = -0.0005; s.add(sun);
 const cam = new THREE.PerspectiveCamera(+q.get('fov')||45, W/H, 0.05, 300);
 const [px,py,pz,tx,ty,tz] = q.get('cam').split(',').map(Number);
 cam.position.set(px,py,pz); cam.lookAt(tx,ty,tz);
-new GLTFLoader().load('/out/normandy_house.glb', g => {
+new GLTFLoader().load('/out/' + (q.get('file') || 'normandy_house.glb'), g => {
   g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true;
     if (white && o.name === 'ground') o.visible = false; } });
   s.add(g.scene); r.render(s, cam); window.done = true;
