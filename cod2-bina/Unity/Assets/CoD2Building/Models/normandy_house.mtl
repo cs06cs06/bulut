@@ -1,0 +1,82 @@
+# CoD2 Normandy house materials
+
+newmtl ground
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/ground.png
+
+newmtl stone
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/stone.png
+
+newmtl plaster
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/plaster.png
+
+newmtl wood_floor
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/wood_floor.png
+
+newmtl wood_dark
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/wood_dark.png
+
+newmtl brick
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/brick.png
+
+newmtl burlap
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/burlap.png
+
+newmtl shutter_green
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/shutter_green.png
+
+newmtl slate
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.04 0.04 0.04
+Ns 10
+d 1
+illum 2
+map_Kd Textures/slate.png

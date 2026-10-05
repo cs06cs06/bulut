@@ -1,0 +1,29 @@
+<!doctype html><html><body style="margin:0;background:#000">
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const q = new URLSearchParams(location.search);
+const W = 1280, H = 800;
+const r = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+r.setSize(W,H); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.toneMapping = THREE.ACESFilmicToneMapping; r.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(r.domElement);
+const s = new THREE.Scene();
+const white = q.get('bg') === 'white';
+s.background = new THREE.Color(white ? 0xffffff : 0x9aa3a6);
+if (!white) s.fog = new THREE.Fog(0x9aa3a6, 30, 90);
+s.add(new THREE.HemisphereLight(0xc8cdd0, 0x4a4436, white ? 1.6 : 1.1));
+const sun = new THREE.DirectionalLight(0xfff1dc, white ? 1.6 : 2.2);
+sun.position.set(-14, 22, -12); sun.castShadow = true;
+sun.shadow.mapSize.set(4096,4096); Object.assign(sun.shadow.camera,{left:-20,right:20,top:20,bottom:-20,far:80});
+sun.shadow.bias = -0.0005; s.add(sun);
+const cam = new THREE.PerspectiveCamera(+q.get('fov')||45, W/H, 0.05, 300);
+const [px,py,pz,tx,ty,tz] = q.get('cam').split(',').map(Number);
+cam.position.set(px,py,pz); cam.lookAt(tx,ty,tz);
+new GLTFLoader().load('/out/normandy_house.glb', g => {
+  g.scene.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true;
+    if (white && o.name === 'ground') o.visible = false; } });
+  s.add(g.scene); r.render(s, cam); window.done = true;
+});
+</script></body></html>
