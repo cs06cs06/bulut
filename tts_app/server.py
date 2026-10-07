@@ -42,7 +42,9 @@ def create_app(tts_factory=get_tts, preload=True):
     @asynccontextmanager
     async def lifespan(app):
         if preload:
-            tts_factory()  # ilk isteğin model yüklemesini beklememesi için
+            # Modeli yükle ve bir kez çalıştır: CPU'da ilk çağrı PyTorch ısınması yüzünden
+            # yaklaşık 20 saniye sürer, ilk ziyaretçi bunu beklemesin.
+            tts_factory().say("Merhaba, hoş geldiniz.", seed=0)
         yield
 
     app = FastAPI(title="EMA Lightning TTS", lifespan=lifespan)

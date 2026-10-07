@@ -57,6 +57,25 @@ python -m tts_app -f metin.txt -o kitap.wav --speed 1.1 --seed 0
 echo "Randevunuz onaylandı." | python -m tts_app --play   # pip install sounddevice gerekir
 ```
 
+### Webde yayınlama
+
+Depoda Hugging Face Spaces (ücretsiz CPU) için hazır bir `Dockerfile` ve otomatik yayın iş akışı var. Tek seferlik kurulum:
+
+1. https://huggingface.co/settings/tokens adresinden **Write** yetkili bir token oluşturun.
+2. GitHub deposunda **Settings → Secrets and variables → Actions** sayfasına gidin:
+   - **Secrets** sekmesinde `HF_TOKEN` adıyla token'ı ekleyin.
+   - **Variables** sekmesinde `HF_SPACE` adıyla Space adını ekleyin, ör. `kullaniciadi/ema-seslendirici`.
+3. Değişiklikleri `main` dalına birleştirin. `.github/workflows/deploy-hf-space.yml` Space'i (yoksa) oluşturur ve kodu yükler. Sonraki her `main` güncellemesinde Space de güncellenir. **Actions → Hugging Face Space'e yayınla → Run workflow** ile elle de tetiklenebilir.
+
+Uygulama `https://huggingface.co/spaces/<HF_SPACE>` adresinde yayına girer. İlk derleme birkaç dakika sürer, açılışta model yaklaşık 20 saniye ısınır.
+
+Aynı `Dockerfile` Docker çalıştıran her platformda (Render, Railway, Google Cloud Run, Fly.io…) kullanılabilir. Uygulama `PORT` ortam değişkenini dinler, varsayılanı 7860'tır:
+
+```bash
+docker build -t ema-seslendirici .
+docker run -p 7860:7860 ema-seslendirici
+```
+
 ### Testler
 
 ```bash
