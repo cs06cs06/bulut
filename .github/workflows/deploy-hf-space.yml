@@ -1,9 +1,8 @@
 name: Hugging Face Space'e yayınla
 
+# Hugging Face'te Docker Space'leri PRO abonelik gerektirir; bu yüzden yalnızca elle tetiklenir
+# (Actions → Hugging Face Space'e yayınla → Run workflow).
 on:
-  push:
-    branches: [main]
-    paths: [Dockerfile, requirements.txt, "tts_app/**", "deploy/huggingface/**", ".github/workflows/deploy-hf-space.yml"]
   workflow_dispatch:
 
 jobs:

@@ -1,4 +1,6 @@
 import io
+import threading
+import time
 import wave
 from types import SimpleNamespace
 
@@ -57,3 +59,30 @@ def test_validation():
 def test_pcm_clips():
     assert np.frombuffer(to_pcm16(np.array([2.0, -2.0], dtype=np.float32)), "<i2").tolist() == [32767, -32767]
     assert to_wav(np.zeros(10, dtype=np.float32), 8000)[:4] == b"RIFF"
+
+
+def test_config():
+    assert client.get("/api/config").json() == {"max_chars": 5000}
+
+
+def test_max_concurrent_queues_requests():
+    running, peak, lock = 0, 0, threading.Lock()
+
+    class SlowTTS(FakeTTS):
+        def say(self, *args, **kwargs):
+            nonlocal running, peak
+            with lock:
+                running += 1
+                peak = max(peak, running)
+            time.sleep(0.05)
+            with lock:
+                running -= 1
+            return super().say(*args, **kwargs)
+
+    slow = TestClient(create_app(tts_factory=lambda: SlowTTS(), preload=False, max_concurrent=1))
+    threads = [threading.Thread(target=slow.post, args=("/api/say",), kwargs={"json": {"text": "a"}}) for _ in range(4)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert peak == 1

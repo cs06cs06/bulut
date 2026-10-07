@@ -110,8 +110,14 @@ const text = $("text"), speed = $("speed"), seed = $("seed"), rate = $("rate");
 const speakBtn = $("speak"), stopBtn = $("stop"), statusEl = $("status");
 let controller = null, audioCtx = null, sources = [], lastUrl = null;
 
-function updateCount() { $("count").textContent = `${text.value.length} / 5000`; }
+let maxChars = 5000;
+function updateCount() { $("count").textContent = `${text.value.length} / ${maxChars}`; }
 text.addEventListener("input", updateCount); updateCount();
+fetch("/api/config").then(r => r.json()).then(c => {
+  maxChars = c.max_chars; text.maxLength = maxChars;
+  if (text.value.length > maxChars) text.value = text.value.slice(0, maxChars);
+  updateCount();
+}).catch(() => {});
 speed.addEventListener("input", () => $("speedValue").textContent = Number(speed.value).toFixed(2) + "×");
 $("examples").addEventListener("click", e => {
   if (e.target.classList.contains("chip")) { text.value = e.target.textContent; updateCount(); }

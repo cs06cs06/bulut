@@ -1,0 +1,21 @@
+# Render Blueprint: https://render.com/docs/blueprint-spec
+# Render panelinde New → Blueprint ile bu depoyu seçince servis kendiliğinden kurulur.
+services:
+  - type: web
+    name: ema-seslendirici
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Ücretsiz plan 512 MB bellek ve 0.1 CPU verir: uzun metinler ve aynı anda birden çok
+      # seslendirme belleği aşar. Ücretli planda bu sınırları yükseltebilirsiniz.
+      - key: MAX_CHARS
+        value: "500"
+      - key: MAX_CONCURRENT
+        value: "1"
+      # 0.1 CPU'da birden çok iş parçacığı birbirini bekler; tek iş parçacığı daha hızlıdır.
+      - key: OMP_NUM_THREADS
+        value: "1"

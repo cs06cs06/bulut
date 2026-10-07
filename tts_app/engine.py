@@ -19,7 +19,12 @@ def get_tts():
                 from ema_lightning import EMA
 
                 tts = EMA(device=os.environ.get("EMA_DEVICE", "auto"))
+                batch_size = os.environ.get("EMA_BATCH_SIZE") or ("2" if tts.device.type == "cpu" else None)
+                if batch_size:
+                    # EMA en iyi toplu iş boyutunu ilk çağrıda 1–8 kopyalık denemelerle ölçer. CPU'da bu
+                    # ölçüm ~20 sn sürer ve ~600 MB ek bellek ister; 512 MB'lık sunucuda kapsayıcıyı öldürür.
+                    tts._batch_size = int(batch_size)
                 if os.environ.get("EMA_LIGHTNING", "1") != "0" and tts.device.type == "cuda":
-                    tts = tts.lightning()
+                    tts = tts.lightning(batch_size=int(batch_size) if batch_size else None)
                 _tts = tts
     return _tts

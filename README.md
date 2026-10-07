@@ -57,24 +57,41 @@ python -m tts_app -f metin.txt -o kitap.wav --speed 1.1 --seed 0
 echo "Randevunuz onaylandı." | python -m tts_app --play   # pip install sounddevice gerekir
 ```
 
-### Webde yayınlama
+### Webde yayınlama (Render, ücretsiz)
 
-Depoda Hugging Face Spaces (ücretsiz CPU) için hazır bir `Dockerfile` ve otomatik yayın iş akışı var. Tek seferlik kurulum:
+Depoda [Render](https://render.com) için hazır bir `render.yaml` (Blueprint) ve `Dockerfile` var:
 
-1. https://huggingface.co/settings/tokens adresinden **Write** yetkili bir token oluşturun.
-2. GitHub deposunda **Settings → Secrets and variables → Actions** sayfasına gidin:
-   - **Secrets** sekmesinde `HF_TOKEN` adıyla token'ı ekleyin.
-   - **Variables** sekmesinde `HF_SPACE` adıyla Space adını ekleyin, ör. `kullaniciadi/ema-seslendirici`.
-3. Değişiklikleri `main` dalına birleştirin. `.github/workflows/deploy-hf-space.yml` Space'i (yoksa) oluşturur ve kodu yükler. Sonraki her `main` güncellemesinde Space de güncellenir. **Actions → Hugging Face Space'e yayınla → Run workflow** ile elle de tetiklenebilir.
+1. render.com'da GitHub hesabınızla oturum açın.
+2. **New → Blueprint** seçin, `cs06cs06/bulut` deposunu ve yayınlanacak dalı seçin, **Apply** deyin.
+3. İlk derleme yaklaşık 5–10 dakika sürer. Uygulama `https://ema-seslendirici.onrender.com` gibi bir adreste yayına girer (ad doluysa Render sonuna ek getirir).
 
-Uygulama `https://huggingface.co/spaces/<HF_SPACE>` adresinde yayına girer. İlk derleme birkaç dakika sürer, açılışta model yaklaşık 20 saniye ısınır.
+`autoDeploy` açık olduğu için seçilen dala her push'ta site yeniden yayınlanır.
 
-Aynı `Dockerfile` Docker çalıştıran her platformda (Render, Railway, Google Cloud Run, Fly.io…) kullanılabilir. Uygulama `PORT` ortam değişkenini dinler, varsayılanı 7860'tır:
+**Ücretsiz planın sınırları (512 MB bellek, 0.1 CPU):**
+
+- Ses gerçek zamandan yaklaşık 3 kat yavaş üretilir. Web arayüzünde kısa bir cümlenin ilk sesi 10–15 saniyede gelir, uzun metinlerde akış sırasında parçalar arasında boşluklar olabilir.
+- Bu yüzden `render.yaml` metni 500 karakterle sınırlar (`MAX_CHARS`) ve aynı anda tek seslendirme çalıştırır (`MAX_CONCURRENT`), diğer istekler sırada bekler.
+- 15 dakika istek gelmezse servis uyur. Sonraki ilk ziyaret açılış için yaklaşık 1 dakika bekler.
+
+Ücretli bir plana (ör. Starter, 0.5 CPU) geçince aynı cümle 1.5 saniyede üretilir. O zaman `MAX_CHARS` ve `MAX_CONCURRENT` değerlerini yükseltebilirsiniz.
+
+**Başka platformlar:** Aynı `Dockerfile` Docker çalıştıran her platformda (Railway, Google Cloud Run, Fly.io…) kullanılabilir. Uygulama `PORT` ortam değişkenini dinler, varsayılanı 7860'tır:
 
 ```bash
 docker build -t ema-seslendirici .
 docker run -p 7860:7860 ema-seslendirici
 ```
+
+Hugging Face Spaces'te Docker Space'leri PRO abonelik gerektirir. PRO hesabınız varsa `HF_TOKEN` secret'ını ve `HF_SPACE` değişkenini (ör. `kullaniciadi/ema-seslendirici`) tanımlayıp **Actions → Hugging Face Space'e yayınla → Run workflow** ile yayınlayabilirsiniz.
+
+| Ortam değişkeni | Anlamı | Varsayılan |
+|---|---|---|
+| `PORT` | dinlenen port | 7860 |
+| `MAX_CHARS` | bir istekteki en fazla karakter | 5000 |
+| `MAX_CONCURRENT` | aynı anda çalışan en fazla seslendirme (0 = sınırsız) | 0 |
+| `EMA_DEVICE` | `auto`, `cpu` veya `cuda` | auto |
+| `EMA_BATCH_SIZE` | toplu iş boyutu; CPU'da varsayılan 2, GPU'da otomatik ölçülür | — |
+| `EMA_LIGHTNING` | `0` ise GPU'da derleme yapılmaz | 1 |
 
 ### Testler
 

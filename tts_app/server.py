@@ -1,8 +1,14 @@
 """Web sunucusu: arayüz, tek parça WAV ve akışlı (streaming) PCM uç noktaları.
 
 Çalıştırma:  uvicorn tts_app.server:app --host 0.0.0.0 --port 8000
+
+Ortam değişkenleri (küçük sunucular için):
+    MAX_CHARS       bir istekteki en fazla karakter (varsayılan 5000)
+    MAX_CONCURRENT  aynı anda en fazla kaç seslendirme çalışsın; fazlası sırada bekler (varsayılan 0 = sınırsız)
 """
-from contextlib import asynccontextmanager
+import os
+import threading
+from contextlib import asynccontextmanager, contextmanager
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -14,7 +20,8 @@ from .engine import get_tts
 
 STATIC = Path(__file__).parent / "static"
 SAMPLE_RATES = (48000, 24000, 16000, 8000)
-MAX_CHARS = 5000
+MAX_CHARS = int(os.environ.get("MAX_CHARS", "5000"))
+MAX_CONCURRENT = int(os.environ.get("MAX_CONCURRENT", "0"))
 
 
 class SpeechRequest(BaseModel):
@@ -38,12 +45,23 @@ class SpeechRequest(BaseModel):
         return rate
 
 
-def create_app(tts_factory=get_tts, preload=True):
+def create_app(tts_factory=get_tts, preload=True, max_concurrent=MAX_CONCURRENT):
+    slots = threading.BoundedSemaphore(max_concurrent) if max_concurrent > 0 else None
+
+    @contextmanager
+    def slot():
+        """Bellek ve CPU'su kısıtlı sunucuda aynı anda çalışan seslendirme sayısını sınırlar."""
+        if slots is None:
+            yield
+            return
+        with slots:
+            yield
+
     @asynccontextmanager
     async def lifespan(app):
         if preload:
-            # Modeli yükle ve bir kez çalıştır: CPU'da ilk çağrı PyTorch ısınması yüzünden
-            # yaklaşık 20 saniye sürer, ilk ziyaretçi bunu beklemesin.
+            # Modeli yükle ve bir kez çalıştır: ilk çağrı PyTorch ısınması yüzünden yavaştır,
+            # ilk ziyaretçi bunu beklemesin.
             tts_factory().say("Merhaba, hoş geldiniz.", seed=0)
         yield
 
@@ -58,10 +76,15 @@ def create_app(tts_factory=get_tts, preload=True):
         tts = tts_factory()
         return {"status": "ok", "device": str(tts.device)}
 
+    @app.get("/api/config")
+    def config():
+        return {"max_chars": MAX_CHARS}
+
     @app.post("/api/say")
     def say(req: SpeechRequest):
         """Metnin tamamını seslendirir ve bir WAV dosyası döndürür."""
-        speech = tts_factory().say(req.text, speed=req.speed, seed=req.seed, sample_rate=req.sample_rate)
+        with slot():
+            speech = tts_factory().say(req.text, speed=req.speed, seed=req.seed, sample_rate=req.sample_rate)
         return Response(
             to_wav(speech.audio, speech.sample_rate),
             media_type="audio/wav",
@@ -75,17 +98,17 @@ def create_app(tts_factory=get_tts, preload=True):
     @app.post("/api/stream")
     def stream(req: SpeechRequest):
         """Ses üretildikçe ham 16 bit mono PCM parçaları gönderir (ilk parça yaklaşık 1 saniye)."""
-        chunks = tts_factory().stream(req.text, speed=req.speed, seed=req.seed, sample_rate=req.sample_rate)
-
         def body():
-            try:
-                for chunk in chunks:
-                    if len(chunk):
-                        yield to_pcm16(chunk)
-            finally:
-                close = getattr(chunks, "close", None)
-                if close:  # istemci ayrılırsa kalan iş bırakılır
-                    close()
+            with slot():
+                chunks = tts_factory().stream(req.text, speed=req.speed, seed=req.seed, sample_rate=req.sample_rate)
+                try:
+                    for chunk in chunks:
+                        if len(chunk):
+                            yield to_pcm16(chunk)
+                finally:
+                    close = getattr(chunks, "close", None)
+                    if close:  # istemci ayrılırsa kalan iş bırakılır
+                        close()
 
         return StreamingResponse(
             body(),
