@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EMA Lightning Seslendirici</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --card: #ffffff; --text: #1b1f24; --muted: #5d6673;
+    --border: #d9dee5; --accent: #e8590c; --accent-text: #ffffff; --soft: #fff1e8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #121417; --card: #1b1f24; --text: #e8eaed; --muted: #9aa3ae;
+      --border: #2e343c; --accent: #ff7a33; --accent-text: #121417; --soft: #2a1d15;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 1.6rem; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 24px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+  textarea { width: 100%; min-height: 170px; resize: vertical; padding: 12px; border-radius: 8px;
+             border: 1px solid var(--border); background: var(--bg); color: var(--text); font: inherit; }
+  textarea:focus, input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .count { color: var(--muted); font-size: .85rem; }
+  .examples { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 18px; }
+  .chip { border: 1px solid var(--border); background: transparent; color: var(--text); border-radius: 999px;
+          padding: 4px 12px; font: inherit; font-size: .85rem; cursor: pointer;
+          max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip:hover { background: var(--soft); }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin-bottom: 20px; }
+  label { display: block; font-size: .85rem; color: var(--muted); margin-bottom: 4px; }
+  input[type=number], select { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid var(--border);
+                               background: var(--bg); color: var(--text); font: inherit; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+  button.primary, button.secondary { border-radius: 8px; padding: 10px 20px; font: inherit; font-weight: 600; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-text); border: none; }
+  button.secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+  button:disabled { opacity: .5; cursor: default; }
+  .status { margin-top: 16px; color: var(--muted); min-height: 1.5em; font-size: .9rem; }
+  .status.error { color: #d6336c; }
+  .result { margin-top: 12px; display: none; }
+  .result audio { width: 100%; }
+  .result a { color: var(--accent); font-size: .9rem; }
+  .note { color: var(--muted); font-size: .8rem; margin-top: 20px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>⚡ EMA Lightning Seslendirici</h1>
+  <p class="sub">Türkçe metni sese çevirir. Ses, üretilirken çalmaya başlar.</p>
+
+  <div class="card">
+    <div class="row">
+      <label for="text" style="margin:0">Metin</label>
+      <span class="count" id="count">0 / 5000</span>
+    </div>
+    <textarea id="text" maxlength="5000" placeholder="Seslendirmek istediğiniz metni yazın…">Merhaba! Bu ses, EMA Lightning ile siz dinlerken üretiliyor.</textarea>
+
+    <div class="examples" id="examples">
+      <button class="chip" type="button">Model sadece 8.6 milyon parametre ve çok hızlı.</button>
+      <button class="chip" type="button">15 Ekim 2026 Çarşamba günü saat 14:30'da, 1.250.000 TL tutarındaki ödemeniz hesabınıza yatırılacak.</button>
+      <button class="chip" type="button">Sabahın erken saatlerinde liman henüz uyanmamıştı. Balıkçılar ağlarını sessizce topluyor, martılar ise teknelerin etrafında dönerek şanslarını deniyordu.</button>
+    </div>
+
+    <div class="controls">
+      <div>
+        <label for="speed">Hız: <span id="speedValue">1.00×</span></label>
+        <input type="range" id="speed" min="0.5" max="2" step="0.05" value="1">
+      </div>
+      <div>
+        <label for="seed">Tohum (boş = rastgele)</label>
+        <input type="number" id="seed" min="0" step="1" placeholder="ör. 0">
+      </div>
+      <div>
+        <label for="rate">Örnekleme hızı</label>
+        <select id="rate">
+          <option value="48000">48 kHz</option>
+          <option value="24000">24 kHz</option>
+          <option value="16000">16 kHz</option>
+          <option value="8000">8 kHz (telefon)</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="buttons">
+      <button class="primary" id="speak">▶ Seslendir</button>
+      <button class="secondary" id="stop" disabled>■ Durdur</button>
+    </div>
+
+    <div class="status" id="status" role="status"></div>
+    <div class="result" id="result">
+      <audio id="player" controls></audio>
+      <a id="download" download="konusma.wav">WAV olarak indir</a>
+    </div>
+  </div>
+
+  <p class="note">Bu ses yapay zekâ ile üretilmiştir. Paylaşırken dinleyicileri bilgilendirin.
+    Model: <a href="https://huggingface.co/canberkkkkkk/ema-lightning" style="color:inherit">canberkkkkkk/ema-lightning</a> (Apache 2.0).</p>
+</main>
+
+<script>
+const $ = id => document.getElementById(id);
+const text = $("text"), speed = $("speed"), seed = $("seed"), rate = $("rate");
+const speakBtn = $("speak"), stopBtn = $("stop"), statusEl = $("status");
+let controller = null, audioCtx = null, sources = [], lastUrl = null;
+
+function updateCount() { $("count").textContent = `${text.value.length} / 5000`; }
+text.addEventListener("input", updateCount); updateCount();
+speed.addEventListener("input", () => $("speedValue").textContent = Number(speed.value).toFixed(2) + "×");
+$("examples").addEventListener("click", e => {
+  if (e.target.classList.contains("chip")) { text.value = e.target.textContent; updateCount(); }
+});
+
+function setStatus(msg, error = false) { statusEl.textContent = msg; statusEl.classList.toggle("error", error); }
+
+function wavBlob(pcmParts, sampleRate) {
+  const dataLen = pcmParts.reduce((n, p) => n + p.byteLength, 0);
+  const header = new DataView(new ArrayBuffer(44));
+  const str = (o, s) => [...s].forEach((c, i) => header.setUint8(o + i, c.charCodeAt(0)));
+  str(0, "RIFF"); header.setUint32(4, 36 + dataLen, true); str(8, "WAVE");
+  str(12, "fmt "); header.setUint32(16, 16, true); header.setUint16(20, 1, true); header.setUint16(22, 1, true);
+  header.setUint32(24, sampleRate, true); header.setUint32(28, sampleRate * 2, true);
+  header.setUint16(32, 2, true); header.setUint16(34, 16, true);
+  str(36, "data"); header.setUint32(40, dataLen, true);
+  return new Blob([header, ...pcmParts], { type: "audio/wav" });
+}
+
+function stopPlayback() {
+  if (controller) controller.abort();
+  sources.forEach(s => { try { s.stop(); } catch (_) {} });
+  sources = [];
+}
+
+async function speak() {
+  const body = { text: text.value, speed: Number(speed.value), sample_rate: Number(rate.value) };
+  if (!body.text.trim()) { setStatus("Lütfen bir metin yazın.", true); return; }
+  if (seed.value !== "") body.seed = Number(seed.value);
+
+  stopPlayback();
+  $("result").style.display = "none";
+  speakBtn.disabled = true; stopBtn.disabled = false;
+  setStatus("Ses üretiliyor…");
+
+  controller = new AbortController();
+  audioCtx = audioCtx || new AudioContext();
+  await audioCtx.resume();
+
+  const started = performance.now();
+  const parts = [];
+  let leftover = null, nextTime = 0, firstAt = null, samples = 0, sampleRate = body.sample_rate;
+
+  try {
+    const res = await fetch("/api/stream", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body), signal: controller.signal,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail ? JSON.stringify(err.detail) : `Sunucu hatası (${res.status})`);
+    }
+    sampleRate = Number(res.headers.get("X-Sample-Rate")) || sampleRate;
+    const reader = res.body.getReader();
+
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      // 16 bit örnekler parça sınırında bölünebilir: artan baytı bir sonraki parçaya taşı.
+      let bytes = value;
+      if (leftover) { bytes = new Uint8Array(leftover.length + value.length); bytes.set(leftover); bytes.set(value, leftover.length); leftover = null; }
+      if (bytes.length % 2) { leftover = bytes.slice(-1); bytes = bytes.slice(0, -1); }
+      if (!bytes.length) continue;
+
+      const pcm = new Int16Array(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.length));
+      parts.push(pcm.buffer);
+      samples += pcm.length;
+
+      const buf = audioCtx.createBuffer(1, pcm.length, sampleRate);
+      const ch = buf.getChannelData(0);
+      for (let i = 0; i < pcm.length; i++) ch[i] = pcm[i] / 32768;
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf; src.connect(audioCtx.destination);
+      nextTime = Math.max(nextTime, audioCtx.currentTime + 0.05);
+      src.start(nextTime); nextTime += buf.duration;
+      sources.push(src);
+
+      if (firstAt === null) {
+        firstAt = performance.now() - started;
+        setStatus(`Çalıyor… İlk ses ${Math.round(firstAt)} ms içinde geldi.`);
+      }
+    }
+
+    const seconds = samples / sampleRate;
+    const total = (performance.now() - started) / 1000;
+    setStatus(`${seconds.toFixed(1)} sn ses, ${total.toFixed(2)} sn içinde üretildi` +
+              (firstAt !== null ? ` (ilk ses ${Math.round(firstAt)} ms).` : "."));
+    if (lastUrl) URL.revokeObjectURL(lastUrl);
+    lastUrl = URL.createObjectURL(wavBlob(parts, sampleRate));
+    $("player").src = lastUrl; $("download").href = lastUrl;
+    $("result").style.display = "block";
+  } catch (e) {
+    if (e.name === "AbortError") setStatus("Durduruldu.");
+    else setStatus("Hata: " + e.message, true);
+  } finally {
+    speakBtn.disabled = false; stopBtn.disabled = true; controller = null;
+  }
+}
+
+speakBtn.addEventListener("click", speak);
+stopBtn.addEventListener("click", stopPlayback);
+text.addEventListener("keydown", e => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) speak(); });
+</script>
+</body>
+</html>
