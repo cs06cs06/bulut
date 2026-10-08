@@ -35,6 +35,13 @@ export async function selectIn<T = Row>(
   return out;
 }
 
+/** Cloudflare D1 ücretsiz katmanının günlük yazma kotası doldu (UTC gece yarısı sıfırlanır). */
+export class QuotaExceededError extends Error {
+  constructor(detail: string) {
+    super(`D1 günlük yazma kotası doldu: ${detail}`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Cloudflare D1 (REST)
 
@@ -76,7 +83,10 @@ export class D1Rest implements Db {
         { limiter: this.limiter },
       );
     } catch (e) {
-      if (e instanceof HttpError) throw new Error(`D1 hatası (${e.status}): ${e.body}`);
+      if (e instanceof HttpError) {
+        if (/row write limit|exceeded D1's free tier/i.test(e.body)) throw new QuotaExceededError(e.body.slice(0, 200));
+        throw new Error(`D1 hatası (${e.status}): ${e.body}`);
+      }
       throw e;
     }
     const json = (await res.json()) as D1Response;
@@ -166,4 +176,20 @@ export async function recordWrites(db: Db): Promise<void> {
     [utcDay(), n],
   );
   db.rowsWritten = 0;
+}
+
+/**
+ * Komut satırı işleri için: kota dolduysa işi hata vermeden durdurur (yarım kalan iş
+ * bir sonraki çalıştırmada kaldığı yerden sürer), diğer hatalarda çıkış kodunu 1 yapar.
+ */
+export function exitOnError(e: unknown): void {
+  if (e instanceof QuotaExceededError) {
+    console.log(
+      '::warning::Cloudflare veritabanının günlük ücretsiz yazma kotası doldu. ' +
+        'İş, kota UTC gece yarısı (TR 03:00) sıfırlandıktan sonraki çalıştırmada kaldığı yerden devam edecek.',
+    );
+    return;
+  }
+  console.error(e);
+  process.exitCode = 1;
 }

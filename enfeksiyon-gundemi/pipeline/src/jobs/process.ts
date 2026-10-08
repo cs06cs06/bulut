@@ -16,7 +16,19 @@ import {
 } from '../ai/prompts.ts';
 import { monthSpend, UsageMeter } from '../ai/usage.ts';
 import { loadAiConfig, loadPrompt, loadTopics, type AiConfig, type Topic } from '../lib/config.ts';
-import { D1Rest, DAILY_WRITE_LIMIT, LocalSqlite, MAX_PARAMS, recordWrites, selectIn, writesToday, type Db, type Stmt } from '../lib/db.ts';
+import {
+  D1Rest,
+  DAILY_WRITE_LIMIT,
+  exitOnError,
+  LocalSqlite,
+  MAX_PARAMS,
+  QuotaExceededError,
+  recordWrites,
+  selectIn,
+  writesToday,
+  type Db,
+  type Stmt,
+} from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
 
 export const PROMPT_VERSION = 'editor-v1';
@@ -383,16 +395,15 @@ async function main() {
     await log.finish(s.reviewFailed ? 'partial' : 'ok', s);
     await recordWrites(db);
   } catch (e) {
-    await log.event('error', SRC, 'Yapay zekâ işlemi beklenmedik bir hatayla durdu.', String(e));
-    await log.finish('failed', { error: String(e) });
+    if (!(e instanceof QuotaExceededError)) {
+      await log.event('error', SRC, 'Yapay zekâ işlemi beklenmedik bir hatayla durdu.', String(e)).catch(() => {});
+      await log.finish('failed', { error: String(e) }).catch(() => {});
+    }
     await recordWrites(db).catch(() => {});
-    process.exitCode = 1;
+    exitOnError(e);
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+  main().catch(exitOnError);
 }

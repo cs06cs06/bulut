@@ -39,4 +39,15 @@ sed -e "s|__D1_DATABASE_ID__|${DB_ID}|" \
     -e "s|__ACCESS_AUD__|${ACCESS_AUD:-__ACCESS_AUD__}|" \
     wrangler.template.toml > wrangler.toml
 
-npx wrangler d1 migrations apply "$DB_NAME" --remote
+# Şema güncellemeleri. Günlük yazma kotası dolduysa güncelleme ertesi güne kalır; iş durmaz.
+if ! out="$(npx wrangler d1 migrations apply "$DB_NAME" --remote 2>&1)"; then
+  echo "$out"
+  if echo "$out" | grep -qiE "row write limit|exceeded D1's free tier"; then
+    echo "::warning::Veritabanı günlük yazma kotası dolu; şema güncellemesi bir sonraki çalıştırmaya kaldı."
+  else
+    echo "::error::Şema güncellemesi başarısız oldu."
+    exit 1
+  fi
+else
+  echo "$out"
+fi
