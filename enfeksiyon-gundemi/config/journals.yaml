@@ -1,0 +1,83 @@
+# Dergi katmanları
+# ----------------------------------------------------------------------------
+# 1. katman: alanın en saygın dergileri ve genel tıbbın en üst dergileri
+# 2. katman: diğer saygın dergiler
+# Listede olmayan dergiler "katmansız" sayılır (silinmez, sadece öncelik almaz).
+#
+# Eşleştirme dergi adına göre yapılır (büyük/küçük harf ve noktalama önemsiz).
+# NLM kısaltması (ör. "Clin Infect Dis") veya tam adı yazabilirsiniz.
+# "turkiye: true" yerel bağlam için işaretlenen dergileri belirtir.
+# ----------------------------------------------------------------------------
+
+tier1:
+  # Genel tıp
+  - N Engl J Med
+  - Lancet
+  - JAMA
+  - BMJ
+  - Ann Intern Med
+  - Nat Med
+  - PLoS Med
+  # Enfeksiyon hastalıkları ve mikrobiyoloji
+  - Clin Infect Dis
+  - Lancet Infect Dis
+  - Lancet Microbe
+  - Lancet HIV
+  - J Infect Dis
+  - Clin Microbiol Infect
+  - Clin Microbiol Rev
+  - J Antimicrob Chemother
+  - Antimicrob Agents Chemother
+  - J Clin Microbiol
+  - Emerg Infect Dis
+  - MMWR Morb Mortal Wkly Rep
+  - Euro Surveill
+  - Infect Control Hosp Epidemiol
+  - J Hosp Infect
+  - Nat Microbiol
+  - Lancet Glob Health
+  - JAMA Intern Med
+  # Komşu alanlar (sepsis, solunum, hepatoloji)
+  - Intensive Care Med
+  - Am J Respir Crit Care Med
+  - Lancet Respir Med
+  - J Hepatol
+  - Hepatology
+
+tier2:
+  - Open Forum Infect Dis
+  - JAC Antimicrob Resist
+  - J Infect
+  - Int J Infect Dis
+  - Infection
+  - Eur J Clin Microbiol Infect Dis
+  - Antimicrob Resist Infect Control
+  - Am J Infect Control
+  - Transpl Infect Dis
+  - Med Mycol
+  - Mycoses
+  - J Fungi (Basel)
+  - AIDS
+  - J Acquir Immune Defic Syndr
+  - J Int AIDS Soc
+  - Int J Tuberc Lung Dis
+  - Eur Respir J
+  - Vaccine
+  - NPJ Vaccines
+  - Crit Care Med
+  - Crit Care
+  - JAMA Netw Open
+  - Microbiol Spectr
+  - mBio
+  - Int J Antimicrob Agents
+  - Diagn Microbiol Infect Dis
+  - BMC Infect Dis
+  - Lancet Reg Health Eur
+  - EClinicalMedicine
+  - Nat Commun
+  - Klimik Derg:
+      turkiye: true
+  - Mikrobiyol Bul:
+      turkiye: true
+  - Turk J Med Sci:
+      turkiye: true

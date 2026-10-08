@@ -1,0 +1,131 @@
+// Veritabanı erişimi: üretimde Cloudflare D1 (REST API), testlerde yerel SQLite.
+
+import { fetchWithRetry, HttpError, RateLimiter } from './http.ts';
+
+export type Param = string | number | null;
+export interface Stmt {
+  sql: string;
+  params?: Param[];
+}
+export type Row = Record<string, unknown>;
+
+export interface Db {
+  all<T = Row>(sql: string, params?: Param[]): Promise<T[]>;
+  /** Birden çok ifadeyi tek seferde (tek işlem olarak) çalıştırır. */
+  batch(stmts: Stmt[]): Promise<Row[][]>;
+}
+
+/** D1 sorgu başına en fazla 100 bağlı parametreye izin verir. */
+export const MAX_PARAMS = 100;
+
+/** "IN (?, ?, ...)" sorgularını parametre sınırına göre parçalar. */
+export async function selectIn<T = Row>(
+  db: Db,
+  sqlWithIn: (placeholders: string) => string,
+  values: Param[],
+): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < values.length; i += MAX_PARAMS) {
+    const chunk = values.slice(i, i + MAX_PARAMS);
+    const ph = chunk.map(() => '?').join(',');
+    out.push(...(await db.all<T>(sqlWithIn(ph), chunk)));
+  }
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Cloudflare D1 (REST)
+
+interface D1Response {
+  success: boolean;
+  errors: { code: number; message: string }[];
+  result: { success?: boolean; results?: Row[] }[];
+}
+
+export class D1Rest implements Db {
+  private limiter = new RateLimiter(3);
+  constructor(
+    private accountId: string,
+    private apiToken: string,
+    private databaseId: string,
+  ) {}
+
+  static async connect(accountId: string, apiToken: string, name: string): Promise<D1Rest> {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${accountId}/d1/database?name=${encodeURIComponent(name)}`;
+    const res = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${apiToken}` } });
+    const json = (await res.json()) as { result: { uuid: string; name: string }[] };
+    const db = json.result.find((d) => d.name === name);
+    if (!db) throw new Error(`D1 veritabanı bulunamadı: ${name}. Önce kurulum (deploy) iş akışı çalışmalı.`);
+    return new D1Rest(accountId, apiToken, db.uuid);
+  }
+
+  private async post(body: unknown): Promise<D1Response['result']> {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/d1/database/${this.databaseId}/query`;
+    let res: Response;
+    try {
+      res = await fetchWithRetry(
+        url,
+        {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${this.apiToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        },
+        { limiter: this.limiter },
+      );
+    } catch (e) {
+      if (e instanceof HttpError) throw new Error(`D1 hatası (${e.status}): ${e.body}`);
+      throw e;
+    }
+    const json = (await res.json()) as D1Response;
+    if (!json.success) throw new Error(`D1 hatası: ${json.errors.map((e) => e.message).join('; ')}`);
+    return json.result;
+  }
+
+  async all<T = Row>(sql: string, params: Param[] = []): Promise<T[]> {
+    const result = await this.post({ sql, params });
+    return (result[0]?.results ?? []) as T[];
+  }
+
+  async batch(stmts: Stmt[]): Promise<Row[][]> {
+    if (stmts.length === 0) return [];
+    const result = await this.post({ batch: stmts.map((s) => ({ sql: s.sql, params: s.params ?? [] })) });
+    return result.map((r) => r.results ?? []);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Yerel SQLite (testler ve yerel deneme için)
+
+export class LocalSqlite implements Db {
+  // node:sqlite deneysel olduğu için dinamik yükleniyor.
+  private constructor(private db: import('node:sqlite').DatabaseSync) {}
+
+  static async open(path = ':memory:'): Promise<LocalSqlite> {
+    const { DatabaseSync } = await import('node:sqlite');
+    return new LocalSqlite(new DatabaseSync(path));
+  }
+
+  exec(sql: string): void {
+    this.db.exec(sql);
+  }
+
+  async all<T = Row>(sql: string, params: Param[] = []): Promise<T[]> {
+    return this.db.prepare(sql).all(...params) as T[];
+  }
+
+  async batch(stmts: Stmt[]): Promise<Row[][]> {
+    const out: Row[][] = [];
+    this.db.exec('BEGIN');
+    try {
+      for (const s of stmts) {
+        const st = this.db.prepare(s.sql);
+        out.push(/^\s*(select|with)\b/i.test(s.sql) || /\breturning\b/i.test(s.sql) ? (st.all(...(s.params ?? [])) as Row[]) : (st.run(...(s.params ?? [])), []));
+      }
+      this.db.exec('COMMIT');
+    } catch (e) {
+      this.db.exec('ROLLBACK');
+      throw e;
+    }
+    return out;
+  }
+}

@@ -1,0 +1,104 @@
+# PubMed arama yapılandırması
+# ----------------------------------------------------------------------------
+# Bu dosya "geniş ağ"ı tanımlar: alakalı olabilecek her şeyi toplar.
+# Neyin önemli olduğuna sonraki aşamada (triyaj) karar verilir.
+#
+# Düzenleme ipuçları:
+#  - Her blok bir konu grubudur; bloklar "VEYA" (OR) ile birleştirilir.
+#  - [Mesh] = MeSH terimi, [tiab] = başlık/özette geçen kelime, * = kök (ör. vaccin* → vaccine, vaccination)
+#  - Yeni bir terim eklemek için ilgili bloğa satır eklemeniz yeterli.
+# ----------------------------------------------------------------------------
+
+# Her blok ayrı bir liste; içindeki terimler OR ile bağlanır.
+include:
+  genel_enfeksiyon:
+    - '"Infections"[Mesh]'
+    - '"Communicable Diseases"[Mesh]'
+    - 'infection*[tiab]'
+    - 'infectious[tiab]'
+    - 'pathogen*[tiab]'
+  mikroorganizmalar:
+    - '"Bacteria"[Mesh]'
+    - '"Viruses"[Mesh]'
+    - '"Fungi"[Mesh]'
+    - '"Parasites"[Mesh]'
+  antimikrobiyal_direnc_ve_yonetim:
+    - '"Drug Resistance, Microbial"[Mesh]'
+    - '"Anti-Infective Agents"[Mesh]'
+    - '"Antimicrobial Stewardship"[Mesh]'
+    - 'antimicrobial*[tiab]'
+    - 'antibiotic*[tiab]'
+    - 'antiviral*[tiab]'
+    - 'antifungal*[tiab]'
+    - 'antiparasitic*[tiab]'
+    - 'stewardship[tiab]'
+    - 'carbapenem*[tiab]'
+    - 'ESBL[tiab]'
+    - 'MRSA[tiab]'
+    - 'VRE[tiab]'
+  hastane_enfeksiyonlari_ve_kontrol:
+    - '"Cross Infection"[Mesh]'
+    - '"Infection Control"[Mesh]'
+    - 'nosocomial[tiab]'
+    - 'healthcare-associated[tiab]'
+    - 'hospital-acquired[tiab]'
+  sepsis:
+    - '"Sepsis"[Mesh]'
+    - 'sepsis[tiab]'
+    - 'septic[tiab]'
+    - 'bacteremia[tiab]'
+    - 'bacteraemia[tiab]'
+    - 'candidemia[tiab]'
+    - 'candidaemia[tiab]'
+    - 'bloodstream[tiab]'
+  asilar:
+    - '"Vaccines"[Mesh]'
+    - '"Vaccination"[Mesh]'
+    - 'vaccin*[tiab]'
+    - 'immunization*[tiab]'
+    - 'immunisation*[tiab]'
+  ozel_hastaliklar:
+    - 'HIV[tiab]'
+    - 'hepatitis[tiab]'
+    - 'tuberculosis[tiab]'
+    - 'mycobacteri*[tiab]'
+    - 'malaria[tiab]'
+    - 'pneumonia[tiab]'
+    - 'meningitis[tiab]'
+    - 'endocarditis[tiab]'
+    - 'osteomyelitis[tiab]'
+    - 'brucell*[tiab]'
+    - 'leishmania*[tiab]'
+    - 'Crimean-Congo[tiab]'
+    - 'mpox[tiab]'
+    - 'COVID-19[tiab]'
+    - 'SARS-CoV-2[tiab]'
+    - 'influenza[tiab]'
+    - 'RSV[tiab]'
+    - 'aspergill*[tiab]'
+    - 'mucormycosis[tiab]'
+    - 'Candida[tiab]'
+  tanisal_mikrobiyoloji:
+    - 'microbiolog*[tiab]'
+    - 'susceptibility testing[tiab]'
+    - 'metagenomic*[tiab]'
+    - 'MALDI-TOF[tiab]'
+    - 'blood culture*[tiab]'
+
+# Hariç tutulacaklar (dikkatli kullanın; burada elenen hiçbir zaman görünmez).
+# Not: Yeni kayıtların çoğunda henüz MeSH yoktur, bu yüzden bu filtreler yalnızca
+# indekslenmiş kayıtları eler. Asıl ayıklamayı triyaj yapar.
+exclude:
+  - '("Animals"[Mesh] NOT "Humans"[Mesh])'
+  - '"Plant Diseases"[Mesh]'
+  - '"Published Erratum"[pt]'
+
+# Dil kısıtı
+languages: [english, turkish]
+
+# PubMed "giriş tarihi" (EDAT) ile gün gün arama yapılır.
+# Her çalıştırmada son kaç gün yeniden taranır (geç indekslenenleri yakalamak için).
+overlap_days: 3
+
+# İlk kurulumda geriye dönük kaç gün taranacak.
+backfill_days: 30
