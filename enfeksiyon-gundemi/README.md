@@ -5,7 +5,7 @@ bir klinisyen-editör gözüyle değerlendiren ve dijital bir dergi gibi sunan k
 
 > Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
 
-Durum: **1. aşama** (PubMed toplama + veritabanı + basit liste). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
+Durum: **2. aşama** (PubMed toplama, triyaj ve editör yazıları). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
 
 ---
 
@@ -13,10 +13,12 @@ Durum: **1. aşama** (PubMed toplama + veritabanı + basit liste). Ayrıntılı 
 
 | Parça | Nerede çalışır | Ne yapar |
 |---|---|---|
-| Toplayıcı (`pipeline/`) | GitHub Actions, her gün 05:47 ve 12:17 (TR) | PubMed'den yeni kayıtları çeker, yinelenenleri birleştirir, veritabanına yazar |
+| Toplayıcı (`pipeline/`) | GitHub Actions, her gün 04:47 ve 12:17 (TR) | PubMed'den yeni kayıtları çeker, yinelenenleri birleştirir, veritabanına yazar |
+| Değerlendirme (`pipeline/`) | Toplamanın hemen ardından | Haiku ile triyaj, Opus ile editör yazıları (Anthropic Batch API, %50 indirimli) |
 | Veritabanı (`db/`) | Cloudflare D1 | Tüm kayıtlar, çalıştırma günlükleri |
 | Uygulama (`web/`) | Cloudflare Pages | Telefonda okuduğunuz arayüz |
-| Ayarlar (`config/`) | Bu repo | Arama sorguları, dergi katmanları, sınırlar |
+| Ayarlar (`config/`) | Bu repo | Arama sorguları, dergi katmanları, konular, yapay zekâ modelleri, bütçe |
+| Editör talimatları (`prompts/`) | Bu repo | Triyaj ve editör yazısı istemleri (düz Türkçe metin) |
 
 Hiçbir şey eklemeniz gerekmez. İsterseniz `config/` altındaki dosyaları GitHub'ın web
 arayüzünden düzenleyebilirsiniz (dosyayı açın → kalem simgesi → "Commit changes").
@@ -32,7 +34,7 @@ arayüzünden düzenleyebilirsiniz (dosyayı açın → kalem simgesi → "Commi
    | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare hesap kimliği |
    | `NCBI_API_KEY` | NCBI API anahtarı |
    | `NCBI_EMAIL` | NCBI'ye bildirilen iletişim e-postası |
-   | `ANTHROPIC_API_KEY` | Claude API anahtarı (2. aşamadan itibaren kullanılır) |
+   | `ANTHROPIC_API_KEY` | Claude API anahtarı |
    | `EG_ACCESS_TEAM_DOMAIN` | Cloudflare Access ekip alan adı (ör. `adiniz.cloudflareaccess.com`) |
    | `EG_ACCESS_AUD` | Cloudflare Access uygulamasının "Application Audience (AUD) Tag" değeri |
 
@@ -61,3 +63,12 @@ cd web && npm ci && npm run build
 - PubMed sorgusu: `config/pubmed.yaml` (MeSH + başlık/özet terimleri, bloklar hâlinde)
 - Dergi katmanları: `config/journals.yaml`
 - Kota/sınırlar: `config/limits.yaml` (D1 ücretsiz katman: günde 100.000 satır yazma, veritabanı başına 500 MB)
+- Yapay zekâ: `config/ai.yaml` (modeller, günlük yazı sayısı, aylık bütçe tavanı), `config/topics.yaml` (konu etiketleri)
+- Editör istemleri: `prompts/triage.md`, `prompts/editor.md`
+
+## Maliyet kontrolü
+
+- Aylık bütçe tavanı `config/ai.yaml` → `budget.monthly_usd`. Dolarsa yeni değerlendirme başlatılmaz.
+- Günde en fazla `review.max_per_day` tam editör yazısı.
+- Aynı yayın asla iki kez değerlendirilmez; tüm çağrılar `ai_usage` tablosuna maliyetiyle kaydedilir.
+- Ek güvenlik: Anthropic Console → Settings → Limits'te aylık harcama limiti.

@@ -1,61 +1,65 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-const PAGE_SIZE = 50;
-
-export interface WorkRow {
+export interface ReviewCard {
   id: number;
-  pmid: string | null;
-  doi: string | null;
-  title: string;
+  impact: string;
+  title_tr: string;
+  hook: string;
+  created_at: string;
   journal: string | null;
   journal_abbr: string | null;
-  journal_tier: number | null;
   pub_date: string | null;
-  pub_types: string | null;
-  kind: string;
   is_preprint: number;
 }
 
-export const load: PageServerLoad = async ({ platform, url }) => {
+export interface NoteCard {
+  id: number;
+  title: string;
+  title_tr: string | null;
+  summary_tr: string;
+  importance: number;
+  journal_abbr: string | null;
+  journal: string | null;
+  pub_date: string | null;
+  pmid: string | null;
+  doi: string | null;
+}
+
+export const load: PageServerLoad = async ({ platform }) => {
   const db = platform?.env.DB;
   if (!db) error(500, 'Veritabanı bağlantısı yok.');
 
-  const tier = url.searchParams.get('katman');
-  const page = Math.max(0, Number(url.searchParams.get('sayfa') ?? 0) || 0);
-  const tierFilter = tier === '1' || tier === '2' ? Number(tier) : null;
-
-  const listSql = `SELECT id, pmid, doi, title, journal, journal_abbr, journal_tier, pub_date, pub_types, kind, is_preprint
-                   FROM works ${tierFilter ? 'WHERE journal_tier = ?1' : ''}
-                   ORDER BY first_seen_at DESC, id DESC LIMIT ${PAGE_SIZE + 1} OFFSET ${page * PAGE_SIZE}`;
-  const listStmt = tierFilter ? db.prepare(listSql).bind(tierFilter) : db.prepare(listSql);
-
-  const [list, lastRun, sourceState, total, issues] = await db.batch([
-    listStmt,
-    db.prepare(`SELECT id, started_at, finished_at, status, summary FROM runs WHERE kind = 'collect' ORDER BY id DESC LIMIT 1`),
-    db.prepare(`SELECT source, last_success_at, synced_until, backfill_cursor, last_error FROM source_state`),
-    db.prepare(`SELECT MAX(id) AS n FROM works`),
+  const [reviews, notes, issues, lastRuns] = await db.batch([
     db.prepare(
-      `SELECT e.level, e.source, e.message, e.created_at FROM run_events e
-       WHERE e.level IN ('warn','error') AND e.created_at >= ?1 ORDER BY e.id DESC LIMIT 5`,
-    ).bind(new Date(Date.now() - 3 * 864e5).toISOString()),
+      `SELECT r.work_id AS id, r.impact, r.title_tr, r.hook, r.created_at, w.journal, w.journal_abbr, w.pub_date, w.is_preprint
+       FROM reviews r JOIN works w ON w.id = r.work_id
+       ORDER BY r.created_at DESC,
+                CASE r.impact WHEN 'practice_changing' THEN 0 WHEN 'important' THEN 1 ELSE 2 END
+       LIMIT 40`,
+    ),
+    db.prepare(
+      `SELECT w.id, w.title, t.title_tr, t.summary_tr, t.importance, w.journal_abbr, w.journal, w.pub_date, w.pmid, w.doi
+       FROM triage t JOIN works w ON w.id = t.work_id
+       WHERE t.relevant = 1 AND t.importance >= 3 AND t.summary_tr IS NOT NULL AND w.status != 'reviewed'
+       ORDER BY t.created_at DESC, t.importance DESC
+       LIMIT 40`,
+    ),
+    db.prepare(
+      `SELECT level, message, created_at FROM run_events
+       WHERE level IN ('warn','error') AND created_at >= ?1 ORDER BY id DESC LIMIT 5`,
+    ).bind(new Date(Date.now() - 2 * 864e5).toISOString()),
+    db.prepare(
+      `SELECT kind, MAX(finished_at) AS finished_at FROM runs WHERE status IN ('ok','partial') GROUP BY kind`,
+    ),
   ]);
 
-  const works = (list.results ?? []) as unknown as WorkRow[];
   return {
-    works: works.slice(0, PAGE_SIZE),
-    hasMore: works.length > PAGE_SIZE,
-    page,
-    tier: tierFilter,
-    lastRun: (lastRun.results?.[0] ?? null) as { started_at: string; finished_at: string | null; status: string } | null,
-    sources: (sourceState.results ?? []) as {
-      source: string;
-      last_success_at: string | null;
-      synced_until: string | null;
-      backfill_cursor: string | null;
-      last_error: string | null;
-    }[],
-    total: Number((total.results?.[0] as { n: number | null } | undefined)?.n ?? 0),
-    issues: (issues.results ?? []) as { level: string; source: string | null; message: string; created_at: string }[],
+    reviews: (reviews.results ?? []) as unknown as ReviewCard[],
+    notes: (notes.results ?? []) as unknown as NoteCard[],
+    issues: (issues.results ?? []) as { level: string; message: string; created_at: string }[],
+    lastRuns: Object.fromEntries(
+      ((lastRuns.results ?? []) as { kind: string; finished_at: string }[]).map((r) => [r.kind, r.finished_at]),
+    ),
   };
 };

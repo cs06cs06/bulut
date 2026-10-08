@@ -8,9 +8,11 @@
   "scripts": {
     "collect": "tsx src/jobs/collect.ts",
     "test": "tsx --test test/*.test.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "process": "tsx src/jobs/process.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
     "fast-xml-parser": "^5.11.2",
     "yaml": "^2.9.1"
   },

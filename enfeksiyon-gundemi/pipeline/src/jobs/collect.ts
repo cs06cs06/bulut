@@ -4,7 +4,7 @@
 import { pathToFileURL } from 'node:url';
 import { buildPubmedQuery, loadJournalTiers, loadLimits, loadPubmedConfig } from '../lib/config.ts';
 import { addDays, daysDesc, isoDay } from '../lib/dates.ts';
-import { D1Rest, LocalSqlite, type Db } from '../lib/db.ts';
+import { D1Rest, DAILY_WRITE_LIMIT, LocalSqlite, recordWrites, writesToday, type Db } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
 import { storeRecords } from '../lib/store.ts';
 import { PubmedClient } from '../sources/pubmed.ts';
@@ -77,7 +77,8 @@ export async function collectPubmed(db: Db, client: PubmedClient, log: RunLog, t
 
   // 2) Geriye dönük tarama (kota kalırsa)
   while (cursor && cursor >= backfillEnd) {
-    if (summary.added >= budget) {
+    // Günlük D1 yazma kotasının yarısını toplamaya ayırıyoruz; kalanı triyaj ve yazılar için.
+    if (summary.added >= budget || (await writesToday(db)) > DAILY_WRITE_LIMIT / 2) {
       summary.backfillRemaining = true;
       await log.event('info', SOURCE, `Geriye dönük tarama kotası doldu; ${cursor} ve öncesi sonraki çalıştırmada taranacak.`);
       break;
@@ -165,10 +166,12 @@ async function main() {
         (s.backfillRemaining ? ' Geriye dönük tarama sürüyor.' : ''),
     );
     await log.finish(status, { pubmed: s });
+    await recordWrites(db);
     if (status === 'failed') process.exitCode = 1;
   } catch (e) {
     await log.event('error', SOURCE, 'Toplama beklenmedik bir hatayla durdu.', String(e));
     await log.finish('failed', { error: String(e) });
+    await recordWrites(db).catch(() => {});
     process.exitCode = 1;
   }
 }

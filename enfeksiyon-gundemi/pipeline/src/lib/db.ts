@@ -10,6 +10,8 @@ export interface Stmt {
 export type Row = Record<string, unknown>;
 
 export interface Db {
+  /** Bu bağlantıyla yazılan satır sayısı (D1 kotası takibi için) */
+  rowsWritten: number;
   all<T = Row>(sql: string, params?: Param[]): Promise<T[]>;
   /** Birden çok ifadeyi tek seferde (tek işlem olarak) çalıştırır. */
   batch(stmts: Stmt[]): Promise<Row[][]>;
@@ -39,10 +41,11 @@ export async function selectIn<T = Row>(
 interface D1Response {
   success: boolean;
   errors: { code: number; message: string }[];
-  result: { success?: boolean; results?: Row[] }[];
+  result: { success?: boolean; results?: Row[]; meta?: { rows_written?: number } }[];
 }
 
 export class D1Rest implements Db {
+  rowsWritten = 0;
   private limiter = new RateLimiter(3);
   constructor(
     private accountId: string,
@@ -78,6 +81,7 @@ export class D1Rest implements Db {
     }
     const json = (await res.json()) as D1Response;
     if (!json.success) throw new Error(`D1 hatası: ${json.errors.map((e) => e.message).join('; ')}`);
+    for (const r of json.result) this.rowsWritten += r.meta?.rows_written ?? 0;
     return json.result;
   }
 
@@ -97,6 +101,7 @@ export class D1Rest implements Db {
 // Yerel SQLite (testler ve yerel deneme için)
 
 export class LocalSqlite implements Db {
+  rowsWritten = 0;
   // node:sqlite deneysel olduğu için dinamik yükleniyor.
   private constructor(private db: import('node:sqlite').DatabaseSync) {}
 
@@ -128,4 +133,28 @@ export class LocalSqlite implements Db {
     }
     return out;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Günlük yazma kotası
+
+/** D1 ücretsiz katmanı: günde 100.000 satır yazma. Güvenlik payı bırakıyoruz. */
+export const DAILY_WRITE_LIMIT = 85_000;
+
+const utcDay = () => new Date().toISOString().slice(0, 10);
+
+/** Bugün (UTC) daha önceki çalıştırmalarda yazılan satırlar + bu çalıştırmada yazılanlar */
+export async function writesToday(db: Db): Promise<number> {
+  const rows = await db.all<{ rows: number }>('SELECT rows FROM db_writes WHERE day = ?', [utcDay()]);
+  return (rows[0]?.rows ?? 0) + db.rowsWritten;
+}
+
+/** Çalıştırma sonunda bu bağlantının yazdığı satırları günlük sayaca ekler. */
+export async function recordWrites(db: Db): Promise<void> {
+  const n = db.rowsWritten;
+  await db.all(
+    'INSERT INTO db_writes (day, rows) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET rows = rows + excluded.rows',
+    [utcDay(), n],
+  );
+  db.rowsWritten = 0;
 }

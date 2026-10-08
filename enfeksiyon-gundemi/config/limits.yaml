@@ -6,6 +6,6 @@
 collect:
   # Bir çalıştırmada eklenecek en fazla yeni kayıt (geriye dönük tarama bu sınırla
   # birkaç güne yayılır; günlük olağan akış ~700 kayıttır).
-  max_new_records_per_run: 6000
+  max_new_records_per_run: 5000
   # Günlük kayıt sayısı, son 14 günün ortalamasının bu oranının altına düşerse uyarı ver.
   low_volume_warning_ratio: 0.5

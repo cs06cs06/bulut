@@ -82,3 +82,50 @@ export function lookupJournal(
   }
   return undefined;
 }
+
+// ---------------------------------------------------------------------------
+// Yapay zekâ ayarları, konu listesi ve istemler (prompts)
+
+export interface ModelPrice {
+  input: number;
+  output: number;
+  cache_write: number;
+  cache_read: number;
+}
+
+export interface AiConfig {
+  triage: { model: string; effort: Effort; max_tokens: number; max_per_run: number };
+  review: {
+    model: string;
+    effort: Effort;
+    max_tokens: number;
+    max_per_day: number;
+    initial_backlog: number;
+    min_importance: number;
+    candidate_days: number;
+    related_reviews: number;
+  };
+  budget: { monthly_usd: number };
+  batch: { max_wait_minutes: number };
+  prices: Record<string, ModelPrice>;
+}
+
+export type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max';
+
+export interface Topic {
+  kod: string;
+  ad: string;
+  kapsam: string;
+}
+
+export function loadAiConfig(): AiConfig {
+  return load<AiConfig>('ai.yaml');
+}
+
+export function loadTopics(): Topic[] {
+  return load<Topic[]>('topics.yaml');
+}
+
+export function loadPrompt(name: string): string {
+  return readFileSync(join(ROOT, 'prompts', `${name}.md`), 'utf8');
+}
