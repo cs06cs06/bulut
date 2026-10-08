@@ -49,3 +49,14 @@ jobs:
             || echo "Proje zaten var."
       - name: Yayınla
         run: npx wrangler pages deploy --branch=main --commit-dirty=true
+      - name: Giriş korumasını doğrula
+        # Access yapılandırıldıysa site girişsiz açılmamalı (Access yönlendirmesi 302 ya da uygulamanın 403'ü).
+        if: env.ACCESS_AUD != ''
+        run: |
+          sleep 15
+          code=$(curl -s -o /dev/null -w "%{http_code}" https://enfeksiyon-gundemi.pages.dev/)
+          echo "Girişsiz istek yanıtı: $code"
+          if [ "$code" = "200" ]; then
+            echo "::error::Site giriş yapmadan açılıyor! Cloudflare Access ayarlarını kontrol edin."
+            exit 1
+          fi
