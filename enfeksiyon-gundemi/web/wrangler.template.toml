@@ -1,0 +1,16 @@
+# Bu dosyadan dağıtım sırasında wrangler.toml üretilir (deploy iş akışı).
+# __D1_DATABASE_ID__ gibi yer tutucular otomatik doldurulur; elle düzenlemeyin.
+name = "enfeksiyon-gundemi"
+pages_build_output_dir = ".svelte-kit/cloudflare"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ACCESS_TEAM_DOMAIN = "__ACCESS_TEAM_DOMAIN__"
+ACCESS_AUD = "__ACCESS_AUD__"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "enfeksiyon-gundemi"
+database_id = "__D1_DATABASE_ID__"
+migrations_dir = "../db/migrations"

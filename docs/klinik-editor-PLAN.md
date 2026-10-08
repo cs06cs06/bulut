@@ -1,13 +1,19 @@
-# Kişisel Klinik Editör — Mimari ve Geliştirme Planı (taslak, onay bekliyor)
+# Enfeksiyon Gündemi — Mimari ve Geliştirme Planı
 
-> Durum: **Öneri.** Kodlamaya onaydan sonra başlanacak. Sorular en sonda.
+> Proje adı **Enfeksiyon Gündemi**; kod `enfeksiyon-gundemi/` klasöründe.
+> Repo herkese açık: GitHub Actions ücretsiz ve sınırsız. Açık repolarda zamanlanmış görevler 60 gün
+> hareketsizlikten sonra kapandığı için ileride bir "canlı tutma" mekanizması eklenecek.
+> Gizli bilgiler (API anahtarları, e-posta) repoya yazılmaz; GitHub Secrets ve Cloudflare'de durur.
+>
+> Kararlar: Opus 5.5 (aylık $25 tavan), günde en fazla 8 tam yazı + kısa notlar, Türkçe başlık + orijinal,
+> günlük baskı 06:30, haftalık baskı pazar, 30 gün geriye dönük tarama.
 
 ## 1. Teknoloji seçimi (tamamı ücretsiz katman)
 
 | Katman | Seçim | Neden |
 |---|---|---|
-| Zamanlanmış toplama ve AI işleri | **GitHub Actions** (günlük cron) | Ücretsiz, kod zaten GitHub'da, uzun süren işler (XML ayrıştırma, toplu AI) için uygun. Gizli repo: ayda 2.000 dk ücretsiz; bizim iş günde ~10–20 dk → ayda ~300–600 dk. |
-| Veritabanı | **Cloudflare D1** (SQLite) | Ücretsiz 5 GB, günde 5 milyon satır okuma / 100.000 yazma. Supabase'in aksine hareketsizlikte "uyku moduna" geçmez → bakım gerektirmez. Tam metin arama (FTS5) var. |
+| Zamanlanmış toplama ve AI işleri | **GitHub Actions** (günlük cron) | Ücretsiz, kod zaten GitHub'da, uzun süren işler (XML ayrıştırma, toplu AI) için uygun. Açık repoda standart çalıştırıcılar ücretsiz. |
+| Veritabanı | **Cloudflare D1** (SQLite) | Ücretsiz: hesap başına 5 GB (veritabanı başına 500 MB), günde 5 milyon satır okuma / 100.000 yazma. Supabase'in aksine hareketsizlikte "uyku moduna" geçmez → bakım gerektirmez. Tam metin arama (FTS5) var. |
 | Ön yüz + API | **Cloudflare Pages + Pages Functions** | Ücretsiz, Türkiye'ye yakın sunucular, hızlı. Okuma API'si hafif sorgulardan oluşur (ücretsiz plandaki 10 ms CPU sınırı ağ beklemesini saymaz). |
 | Giriş koruması | **Cloudflare Access** (e-postaya tek kullanımlık kod) | Uygulamanın önüne kurumsal düzeyde bir kapı; şifre tutmayız, yalnızca sizin e-postanız girebilir. API ayrıca Access imzasını doğrular (çift katman). |
 | Dil | **TypeScript** (her yerde) | Tek dil → bakım kolay. Resmi Anthropic SDK'sı var. |
