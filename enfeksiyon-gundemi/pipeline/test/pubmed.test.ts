@@ -48,3 +48,13 @@ test('sorgu ve dergi katmanları yapılandırmadan okunur', () => {
   assert.equal(lookupJournal(tiers, 'Klimik Derg')?.turkiye, true);
   assert.equal(lookupJournal(tiers, 'Some Unknown J'), undefined);
 });
+
+test('kitap bölümleri (StatPearls, GeneReviews) de okunur', () => {
+  const recs = parsePubmedXml(readFileSync(join(import.meta.dirname, 'fixtures', 'pubmed-books.xml'), 'utf8'));
+  assert.equal(recs.length, 2);
+  for (const r of recs) {
+    assert.equal(r.kind, 'report');
+    assert.ok(r.title.length > 3 && !r.title.includes('<'));
+    assert.ok(r.journal);
+  }
+});

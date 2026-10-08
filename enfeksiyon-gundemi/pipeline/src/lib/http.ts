@@ -1,12 +1,14 @@
 // Yeniden denemeli HTTP istekleri ve basit hız sınırlayıcı.
 
 export class HttpError extends Error {
+  /** true: tekrar denemeye gerek yok (kalıcı hata ya da denemeler tükendi) */
+  final = false;
   constructor(
     public status: number,
     public url: string,
     public body: string,
   ) {
-    super(`HTTP ${status} - ${url.split('?')[0]}`);
+    super(`HTTP ${status} - ${url.split('?')[0]}${body ? ` — ${body.replace(/\s+/g, ' ').slice(0, 300)}` : ''}`);
   }
 }
 
@@ -30,6 +32,8 @@ export interface RetryOptions {
   baseDelayMs?: number;
   limiter?: RateLimiter;
   timeoutMs?: number;
+  /** Normalde kalıcı sayılan bir hatanın (ör. 400) yine de tekrar denenip denenmeyeceği */
+  retryIf?: (status: number, body: string) => boolean;
 }
 
 function isRetryable(status: number): boolean {
@@ -58,12 +62,16 @@ export async function fetchWithRetry(
       if (res.ok) return res;
       const body = await res.text().catch(() => '');
       const err = new HttpError(res.status, url, body.slice(0, 500));
-      if (!isRetryable(res.status) || attempt === retries) throw err;
+      const retryable = isRetryable(res.status) || !!opts.retryIf?.(res.status, body);
+      if (!retryable || attempt === retries) {
+        err.final = true;
+        throw err;
+      }
       lastErr = err;
       const retryAfter = Number(res.headers.get('retry-after'));
       await sleep(retryAfter > 0 ? retryAfter * 1000 : base * 2 ** attempt);
     } catch (e) {
-      if (e instanceof HttpError && !isRetryable(e.status)) throw e;
+      if (e instanceof HttpError && e.final) throw e;
       lastErr = e;
       if (attempt === retries) break;
       await sleep(base * 2 ** attempt);

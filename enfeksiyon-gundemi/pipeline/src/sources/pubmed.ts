@@ -38,47 +38,43 @@ export class PubmedClient {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: params.toString(),
       },
-      { limiter: this.limiter, timeoutMs: 120_000 },
+      {
+        limiter: this.limiter,
+        timeoutMs: 120_000,
+        // NCBI kendi iç zaman aşımlarını 400 koduyla bildiriyor ("Empty Response ... Status: Timeout")
+        retryIf: (status, body) => status === 400 && /timeout|empty response|temporarily|try again/i.test(body),
+      },
     );
     return res.text();
   }
 
-  /** Belirli bir PubMed giriş gününde (EDAT) sorguya uyan kayıtları arar. */
-  async searchDay(query: string, day: string): Promise<{ count: number; webEnv: string; queryKey: string }> {
+  /**
+   * Belirli bir PubMed giriş gününde (EDAT) sorguya uyan PMID'leri döndürür.
+   * Geçici arama oturumu (WebEnv) yerine kimlik listesi kullanılır: oturum süresi dolması
+   * gibi hatalar olmaz ve yarım kalan indirme güvenle tekrarlanabilir.
+   */
+  async searchDay(query: string, day: string): Promise<{ count: number; ids: string[] }> {
     const d = day.replaceAll('-', '/');
     const text = await this.post(
       'esearch.fcgi',
-      this.params({
-        term: query,
-        datetype: 'edat',
-        mindate: d,
-        maxdate: d,
-        usehistory: 'y',
-        retmax: '0',
-        retmode: 'json',
-      }),
+      this.params({ term: query, datetype: 'edat', mindate: d, maxdate: d, retmax: '9999', retmode: 'json' }),
     );
-    const json = JSON.parse(text) as {
-      esearchresult: { count: string; webenv: string; querykey: string; ERROR?: string; errorlist?: unknown };
-    };
+    const json = JSON.parse(text) as { esearchresult: { count: string; idlist: string[]; ERROR?: string } };
     const r = json.esearchresult;
     if (r.ERROR) throw new Error(`PubMed arama hatası: ${r.ERROR}`);
-    return { count: Number(r.count), webEnv: r.webenv, queryKey: r.querykey };
+    const count = Number(r.count);
+    if (count > r.idlist.length) {
+      // Tek günde 9.999'dan fazla kayıt beklenmez; olursa eksik kalanı açıkça bildir.
+      throw new Error(`PubMed bir günde ${count} kayıt döndürdü; en fazla ${r.idlist.length} indirilebilir.`);
+    }
+    return { count, ids: r.idlist };
   }
 
-  /** Arama sonucundaki kayıtları 200'lük sayfalar hâlinde indirir. */
-  async *fetchAll(search: { count: number; webEnv: string; queryKey: string }): AsyncGenerator<NormalizedRecord[]> {
-    for (let start = 0; start < search.count; start += PAGE_SIZE) {
-      const xml = await this.post(
-        'efetch.fcgi',
-        this.params({
-          WebEnv: search.webEnv,
-          query_key: search.queryKey,
-          retstart: String(start),
-          retmax: String(PAGE_SIZE),
-          retmode: 'xml',
-        }),
-      );
+  /** Kayıtları 200'lük gruplar hâlinde indirir. */
+  async *fetchAll(search: { ids: string[] }): AsyncGenerator<NormalizedRecord[]> {
+    for (let i = 0; i < search.ids.length; i += PAGE_SIZE) {
+      const ids = search.ids.slice(i, i + PAGE_SIZE);
+      const xml = await this.post('efetch.fcgi', this.params({ id: ids.join(','), retmode: 'xml' }));
       yield parsePubmedXml(xml);
     }
   }
@@ -88,10 +84,11 @@ export class PubmedClient {
 // XML ayrıştırma
 
 // Bu düğümlerin içi ham XML olarak bırakılır (içlerinde <i>, <sup> gibi etiketler olabilir).
-const RAW_NODES = ['AbstractText', 'ArticleTitle', 'VernacularTitle', 'CoiStatement'];
+const RAW_NODES = ['AbstractText', 'ArticleTitle', 'VernacularTitle', 'CoiStatement', 'BookTitle'];
 
 const ARRAY_NODES = new Set([
   'PubmedArticle',
+  'PubmedBookArticle',
   'Author',
   'AbstractText',
   'ArticleId',
@@ -227,5 +224,43 @@ export function parsePubmedXml(xml: string): NormalizedRecord[] {
       kind: isPreprint ? 'preprint' : pubTypes.some((t: string) => /guideline|consensus/i.test(t)) ? 'guideline' : 'article',
     });
   }
+  for (const pb of doc?.PubmedArticleSet?.PubmedBookArticle ?? []) {
+    const r = parseBookArticle(pb);
+    if (r) out.push(r);
+  }
   return out;
+}
+
+/** Kitap bölümleri (GeneReviews, StatPearls vb.): düşük öncelikli ama kaybolmasın. */
+function parseBookArticle(pb: X): NormalizedRecord | undefined {
+  const bd = pb.BookDocument;
+  const pmid = text(bd?.PMID);
+  const bookTitle = stripTags(text(bd?.Book?.BookTitle));
+  const title = stripTags(text(bd?.ArticleTitle)) || bookTitle;
+  if (!pmid || !title) return undefined;
+  const authorLists = Array.isArray(bd.AuthorList) ? bd.AuthorList : bd.AuthorList ? [bd.AuthorList] : [];
+  const authors = authorLists
+    .filter((l: X) => l?.['@Type'] !== 'editors')
+    .flatMap((l: X) => l.Author ?? [])
+    .map(authorName)
+    .filter(Boolean) as string[];
+  const revised = pb.PubmedBookData?.History?.PubMedPubDate;
+  const lastDate = Array.isArray(revised) ? revised[revised.length - 1] : revised;
+  return {
+    source: 'pubmed',
+    sourceId: pmid,
+    pmid,
+    title,
+    abstract: parseAbstract(bd.Abstract),
+    authors,
+    journal: bookTitle || undefined,
+    pubDate: toDate(lastDate) ?? toDate(bd.Book?.PubDate),
+    pubTypes: ['Book Chapter'],
+    mesh: [],
+    keywords: [],
+    grants: [],
+    language: text((bd.Language ?? [])[0]) || undefined,
+    isPreprint: false,
+    kind: 'report',
+  };
 }

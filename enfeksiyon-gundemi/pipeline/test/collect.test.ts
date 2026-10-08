@@ -13,10 +13,10 @@ function fakeClient(failDays: string[] = []) {
     async searchDay(_q: string, day: string) {
       calls.push(day);
       if (failDays.includes(day)) throw new Error('ağ hatası');
-      return { count: 3, webEnv: day, queryKey: '1' };
+      return { count: 3, ids: [1, 2, 3].map((i) => `${day.replaceAll('-', '')}${i}`) };
     },
-    async *fetchAll(s: { webEnv: string }): AsyncGenerator<NormalizedRecord[]> {
-      yield [1, 2, 3].map((i) => rec({ pmid: `${s.webEnv.replaceAll('-', '')}${i}`, title: `Study number ${i} published on day ${s.webEnv} about sepsis outcomes` }));
+    async *fetchAll(s: { ids: string[] }): AsyncGenerator<NormalizedRecord[]> {
+      yield s.ids.map((pmid) => rec({ pmid, title: `Study number ${pmid} about sepsis outcomes in adults` }));
     },
   };
   return { client: client as unknown as PubmedClient, calls };
