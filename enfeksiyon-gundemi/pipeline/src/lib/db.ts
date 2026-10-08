@@ -160,6 +160,7 @@ export async function writesToday(db: Db): Promise<number> {
 /** Çalıştırma sonunda bu bağlantının yazdığı satırları günlük sayaca ekler. */
 export async function recordWrites(db: Db): Promise<void> {
   const n = db.rowsWritten;
+  console.log(`Veritabanına yazılan satır: ${n} (bugün toplam: ${await writesToday(db)}, ücretsiz kota: 100.000)`);
   await db.all(
     'INSERT INTO db_writes (day, rows) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET rows = rows + excluded.rows',
     [utcDay(), n],
