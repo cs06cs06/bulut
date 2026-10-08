@@ -166,3 +166,26 @@ test('maliyet hesabı: toplu işlemede %50 indirim', () => {
   assert.equal(costUsd(price, u, false), 6);
   assert.equal(costUsd(price, u, true), 3);
 });
+
+test('yüzlerce kayıt D1 parametre sınırına takılmadan gönderilir', async () => {
+  const db = await seed(150);
+  const ai = new FakeAi();
+  ai.holdNext = true;
+  const log = await RunLog.start(db, 'process');
+  const s = await runProcess(deps(db, ai, log));
+  assert.equal(s.triageSubmitted, 150);
+  const [{ n }] = await db.all<{ n: number }>(`SELECT COUNT(*) AS n FROM works WHERE status = 'triage_pending'`);
+  assert.equal(n, 150);
+});
+
+test('gönderim başarısız olursa kayıtlar geri alınır', async () => {
+  const db = await seed(3);
+  const ai = new FakeAi();
+  ai.createBatch = async () => {
+    throw new Error('API kapalı');
+  };
+  const log = await RunLog.start(db, 'process');
+  await assert.rejects(runProcess(deps(db, ai, log)));
+  const [{ n }] = await db.all<{ n: number }>(`SELECT COUNT(*) AS n FROM works WHERE status = 'new'`);
+  assert.equal(n, 3);
+});

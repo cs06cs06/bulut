@@ -16,7 +16,7 @@ import {
 } from '../ai/prompts.ts';
 import { monthSpend, UsageMeter } from '../ai/usage.ts';
 import { loadAiConfig, loadPrompt, loadTopics, type AiConfig, type Topic } from '../lib/config.ts';
-import { D1Rest, DAILY_WRITE_LIMIT, LocalSqlite, recordWrites, selectIn, writesToday, type Db, type Stmt } from '../lib/db.ts';
+import { D1Rest, DAILY_WRITE_LIMIT, LocalSqlite, MAX_PARAMS, recordWrites, selectIn, writesToday, type Db, type Stmt } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
 
 export const PROMPT_VERSION = 'editor-v1';
@@ -186,22 +186,41 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
   /** Hiçbir aktif toplu işe ait olmayan "bekliyor" durumundaki kayıtları geri al. */
   async function sweepOrphans(): Promise<void> {
     for (const [kind, from, to] of [['triage', 'triage_pending', 'new'], ['review', 'review_pending', 'triaged']] as const) {
-      const active = await db.all(`SELECT 1 FROM ai_batches WHERE kind = ? AND status = 'submitted' LIMIT 1`, [kind]);
-      if (!active.length) await db.all(`UPDATE works SET status = ? WHERE status = ?`, [to, from]);
+      if (!(await hasActive(kind))) await db.all(`UPDATE works SET status = ? WHERE status = ?`, [to, from]);
     }
+  }
+
+  /** Bu türden yanıtı beklenen bir toplu iş var mı? Aynı anda yalnızca biri gönderilir. */
+  async function hasActive(kind: 'triage' | 'review'): Promise<boolean> {
+    return (await db.all(`SELECT 1 FROM ai_batches WHERE kind = ? AND status = 'submitted' LIMIT 1`, [kind])).length > 0;
+  }
+
+  async function setStatus(ids: number[], status: string): Promise<void> {
+    const stmts: Stmt[] = [];
+    for (let i = 0; i < ids.length; i += MAX_PARAMS - 1) {
+      const chunk = ids.slice(i, i + MAX_PARAMS - 1);
+      stmts.push({ sql: `UPDATE works SET status = ? WHERE id IN (${chunk.map(() => '?').join(',')})`, params: [status, ...chunk] });
+    }
+    await runBatches(db, stmts);
   }
 
   async function submit(kind: 'triage' | 'review', requests: BatchRequest[], workIds: number[]): Promise<void> {
     if (!requests.length) return;
+    // Önce "bekliyor" olarak işaretle: gönderim sırasında bir şey kırılırsa kayıtlar iki kez gönderilmez,
+    // sahipsiz kalan işaretler sonraki çalıştırmada geri alınır.
     const pendingStatus = kind === 'triage' ? 'triage_pending' : 'review_pending';
-    const { id } = await ai.createBatch(requests);
+    const previous = kind === 'triage' ? 'new' : 'triaged';
+    await setStatus(workIds, pendingStatus);
+    let id: string;
+    try {
+      ({ id } = await ai.createBatch(requests));
+    } catch (e) {
+      await setStatus(workIds, previous);
+      throw e;
+    }
     await db.all(`INSERT INTO ai_batches (kind, batch_id, status, request_count, created_at) VALUES (?, ?, 'submitted', ?, ?)`, [
       kind, id, requests.length, now().toISOString(),
     ]);
-    for (let i = 0; i < workIds.length; i += 100) {
-      const chunk = workIds.slice(i, i + 100);
-      await db.all(`UPDATE works SET status = ? WHERE id IN (${chunk.map(() => '?').join(',')})`, [pendingStatus, ...chunk]);
-    }
   }
 
   // ---- 1) Önceki çalıştırmalardan kalan işler -----------------------------
@@ -211,7 +230,9 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   // ---- 2) Triyaj ------------------------------------------------------------
   s.monthSpent = await monthSpend(db, now());
-  if ((await budgetLeft()) <= 0) {
+  if (await hasActive('triage')) {
+    await log.event('info', SRC, 'Önceki triyaj toplu işi henüz bitmedi; yeni kayıtlar onun ardından gönderilecek.');
+  } else if ((await budgetLeft()) <= 0) {
     s.budgetBlocked = true;
     await log.event('warn', SRC, `Aylık yapay zekâ bütçesi (${cfg.budget.monthly_usd} $) doldu; yeni değerlendirme yapılmayacak.`);
   } else {
@@ -258,7 +279,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
   await finishBatches('triage', cfg.batch.max_wait_minutes * 60_000);
 
   // ---- 3) Seçim ve editör yazıları -----------------------------------------
-  if (!s.budgetBlocked && (await budgetLeft()) > 0) {
+  if (!s.budgetBlocked && !(await hasActive('review')) && (await budgetLeft()) > 0) {
     const today = now().toISOString().slice(0, 10);
     const [{ n: totalReviews }] = await db.all<{ n: number }>(
       `SELECT (SELECT COUNT(*) FROM reviews) + (SELECT COUNT(*) FROM ai_batches WHERE kind = 'review') AS n`,

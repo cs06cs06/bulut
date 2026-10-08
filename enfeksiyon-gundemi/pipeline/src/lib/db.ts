@@ -114,8 +114,15 @@ export class LocalSqlite implements Db {
     this.db.exec(sql);
   }
 
+  /** D1 ile aynı davranmak için parametre sınırını burada da uygularız. */
+  private check(params: Param[] | undefined): Param[] {
+    const p = params ?? [];
+    if (p.length > MAX_PARAMS) throw new Error(`too many SQL variables (${p.length} > ${MAX_PARAMS}, D1 sınırı)`);
+    return p;
+  }
+
   async all<T = Row>(sql: string, params: Param[] = []): Promise<T[]> {
-    return this.db.prepare(sql).all(...params) as T[];
+    return this.db.prepare(sql).all(...this.check(params)) as T[];
   }
 
   async batch(stmts: Stmt[]): Promise<Row[][]> {
@@ -124,7 +131,8 @@ export class LocalSqlite implements Db {
     try {
       for (const s of stmts) {
         const st = this.db.prepare(s.sql);
-        out.push(/^\s*(select|with)\b/i.test(s.sql) || /\breturning\b/i.test(s.sql) ? (st.all(...(s.params ?? [])) as Row[]) : (st.run(...(s.params ?? [])), []));
+        const p = this.check(s.params);
+        out.push(/^\s*(select|with)\b/i.test(s.sql) || /\breturning\b/i.test(s.sql) ? (st.all(...p) as Row[]) : (st.run(...p), []));
       }
       this.db.exec('COMMIT');
     } catch (e) {
