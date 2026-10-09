@@ -392,7 +392,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   // ---- 5) Soru-cevap için arşiv arama dizini ---------------------------------
   // Dizin satırı başına birkaç satır yazıldığı varsayılır; kotanın sonunda yer bırakılır.
-  s.indexed = await updateSearchIndex(db, Math.min(3000, Math.floor(((await writesLeft()) - 3000) / 10)));
+  s.indexed = await updateSearchIndex(db, Math.min(8000, Math.floor(((await writesLeft()) - 3000) / 10)));
 
   s.spentThisRun = meter.total();
   await meter.flush(db);
