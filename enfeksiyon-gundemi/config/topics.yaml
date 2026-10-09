@@ -1,0 +1,64 @@
+# Konu etiketleri
+# ----------------------------------------------------------------------------
+# Triyaj her yayına bu listeden bir veya birkaç konu atar; arayüzdeki konu filtresi
+# da bu listeyi kullanır. "kod" değişmemeli (veritabanında saklanır); "ad" ve
+# "kapsam" serbestçe düzenlenebilir. Yeni konu eklenebilir.
+# ----------------------------------------------------------------------------
+
+- kod: amr
+  ad: Antimikrobiyal direnç
+  kapsam: direnç mekanizmaları, epidemiyoloji, CRE/ESBL/MRSA/VRE, yeni antimikrobiyaller ve direnç
+- kod: stewardship
+  ad: Antimikrobiyal yönetim
+  kapsam: antibiyotik yönetimi programları, tedavi süresi, de-eskalasyon, uygun kullanım
+- kod: antimikrobiyal_tedavi
+  ad: Antimikrobiyal tedavi
+  kapsam: ilaç çalışmaları, PK/PD, dozlama, yeni ajanlar, karşılaştırmalı tedavi
+- kod: hastane_enfeksiyonlari
+  ad: Hastane enfeksiyonları
+  kapsam: sağlık hizmetiyle ilişkili enfeksiyonlar, CLABSI, CAUTI, VAP, cerrahi alan enfeksiyonu
+- kod: enfeksiyon_kontrolu
+  ad: Enfeksiyon kontrolü
+  kapsam: izolasyon, el hijyeni, salgın yönetimi, sürveyans, dekolonizasyon
+- kod: sepsis
+  ad: Sepsis ve bakteriyemi
+  kapsam: sepsis, septik şok, kan dolaşımı enfeksiyonları, kandidemi
+- kod: solunum
+  ad: Solunum yolu enfeksiyonları
+  kapsam: pnömoni, influenza, RSV, COVID-19, diğer solunum virüsleri
+- kod: hiv
+  ad: HIV
+  kapsam: HIV tedavisi, PrEP, fırsatçı enfeksiyonlar
+- kod: hepatit
+  ad: Viral hepatitler
+  kapsam: HBV, HCV, HDV, HEV ve diğer hepatitler
+- kod: tuberkuloz
+  ad: Tüberküloz ve mikobakteriler
+  kapsam: TB, latent TB, ilaç dirençli TB, NTM
+- kod: viroloji
+  ad: Viroloji
+  kapsam: diğer viral enfeksiyonlar, yeni virüsler, antiviral tedavi (HIV/hepatit dışı)
+- kod: mikoloji
+  ad: Mikoloji
+  kapsam: invaziv fungal enfeksiyonlar, aspergilloz, mukormikoz, Candida auris, antifungaller
+- kod: parazitoloji
+  ad: Parazitoloji
+  kapsam: sıtma, leişmanyaz, helmintler, protozoonlar
+- kod: tropikal_zoonoz
+  ad: Tropikal ve zoonotik hastalıklar
+  kapsam: KKKA, bruselloz, dang, seyahat tıbbı, tek sağlık
+- kod: asilar
+  ad: Aşılar
+  kapsam: aşı etkinliği, güvenliği, aşılama programları, yeni aşılar
+- kod: immunsupresif
+  ad: İmmünsüpresif hasta
+  kapsam: transplantasyon, nötropeni, onkoloji, biyolojik tedavi alanlarda enfeksiyon
+- kod: tanisal_mikrobiyoloji
+  ad: Tanısal mikrobiyoloji
+  kapsam: kültür, moleküler tanı, hızlı testler, duyarlılık testleri, metagenomik
+- kod: organ_enfeksiyonlari
+  ad: Organ/sistem enfeksiyonları
+  kapsam: endokardit, menenjit, kemik-eklem, deri-yumuşak doku, intraabdominal, üriner
+- kod: halk_sagligi
+  ad: Halk sağlığı ve salgınlar
+  kapsam: salgın raporları, epidemiyoloji, sürveyans verileri, küresel sağlık

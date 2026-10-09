@@ -10,6 +10,8 @@ export interface Stmt {
 export type Row = Record<string, unknown>;
 
 export interface Db {
+  /** Bu bağlantıyla yazılan satır sayısı (D1 kotası takibi için) */
+  rowsWritten: number;
   all<T = Row>(sql: string, params?: Param[]): Promise<T[]>;
   /** Birden çok ifadeyi tek seferde (tek işlem olarak) çalıştırır. */
   batch(stmts: Stmt[]): Promise<Row[][]>;
@@ -33,16 +35,24 @@ export async function selectIn<T = Row>(
   return out;
 }
 
+/** Cloudflare D1 ücretsiz katmanının günlük yazma kotası doldu (UTC gece yarısı sıfırlanır). */
+export class QuotaExceededError extends Error {
+  constructor(detail: string) {
+    super(`D1 günlük yazma kotası doldu: ${detail}`);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Cloudflare D1 (REST)
 
 interface D1Response {
   success: boolean;
   errors: { code: number; message: string }[];
-  result: { success?: boolean; results?: Row[] }[];
+  result: { success?: boolean; results?: Row[]; meta?: { rows_written?: number } }[];
 }
 
 export class D1Rest implements Db {
+  rowsWritten = 0;
   private limiter = new RateLimiter(3);
   constructor(
     private accountId: string,
@@ -73,11 +83,15 @@ export class D1Rest implements Db {
         { limiter: this.limiter },
       );
     } catch (e) {
-      if (e instanceof HttpError) throw new Error(`D1 hatası (${e.status}): ${e.body}`);
+      if (e instanceof HttpError) {
+        if (/row write limit|exceeded D1's free tier/i.test(e.body)) throw new QuotaExceededError(e.body.slice(0, 200));
+        throw new Error(`D1 hatası (${e.status}): ${e.body}`);
+      }
       throw e;
     }
     const json = (await res.json()) as D1Response;
     if (!json.success) throw new Error(`D1 hatası: ${json.errors.map((e) => e.message).join('; ')}`);
+    for (const r of json.result) this.rowsWritten += r.meta?.rows_written ?? 0;
     return json.result;
   }
 
@@ -97,6 +111,7 @@ export class D1Rest implements Db {
 // Yerel SQLite (testler ve yerel deneme için)
 
 export class LocalSqlite implements Db {
+  rowsWritten = 0;
   // node:sqlite deneysel olduğu için dinamik yükleniyor.
   private constructor(private db: import('node:sqlite').DatabaseSync) {}
 
@@ -109,8 +124,15 @@ export class LocalSqlite implements Db {
     this.db.exec(sql);
   }
 
+  /** D1 ile aynı davranmak için parametre sınırını burada da uygularız. */
+  private check(params: Param[] | undefined): Param[] {
+    const p = params ?? [];
+    if (p.length > MAX_PARAMS) throw new Error(`too many SQL variables (${p.length} > ${MAX_PARAMS}, D1 sınırı)`);
+    return p;
+  }
+
   async all<T = Row>(sql: string, params: Param[] = []): Promise<T[]> {
-    return this.db.prepare(sql).all(...params) as T[];
+    return this.db.prepare(sql).all(...this.check(params)) as T[];
   }
 
   async batch(stmts: Stmt[]): Promise<Row[][]> {
@@ -119,7 +141,8 @@ export class LocalSqlite implements Db {
     try {
       for (const s of stmts) {
         const st = this.db.prepare(s.sql);
-        out.push(/^\s*(select|with)\b/i.test(s.sql) || /\breturning\b/i.test(s.sql) ? (st.all(...(s.params ?? [])) as Row[]) : (st.run(...(s.params ?? [])), []));
+        const p = this.check(s.params);
+        out.push(/^\s*(select|with)\b/i.test(s.sql) || /\breturning\b/i.test(s.sql) ? (st.all(...p) as Row[]) : (st.run(...p), []));
       }
       this.db.exec('COMMIT');
     } catch (e) {
@@ -128,4 +151,45 @@ export class LocalSqlite implements Db {
     }
     return out;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Günlük yazma kotası
+
+/** D1 ücretsiz katmanı: günde 100.000 satır yazma. Güvenlik payı bırakıyoruz. */
+export const DAILY_WRITE_LIMIT = 85_000;
+
+const utcDay = () => new Date().toISOString().slice(0, 10);
+
+/** Bugün (UTC) daha önceki çalıştırmalarda yazılan satırlar + bu çalıştırmada yazılanlar */
+export async function writesToday(db: Db): Promise<number> {
+  const rows = await db.all<{ rows: number }>('SELECT rows FROM db_writes WHERE day = ?', [utcDay()]);
+  return (rows[0]?.rows ?? 0) + db.rowsWritten;
+}
+
+/** Çalıştırma sonunda bu bağlantının yazdığı satırları günlük sayaca ekler. */
+export async function recordWrites(db: Db): Promise<void> {
+  const n = db.rowsWritten;
+  console.log(`Veritabanına yazılan satır: ${n} (bugün toplam: ${await writesToday(db)}, ücretsiz kota: 100.000)`);
+  await db.all(
+    'INSERT INTO db_writes (day, rows) VALUES (?, ?) ON CONFLICT (day) DO UPDATE SET rows = rows + excluded.rows',
+    [utcDay(), n],
+  );
+  db.rowsWritten = 0;
+}
+
+/**
+ * Komut satırı işleri için: kota dolduysa işi hata vermeden durdurur (yarım kalan iş
+ * bir sonraki çalıştırmada kaldığı yerden sürer), diğer hatalarda çıkış kodunu 1 yapar.
+ */
+export function exitOnError(e: unknown): void {
+  if (e instanceof QuotaExceededError) {
+    console.log(
+      '::warning::Cloudflare veritabanının günlük ücretsiz yazma kotası doldu. ' +
+        'İş, kota UTC gece yarısı (TR 03:00) sıfırlandıktan sonraki çalıştırmada kaldığı yerden devam edecek.',
+    );
+    return;
+  }
+  console.error(e);
+  process.exitCode = 1;
 }

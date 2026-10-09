@@ -6,6 +6,8 @@
 collect:
   # Bir çalıştırmada eklenecek en fazla yeni kayıt (geriye dönük tarama bu sınırla
   # birkaç güne yayılır; günlük olağan akış ~700 kayıttır).
-  max_new_records_per_run: 6000
+  # Not: her yeni kayıt dizinlerle birlikte ~8 satır yazar; 3000 kayıt ≈ 24.000 satır,
+  # böylece aynı gün triyaj ve editör yazıları için kotada yer kalır.
+  max_new_records_per_run: 3000
   # Günlük kayıt sayısı, son 14 günün ortalamasının bu oranının altına düşerse uyarı ver.
   low_volume_warning_ratio: 0.5

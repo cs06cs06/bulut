@@ -4,7 +4,7 @@
 import { pathToFileURL } from 'node:url';
 import { buildPubmedQuery, loadJournalTiers, loadLimits, loadPubmedConfig } from '../lib/config.ts';
 import { addDays, daysDesc, isoDay } from '../lib/dates.ts';
-import { D1Rest, LocalSqlite, type Db } from '../lib/db.ts';
+import { D1Rest, DAILY_WRITE_LIMIT, exitOnError, LocalSqlite, QuotaExceededError, recordWrites, writesToday, type Db } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
 import { storeRecords } from '../lib/store.ts';
 import { PubmedClient } from '../sources/pubmed.ts';
@@ -62,6 +62,7 @@ export async function collectPubmed(db: Db, client: PubmedClient, log: RunLog, t
       console.log(`  ${day}: ${search.count} bulundu, ${added} yeni, ${merged} birleştirildi`);
       return true;
     } catch (e) {
+      if (e instanceof QuotaExceededError) throw e; // diğer günleri denemenin anlamı yok
       summary.failedDays.push(day);
       await log.event('error', SOURCE, `${day} günü indirilemedi; bir sonraki çalıştırmada yeniden denenecek.`, String(e));
       return false;
@@ -77,7 +78,8 @@ export async function collectPubmed(db: Db, client: PubmedClient, log: RunLog, t
 
   // 2) Geriye dönük tarama (kota kalırsa)
   while (cursor && cursor >= backfillEnd) {
-    if (summary.added >= budget) {
+    // Günlük D1 yazma kotasının yarısını toplamaya ayırıyoruz; kalanı triyaj ve yazılar için.
+    if (summary.added >= budget || (await writesToday(db)) > DAILY_WRITE_LIMIT / 2) {
       summary.backfillRemaining = true;
       await log.event('info', SOURCE, `Geriye dönük tarama kotası doldu; ${cursor} ve öncesi sonraki çalıştırmada taranacak.`);
       break;
@@ -165,17 +167,18 @@ async function main() {
         (s.backfillRemaining ? ' Geriye dönük tarama sürüyor.' : ''),
     );
     await log.finish(status, { pubmed: s });
+    await recordWrites(db);
     if (status === 'failed') process.exitCode = 1;
   } catch (e) {
-    await log.event('error', SOURCE, 'Toplama beklenmedik bir hatayla durdu.', String(e));
-    await log.finish('failed', { error: String(e) });
-    process.exitCode = 1;
+    if (!(e instanceof QuotaExceededError)) {
+      await log.event('error', SOURCE, 'Toplama beklenmedik bir hatayla durdu.', String(e)).catch(() => {});
+      await log.finish('failed', { error: String(e) }).catch(() => {});
+    }
+    await recordWrites(db).catch(() => {});
+    exitOnError(e);
   }
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main().catch((e) => {
-    console.error(e);
-    process.exit(1);
-  });
+  main().catch(exitOnError);
 }
