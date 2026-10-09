@@ -23,9 +23,12 @@ export const load: PageServerLoad = async ({ platform, params }) => {
 
   const row = await db
     .prepare(
-      `SELECT r.work_id AS id, r.impact, r.title_tr, r.hook, r.body, r.basis, r.model, r.created_at,
-              w.title, w.authors, w.journal, w.journal_abbr, w.pub_date, w.doi, w.pmid, w.pmcid, w.is_preprint, w.pub_types
-       FROM reviews r JOIN works w ON w.id = r.work_id WHERE r.work_id = ?1`,
+      `SELECT r.work_id AS id, r.impact, r.title_tr, r.hook, r.body, r.basis, r.model, r.created_at, r.topics,
+              w.title, w.authors, w.journal, w.journal_abbr, w.pub_date, w.doi, w.pmid, w.pmcid, w.is_preprint, w.pub_types,
+              rs.read_at, rs.saved_at
+       FROM reviews r JOIN works w ON w.id = r.work_id
+       LEFT JOIN reading_state rs ON rs.work_id = r.work_id
+       WHERE r.work_id = ?1`,
     )
     .bind(id)
     .first<Record<string, unknown>>();

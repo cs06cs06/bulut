@@ -1,135 +1,69 @@
 <script lang="ts">
-  import { IMPACT_LABEL, fmtDay, fmtTime, sourceLink } from '$lib/format';
+  import Chips from '$lib/components/Chips.svelte';
+  import HeroCard from '$lib/components/HeroCard.svelte';
+  import ReviewRow from '$lib/components/ReviewRow.svelte';
+  import { TOPIC_NAME } from '$lib/topics';
+  import { showToast } from '$lib/toast.svelte';
+
   let { data } = $props();
+  const status = $derived(data.status);
+
+  const chips = $derived([
+    { value: null, label: 'Tümü' },
+    { value: 'yeni', label: status.unread ? `Yeni · ${status.unread}` : 'Yeni' },
+    { value: 'pratik', label: 'Pratiği değiştirebilir' },
+    { value: 'onemli', label: 'Önemli' },
+    ...data.topicChips.map((k) => ({ value: `konu:${k}`, label: TOPIC_NAME[k] ?? k })),
+    { value: 'bilgi', label: 'Bilgi için' },
+    { value: 'onbaski', label: 'Ön baskılar' },
+  ]);
+  const currentLabel = $derived(chips.find((c) => c.value === data.f)?.label ?? '');
 </script>
 
-{#if data.issues.length}
-  <section class="issues" aria-label="Uyarılar">
-    {#each data.issues as i}
-      <p class={i.level}>{i.message}</p>
+<Chips items={chips} current={data.f} />
+
+{#if data.hero.length}
+  <h2 class="section-title">Günün Önemli Gelişmeleri</h2>
+  <div class="carousel">
+    {#each data.hero as card (card.id)}
+      <HeroCard {card} ontoast={showToast} />
     {/each}
-  </section>
+  </div>
 {/if}
 
-<p class="status">
-  Son toplama: {fmtTime(data.lastRuns.collect)} · Son değerlendirme: {fmtTime(data.lastRuns.process)}
-  · <a href="/kayitlar">Tüm kayıtlar</a>
-</p>
+<h2 class="section-title">{data.f ? currentLabel : data.hero.length ? 'Sizin İçin Seçilenler' : 'Editör yazıları'}</h2>
+{#each data.list as card (card.id)}
+  <ReviewRow {card} ontoast={showToast} />
+{:else}
+  <p class="empty">
+    {#if data.f === 'yeni'}Tüm yazıları okudunuz. Yeni yazılar her sabah gelir.{:else if data.f}Bu filtrede yazı yok.{:else}Henüz editör yazısı yok. İlk değerlendirmeler tamamlandığında burada görünecek.{/if}
+  </p>
+{/each}
 
-<h2>Editör yazıları</h2>
-{#if data.reviews.length === 0}
-  <p class="empty">Henüz editör yazısı yok. İlk değerlendirmeler tamamlandığında burada görünecek.</p>
-{/if}
-<ol class="cards">
-  {#each data.reviews as r (r.id)}
-    <li class="card {r.impact}">
-      <a href="/yazi/{r.id}">
-        <span class="impact">{IMPACT_LABEL[r.impact] ?? r.impact}{r.is_preprint ? ' · ön baskı' : ''}</span>
-        <strong class="title">{r.title_tr}</strong>
-        <span class="hook">{r.hook}</span>
-        <span class="src">{r.journal_abbr ?? r.journal ?? ''}{r.pub_date ? ` · ${fmtDay(r.pub_date)}` : ''}</span>
-      </a>
-    </li>
-  {/each}
-</ol>
-
-{#if data.notes.length}
-  <h2>Kısa notlar</h2>
-  <ol class="notes">
-    {#each data.notes as n (n.id)}
-      <li>
-        <strong>{n.title_tr ?? n.title}</strong>
-        <p>{n.summary_tr}</p>
-        <span class="src">
-          {n.journal_abbr ?? n.journal ?? ''}{n.pub_date ? ` · ${fmtDay(n.pub_date)}` : ''}
-          {#if sourceLink(n)}· <a href={sourceLink(n)} target="_blank" rel="noopener noreferrer">kaynak</a>{/if}
-        </span>
-      </li>
-    {/each}
-  </ol>
-{/if}
+<p class="disclaimer">Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.</p>
 
 <style>
-  .issues p {
-    margin: 0 0 8px;
-    padding: 10px 12px;
-    border-radius: 8px;
-    font: 0.9rem/1.4 system-ui, sans-serif;
+  .carousel {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    margin: 0 -16px;
+    padding: 2px 16px 8px;
+    scroll-padding: 16px;
   }
-  .issues .warn {
-    background: var(--warn-bg);
-    color: var(--warn-text);
-  }
-  .issues .error {
-    background: var(--err-bg);
-    color: var(--err-text);
-  }
-  .status {
-    color: var(--muted);
-    font: 0.8rem/1.5 system-ui, sans-serif;
-    margin: 0 0 8px;
-  }
-  h2 {
-    font-size: 1.15rem;
-    margin: 24px 0 8px;
+  .carousel::-webkit-scrollbar {
+    display: none;
   }
   .empty {
     color: var(--muted);
+    padding: 24px 4px;
   }
-  .cards,
-  .notes {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .card {
-    margin: 0 0 12px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    background: var(--surface);
-  }
-  .card a {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
-    text-decoration: none;
-  }
-  .card.practice_changing {
-    border-left: 4px solid var(--tier1);
-  }
-  .card.important {
-    border-left: 4px solid var(--tier2);
-  }
-  .impact {
-    font: 600 0.75rem system-ui, sans-serif;
+  .disclaimer {
+    margin: 32px 0 8px;
+    text-align: center;
+    font-size: 0.75rem;
     color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-  .practice_changing .impact {
-    color: var(--tier1);
-  }
-  .important .impact {
-    color: var(--tier2);
-  }
-  .title {
-    font-size: 1.1rem;
-    line-height: 1.3;
-  }
-  .hook {
-    line-height: 1.45;
-  }
-  .src {
-    color: var(--muted);
-    font: 0.8rem system-ui, sans-serif;
-  }
-  .notes li {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .notes p {
-    margin: 4px 0;
-    line-height: 1.45;
   }
 </style>

@@ -174,10 +174,10 @@
     font-weight: 600;
   }
   .t1 {
-    color: var(--tier1);
+    color: var(--coral);
   }
   .t2 {
-    color: var(--tier2);
+    color: var(--gold);
   }
   .tag {
     color: var(--muted);
@@ -194,7 +194,7 @@
     font-size: 0.95rem;
   }
   .rev {
-    color: var(--accent);
+    color: var(--gold);
     font-weight: 600;
   }
   .src {
