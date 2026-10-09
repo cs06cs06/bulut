@@ -1,88 +1,167 @@
 <script lang="ts">
-  let { children } = $props();
+  import '@fontsource/playfair-display/latin-700.css';
+  import '@fontsource/playfair-display/latin-ext-700.css';
+  import '../app.css';
+  import { page } from '$app/state';
+  import Icon from '$lib/components/Icon.svelte';
+  import { toast } from '$lib/toast.svelte';
+
+  let { children, data } = $props();
+
+  const tabs = [
+    { href: '/', label: 'Ana Sayfa', icon: 'home' },
+    { href: '/kesfet', label: 'Keşfet', icon: 'compass' },
+    { href: '/kaydedilenler', label: 'Kaydedilenler', icon: 'bookmark' },
+    { href: '/ayarlar', label: 'Ayarlar', icon: 'settings' },
+  ] as const;
+
+  const active = (href: string) => (href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href));
+  const reading = $derived(page.url.pathname.startsWith('/yazi/'));
 </script>
 
 <svelte:head>
   <title>Enfeksiyon Gündemi</title>
 </svelte:head>
 
-<div class="shell">
-  <header>
-    <a href="/" class="brand">Enfeksiyon Gündemi</a>
-  </header>
-  <main>
+<div class="app">
+  {#if !reading}
+    <header>
+      <a href="/" class="brand brand-font">Enfeksiyon Gündemi</a>
+      <a href="/ayarlar#durum" class="bell icon-btn" aria-label="Bildirimler">
+        <Icon name="bell" />
+        {#if data.status.warnings.length}<span class="dot warn"></span>{:else if data.status.unread}<span class="dot"></span>{/if}
+      </a>
+    </header>
+  {/if}
+
+  <main class:reading>
     {@render children()}
   </main>
-  <footer>
-    Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
-  </footer>
+
+  {#if toast.msg}
+    <div class="toast" role="status">{toast.msg}</div>
+  {/if}
+
+  <nav class="tabbar" aria-label="Ana menü">
+    {#each tabs as t}
+      <a href={t.href} class:active={active(t.href)} aria-current={active(t.href) ? 'page' : undefined}>
+        <Icon name={t.icon} filled={t.icon === 'bookmark' && active(t.href)} />
+        <span>{t.label}</span>
+        {#if t.href === '/' && data.status.unread}<span class="count">{data.status.unread > 99 ? '99+' : data.status.unread}</span>{/if}
+      </a>
+    {/each}
+  </nav>
 </div>
 
 <style>
-  :global(:root) {
-    --bg: #fbfaf7;
-    --surface: #ffffff;
-    --text: #1d1d1b;
-    --muted: #6b6a66;
-    --line: #e7e4dd;
-    --accent: #9b2c2c;
-    --tier1: #9b2c2c;
-    --tier2: #8a6d1f;
-    --warn-bg: #fff6e0;
-    --warn-text: #6d4c00;
-    --err-bg: #fdecec;
-    --err-text: #8a1c1c;
-    color-scheme: light dark;
-  }
-  @media (prefers-color-scheme: dark) {
-    :global(:root) {
-      --bg: #151514;
-      --surface: #1e1e1c;
-      --text: #ecebe6;
-      --muted: #a4a39d;
-      --line: #33322f;
-      --accent: #e38b8b;
-      --tier1: #e38b8b;
-      --tier2: #d8b65e;
-      --warn-bg: #3a2f12;
-      --warn-text: #f2d58a;
-      --err-bg: #3d1a1a;
-      --err-text: #f3b0b0;
-    }
-  }
-  :global(html, body) {
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: Charter, 'Iowan Old Style', Georgia, serif;
-    -webkit-text-size-adjust: 100%;
-  }
-  :global(a) {
-    color: inherit;
-  }
-  .shell {
-    max-width: 44rem;
+  .app {
+    max-width: 640px;
     margin: 0 auto;
-    padding: 0 16px;
+    min-height: 100dvh;
   }
   header {
-    padding: 20px 0 12px;
-    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    background: var(--glass);
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
   }
   .brand {
-    font-size: 1.5rem;
+    font-size: 1.32rem;
     font-weight: 700;
-    letter-spacing: -0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
     text-decoration: none;
+    color: var(--text);
+  }
+  .bell {
+    position: relative;
+    color: var(--gold);
+  }
+  .dot {
+    position: absolute;
+    top: 8px;
+    right: 9px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    border: 2px solid var(--bg);
+  }
+  .dot.warn {
+    background: #e5534b;
   }
   main {
-    padding: 16px 0 32px;
+    padding: 4px 16px calc(96px + env(safe-area-inset-bottom));
   }
-  footer {
-    border-top: 1px solid var(--line);
-    padding: 16px 0 32px;
+  main.reading {
+    padding-top: 0;
+  }
+  .tabbar {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 20;
+    width: min(calc(100% - 24px), 520px);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 6px;
+    border-radius: 24px;
+    background: var(--glass);
+    border: 1px solid var(--line-strong);
+    box-shadow: var(--shadow);
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
+  }
+  .tabbar a {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 0 6px;
+    border-radius: 18px;
+    text-decoration: none;
+    font-size: 0.7rem;
     color: var(--muted);
-    font-size: 0.85rem;
-    font-family: system-ui, sans-serif;
+  }
+  .tabbar a.active {
+    color: var(--gold);
+    background: var(--gold-soft);
+  }
+  .count {
+    position: absolute;
+    top: 3px;
+    left: calc(50% + 6px);
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--gold);
+    color: var(--bg);
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: grid;
+    place-items: center;
+  }
+  .toast {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(92px + env(safe-area-inset-bottom));
+    z-index: 30;
+    padding: 10px 16px;
+    border-radius: 12px;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 0.88rem;
+    box-shadow: var(--shadow);
+    max-width: calc(100% - 32px);
   }
 </style>

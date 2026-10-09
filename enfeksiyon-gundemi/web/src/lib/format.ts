@@ -6,6 +6,12 @@ export const IMPACT_LABEL: Record<string, string> = {
   informational: 'Bilgi için',
 };
 
+export const IMPACT_SHORT: Record<string, string> = {
+  practice_changing: 'Pratiği değiştirebilir',
+  important: 'Önemli',
+  informational: 'Bilgi',
+};
+
 export const MATURITY_LABEL: Record<string, string> = {
   mature: 'Sağlam kanıt',
   promising_early: 'Heyecan verici ama henüz erken',
