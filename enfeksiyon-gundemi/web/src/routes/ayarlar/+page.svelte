@@ -29,7 +29,6 @@
     }
   }
 
-  const SOURCE_NAME: Record<string, string> = { pubmed: 'PubMed' };
   const KIND_NAME: Record<string, string> = { collect: 'Toplama', process: 'Değerlendirme' };
   const STATUS: Record<string, { label: string; cls: string }> = {
     ok: { label: 'başarılı', cls: 'green' },
@@ -64,7 +63,7 @@
   {#each data.sources as s}
     <div class="line">
       <span class="light {sourceHealth(s)}"></span>
-      <span class="name">{SOURCE_NAME[s.source] ?? s.source}</span>
+      <span class="name">{s.name}</span>
       <span class="val">son başarılı çekim: {fmtTime(s.last_success_at)}</span>
     </div>
     {#if s.backfill_cursor}<p class="sub">Geriye dönük tarama sürüyor.</p>{/if}

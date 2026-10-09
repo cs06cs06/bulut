@@ -11,6 +11,8 @@ export interface NoteRow {
   pub_date: string | null;
   pmid: string | null;
   doi: string | null;
+  url: string | null;
+  kind: string;
   is_preprint: number;
 }
 
@@ -26,18 +28,20 @@ export const load: PageServerLoad = async ({ platform, url }) => {
   const like = `%${likeEscape(q)}%`;
   const noteTopic = topic && /^[a-z_]+$/.test(topic) ? `%"${topic}"%` : '%';
   const preprintOnly = f === 'onbaski' ? 1 : 0;
+  const agencyOnly = f === 'kurum' ? 1 : 0;
 
   const notes = await db
       .prepare(
         `SELECT w.id, w.title, t.title_tr, t.summary_tr, t.importance, COALESCE(w.journal_abbr, w.journal) AS journal,
-                w.pub_date, w.pmid, w.doi, w.is_preprint
+                w.pub_date, w.pmid, w.doi, w.url, w.kind, w.is_preprint
          FROM triage t JOIN works w ON w.id = t.work_id
          WHERE t.relevant = 1 AND w.status != 'reviewed' AND t.importance >= ?1
-           AND COALESCE(t.topics, '') LIKE ?2 AND (?3 = 0 OR w.is_preprint = 1)
-           ${q ? `AND (t.title_tr LIKE ?4 ESCAPE '\\' OR t.summary_tr LIKE ?4 ESCAPE '\\' OR w.title LIKE ?4 ESCAPE '\\')` : ''}
+           AND COALESCE(t.topics, '') LIKE ?2 AND (?3 = 0 OR w.is_preprint = 1) AND (?4 = 0 OR w.kind IN ('report', 'guideline'))
+           AND NOT (w.is_preprint = 1 AND w.linked_work_id IS NOT NULL)
+           ${q ? `AND (t.title_tr LIKE ?5 ESCAPE '\\' OR t.summary_tr LIKE ?5 ESCAPE '\\' OR w.title LIKE ?5 ESCAPE '\\')` : ''}
          ORDER BY t.created_at DESC, t.importance DESC LIMIT 50`,
       )
-      .bind(q ? 2 : 3, noteTopic, preprintOnly, ...(q ? [like] : []))
+      .bind(q ? 2 : 3, noteTopic, preprintOnly, agencyOnly, ...(q ? [like] : []))
       .all();
 
   return {

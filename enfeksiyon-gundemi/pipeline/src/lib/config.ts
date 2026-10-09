@@ -104,6 +104,7 @@ export interface AiConfig {
     min_importance: number;
     candidate_days: number;
     related_reviews: number;
+    fulltext_max_chars?: number;
   };
   budget: { monthly_usd: number };
   batch: { max_wait_minutes: number };
@@ -128,4 +129,58 @@ export function loadTopics(): Topic[] {
 
 export function loadPrompt(name: string): string {
   return readFileSync(join(ROOT, 'prompts', `${name}.md`), 'utf8');
+}
+
+// ---------------------------------------------------------------------------
+// Ek kaynaklar (config/sources.yaml)
+
+export interface FeedSourceConfig {
+  id: string;
+  name: string;
+  url: string;
+  type?: 'rss' | 'who_don';
+  filter?: 'none' | 'keywords';
+  kind?: 'article' | 'report' | 'guideline';
+  language?: string;
+  fetch_detail?: boolean;
+  enabled?: boolean;
+}
+
+export interface PageSourceConfig {
+  id: string;
+  name: string;
+  url: string;
+  link: string;
+  exclude?: string;
+  kind?: 'report' | 'guideline';
+  language?: string;
+  fetch_detail?: boolean;
+  enabled?: boolean;
+}
+
+export interface SourcesConfig {
+  rss: FeedSourceConfig[];
+  agencies: FeedSourceConfig[];
+  pages: PageSourceConfig[];
+  preprints: {
+    medrxiv: { enabled?: boolean; categories: string[]; keyword_categories: string[] };
+    biorxiv: { enabled?: boolean; categories: string[]; keyword_categories: string[] };
+    europepmc: { enabled?: boolean; max_per_run: number };
+  };
+  enrich: { enabled?: boolean; max_per_run: number };
+}
+
+export function loadSourcesConfig(): SourcesConfig {
+  const raw = load<Partial<SourcesConfig>>('sources.yaml');
+  return {
+    rss: raw.rss ?? [],
+    agencies: raw.agencies ?? [],
+    pages: raw.pages ?? [],
+    preprints: raw.preprints ?? {
+      medrxiv: { enabled: false, categories: [], keyword_categories: [] },
+      biorxiv: { enabled: false, categories: [], keyword_categories: [] },
+      europepmc: { enabled: false, max_per_run: 0 },
+    },
+    enrich: raw.enrich ?? { enabled: false, max_per_run: 0 },
+  };
 }

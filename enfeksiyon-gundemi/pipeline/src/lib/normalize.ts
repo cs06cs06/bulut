@@ -22,6 +22,9 @@ export interface NormalizedRecord {
   isPreprint: boolean;
   preprintServer?: string;
   kind: 'article' | 'preprint' | 'guideline' | 'report';
+  url?: string; // DOI/PMID yoksa kaynak sayfa
+  fulltextUrl?: string; // açık tam metin (JATS XML)
+  publishedDoi?: string; // ön baskının yayımlanmış hâli
 }
 
 export function normalizeDoi(raw: string | undefined | null): string | undefined {

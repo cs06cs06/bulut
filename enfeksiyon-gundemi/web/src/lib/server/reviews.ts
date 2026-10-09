@@ -13,13 +13,14 @@ export interface ReviewCard {
   is_preprint: number;
   doi: string | null;
   pmid: string | null;
+  url: string | null;
   read: boolean;
   saved: boolean;
 }
 
 export const CARD_SELECT = `
   SELECT r.work_id AS id, r.impact, r.title_tr, r.hook, r.topics, r.created_at,
-         COALESCE(w.journal_abbr, w.journal) AS journal, w.pub_date, w.is_preprint, w.doi, w.pmid,
+         COALESCE(w.journal_abbr, w.journal) AS journal, w.pub_date, w.is_preprint, w.doi, w.pmid, w.url,
          rs.read_at, rs.saved_at
   FROM reviews r
   JOIN works w ON w.id = r.work_id
@@ -39,6 +40,7 @@ export function toCard(raw: unknown): ReviewCard {
     is_preprint: Number(row.is_preprint ?? 0),
     doi: (row.doi as string) ?? null,
     pmid: (row.pmid as string) ?? null,
+    url: (row.url as string) ?? null,
     read: row.read_at != null,
     saved: row.saved_at != null,
   };

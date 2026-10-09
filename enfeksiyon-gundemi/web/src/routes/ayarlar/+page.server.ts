@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+import { SOURCE_NAME } from '$lib/server/sources';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ platform }) => {
@@ -21,13 +22,18 @@ export const load: PageServerLoad = async ({ platform }) => {
   ]);
 
   return {
-    sources: (sources.results ?? []) as {
-      source: string;
-      last_success_at: string | null;
-      last_attempt_at: string | null;
-      last_error: string | null;
-      backfill_cursor: string | null;
-    }[],
+    sources: (
+      (sources.results ?? []) as {
+        source: string;
+        last_success_at: string | null;
+        last_attempt_at: string | null;
+        last_error: string | null;
+        backfill_cursor: string | null;
+      }[]
+    )
+      .filter((x) => SOURCE_NAME[x.source]) // yapılandırmadan kaldırılan/kapatılan kaynaklar gösterilmez
+      .map((x) => ({ ...x, name: SOURCE_NAME[x.source] }))
+      .sort((a, b) => (a.source === 'pubmed' ? -1 : b.source === 'pubmed' ? 1 : a.name.localeCompare(b.name, 'tr'))),
     runs: (runs.results ?? []) as { kind: string; started_at: string; finished_at: string | null; status: string }[],
     monthCost: Number((cost.results?.[0] as { usd: number } | undefined)?.usd ?? 0),
     events: (events.results ?? []) as { level: string; source: string | null; message: string; created_at: string }[],

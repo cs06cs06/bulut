@@ -72,7 +72,7 @@ async function seed(n: number, extra: ReturnType<typeof rec>[] = []) {
   const db = await freshDb();
   const recs = [
     ...Array.from({ length: n }, (_, i) =>
-      rec({ pmid: String(100 + i), title: `Early antibiotics in sepsis trial number ${i} with long title text`, abstract: 'BACKGROUND: sepsis ...', journalAbbr: 'Clin Infect Dis', pubTypes: ['Randomized Controlled Trial'] }),
+      rec({ pmid: String(100 + i), title: `Early antibiotics in sepsis trial number ${i} with long title text`, abstract: `BACKGROUND: sepsis ${'outcomes in adults '.repeat(25)}`, journalAbbr: 'Clin Infect Dis', pubTypes: ['Randomized Controlled Trial'] }),
     ),
     ...extra,
   ];
@@ -188,4 +188,32 @@ test('gönderim başarısız olursa kayıtlar geri alınır', async () => {
   await assert.rejects(runProcess(deps(db, ai, log)));
   const [{ n }] = await db.all<{ n: number }>(`SELECT COUNT(*) AS n FROM works WHERE status = 'new'`);
   assert.equal(n, 3);
+});
+
+test('açık erişimli tam metin varsa yazı tam metne dayanır; yayımlanmış hâli olan ön baskı seçilmez', async () => {
+  const long = `Background ${'sepsis outcomes in adults '.repeat(25)}`;
+  const db = await seed(0, [
+    rec({ pmid: '500', pmcid: 'PMC123', title: 'Open access sepsis trial with a sufficiently long title here', abstract: long }),
+    rec({ source: 'preprint:medrxiv', sourceId: '10.1101/x', doi: '10.1101/x', isPreprint: true, kind: 'preprint', publishedDoi: '10.1/pub',
+      title: 'Preprint sepsis study which was later published in a journal', abstract: long }),
+    rec({ pmid: '502', doi: '10.1/pub', title: 'Journal version of the sepsis study published in a journal', abstract: long }),
+  ]);
+  const { linkPreprints } = await import('../src/jobs/collect.ts');
+  await linkPreprints(db);
+  const ai = new FakeAi();
+  const log = await RunLog.start(db, 'process');
+  const asked: string[] = [];
+  const s = await runProcess({
+    ...deps(db, ai, log),
+    fullText: async (w) => {
+      asked.push(w.pmcid ?? '');
+      return w.pmcid ? { text: 'METHODS ... RESULTS ...', source: 'Europe PMC', truncated: false } : null;
+    },
+  });
+  assert.equal(s.reviewed, 2, 'ön baskı değil, dergi hâli yazılır');
+  assert.deepEqual(asked, ['PMC123']);
+  const rows = await db.all<{ pmid: string | null; basis: string }>('SELECT w.pmid, r.basis FROM reviews r JOIN works w ON w.id = r.work_id ORDER BY w.pmid');
+  assert.deepEqual(rows.map((r) => [r.pmid, r.basis]), [['500', 'full_text'], ['502', 'abstract']]);
+  const reviewReq = [...ai.batches.values()].flat().find((r) => r.custom_id.startsWith('f'));
+  assert.ok(String(reviewReq?.params.messages[0].content).includes('## Tam metin'));
 });

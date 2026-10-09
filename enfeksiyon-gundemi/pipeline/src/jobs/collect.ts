@@ -2,11 +2,14 @@
 // Önce son günleri (çakışmalı) tarar, kalan kotayla geriye dönük taramayı sürdürür.
 
 import { pathToFileURL } from 'node:url';
-import { buildPubmedQuery, loadJournalTiers, loadLimits, loadPubmedConfig } from '../lib/config.ts';
+import { buildPubmedQuery, loadJournalTiers, loadLimits, loadPubmedConfig, loadSourcesConfig } from '../lib/config.ts';
 import { addDays, daysDesc, isoDay } from '../lib/dates.ts';
 import { D1Rest, DAILY_WRITE_LIMIT, exitOnError, LocalSqlite, QuotaExceededError, recordWrites, writesToday, type Db } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
+import { buildKeywordFilter } from '../lib/keywords.ts';
 import { storeRecords } from '../lib/store.ts';
+import { enrichWorks } from '../sources/enrich.ts';
+import { buildSources, type SourceEntry } from '../sources/index.ts';
 import { PubmedClient } from '../sources/pubmed.ts';
 
 const SOURCE = 'pubmed';
@@ -135,6 +138,84 @@ async function checkVolume(db: Db, log: RunLog, today: string, ratio: number): P
 }
 
 // ---------------------------------------------------------------------------
+// Ek kaynaklar (RSS, kurumlar, sayfa izleme, ön baskılar)
+
+export interface SourceRunSummary {
+  id: string;
+  name: string;
+  ok: boolean;
+  found: number;
+  added: number;
+  merged: number;
+  skipped?: boolean;
+}
+
+/** Her kaynak ayrı çalışır: biri bozulursa diğerleri etkilenmez. */
+export async function collectSources(db: Db, entries: SourceEntry[], log: RunLog, today = isoDay(new Date())): Promise<SourceRunSummary[]> {
+  const tiers = loadJournalTiers();
+  const keywordFilter = buildKeywordFilter(loadPubmedConfig());
+  const out: SourceRunSummary[] = [];
+  for (const { source, lookbackDays } of entries) {
+    // PubMed ve yapay zekâ işleri için kotada yer bırak
+    if ((await writesToday(db)) > DAILY_WRITE_LIMIT * 0.7) {
+      out.push({ id: source.id, name: source.name, ok: true, found: 0, added: 0, merged: 0, skipped: true });
+      continue;
+    }
+    const state = (await db.all<SourceState>('SELECT synced_until, backfill_cursor FROM source_state WHERE source = ?', [source.id]))[0];
+    const since = state?.synced_until ? addDays(state.synced_until, -3) : addDays(today, -lookbackDays);
+    const now = new Date().toISOString();
+    try {
+      const { records, note } = await source.fetch({ since, today, firstRun: !state, db, keywordFilter });
+      const r = await storeRecords(db, records, tiers);
+      out.push({ id: source.id, name: source.name, ok: true, found: records.length, added: r.added, merged: r.merged });
+      await db.batch([
+        {
+          sql: `INSERT INTO source_daily_counts (source, day, found, added) VALUES (?, ?, ?, ?)
+                ON CONFLICT (source, day) DO UPDATE SET found = MAX(found, excluded.found), added = added + excluded.added`,
+          params: [source.id, today, records.length, r.added],
+        },
+        {
+          sql: `INSERT INTO source_state (source, last_success_at, last_attempt_at, last_error, synced_until, updated_at)
+                VALUES (?, ?, ?, NULL, ?, ?)
+                ON CONFLICT (source) DO UPDATE SET last_success_at = excluded.last_success_at, last_attempt_at = excluded.last_attempt_at,
+                  last_error = NULL, synced_until = excluded.synced_until, updated_at = excluded.updated_at`,
+          params: [source.id, now, now, today, now],
+        },
+      ]);
+      console.log(`  ${source.name}: ${records.length} kayıt, ${r.added} yeni, ${r.merged} birleştirildi${note ? ` (${note})` : ''}`);
+    } catch (e) {
+      if (e instanceof QuotaExceededError) throw e;
+      out.push({ id: source.id, name: source.name, ok: false, found: 0, added: 0, merged: 0 });
+      const msg = e instanceof Error ? e.message : String(e);
+      await log.event('error', source.id, `${source.name} kaynağından veri alınamadı; sonraki çalıştırmada yeniden denenecek.`, msg);
+      await db.all(
+        `INSERT INTO source_state (source, last_attempt_at, last_error, updated_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT (source) DO UPDATE SET last_attempt_at = excluded.last_attempt_at, last_error = excluded.last_error, updated_at = excluded.updated_at`,
+        [source.id, now, msg.slice(0, 300), now],
+      );
+    }
+  }
+  return out;
+}
+
+/** Ön baskıyı dergide yayımlanmış hâliyle (DOI üzerinden) iki yönlü bağlar. */
+export async function linkPreprints(db: Db): Promise<void> {
+  await db.batch([
+    {
+      sql: `UPDATE works SET linked_work_id = (SELECT j.id FROM works j WHERE j.doi = works.published_doi AND j.is_preprint = 0 LIMIT 1)
+            WHERE published_doi IS NOT NULL AND is_preprint = 1 AND linked_work_id IS NULL
+              AND EXISTS (SELECT 1 FROM works j WHERE j.doi = works.published_doi AND j.is_preprint = 0)`,
+      params: [],
+    },
+    {
+      sql: `UPDATE works SET linked_work_id = (SELECT p.id FROM works p WHERE p.published_doi = works.doi AND p.is_preprint = 1 LIMIT 1)
+            WHERE is_preprint = 0 AND linked_work_id IS NULL AND doi IN (SELECT published_doi FROM works WHERE published_doi IS NOT NULL)`,
+      params: [],
+    },
+  ]);
+}
+
+// ---------------------------------------------------------------------------
 // Komut satırından çalıştırma
 
 async function main() {
@@ -159,14 +240,42 @@ async function main() {
   const log = await RunLog.start(db, 'collect');
   try {
     const s = await collectPubmed(db, client, log);
-    const status = s.failedDays.length === 0 ? 'ok' : s.days.length > 0 ? 'partial' : 'failed';
+    const pubmedStatus = s.failedDays.length === 0 ? 'ok' : s.days.length > 0 ? 'partial' : 'failed';
     await log.event(
-      status === 'ok' ? 'info' : 'warn',
+      pubmedStatus === 'ok' ? 'info' : 'warn',
       SOURCE,
       `PubMed: ${s.days.length} gün tarandı, ${s.added} yeni kayıt eklendi.` +
         (s.backfillRemaining ? ' Geriye dönük tarama sürüyor.' : ''),
     );
-    await log.finish(status, { pubmed: s });
+
+    console.log('Ek kaynaklar:');
+    const srcCfg = loadSourcesConfig();
+    const others = await collectSources(db, buildSources(srcCfg, loadPubmedConfig()), log);
+    const failed = others.filter((o) => !o.ok);
+    const skipped = others.filter((o) => o.skipped);
+    await log.event(
+      failed.length ? 'warn' : 'info',
+      'sources',
+      `Ek kaynaklar: ${others.length - failed.length - skipped.length}/${others.length} kaynak okundu, ` +
+        `${others.reduce((n, o) => n + o.added, 0)} yeni kayıt.` +
+        (failed.length ? ` Ulaşılamayan: ${failed.map((f) => f.name).join(', ')}.` : '') +
+        (skipped.length ? ` ${skipped.length} kaynak veritabanı kotası nedeniyle ertelendi.` : ''),
+    );
+
+    let enrich = { checked: 0, improved: 0 };
+    if (srcCfg.enrich.enabled !== false) {
+      try {
+        enrich = await enrichWorks(db, srcCfg.enrich.max_per_run);
+        if (enrich.checked) console.log(`Zenginleştirme: ${enrich.checked} kayıt kontrol edildi, ${enrich.improved} tamamlandı`);
+      } catch (e) {
+        if (e instanceof QuotaExceededError) throw e;
+        await log.event('warn', 'enrich', 'Eksik özetler Crossref/OpenAlex ile tamamlanamadı.', String(e));
+      }
+    }
+    await linkPreprints(db);
+
+    const status = pubmedStatus === 'failed' ? 'failed' : pubmedStatus === 'partial' || failed.length ? 'partial' : 'ok';
+    await log.finish(status, { pubmed: s, sources: others, enrich });
     await recordWrites(db);
     if (status === 'failed') process.exitCode = 1;
   } catch (e) {

@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { sourceLink as link } from '$lib/format';
+
   let { data } = $props();
 
   const fmt = (iso: string | null | undefined) =>
@@ -14,11 +16,11 @@
       return [];
     }
   };
-  const link = (w: { pmid: string | null; doi: string | null }) =>
-    w.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${w.pmid}/` : w.doi ? `https://doi.org/${w.doi}` : null;
-  const qs = (tier: number | null, page = 0) => {
+  const KIND_TAG: Record<string, string> = { guideline: 'rehber', report: 'kurum yayını' };
+  const qs = (tier: number | null, page = 0, kind: string | null = null) => {
     const p = new URLSearchParams();
     if (tier) p.set('katman', String(tier));
+    if (kind) p.set('tur', kind);
     if (page) p.set('sayfa', String(page));
     const s = p.toString();
     return s ? `/kayitlar?${s}` : '/kayitlar';
@@ -62,9 +64,11 @@
 </section>
 
 <nav class="filters" aria-label="Filtre">
-  <a href={qs(null)} class:active={!data.tier}>Tümü</a>
+  <a href={qs(null)} class:active={!data.tier && !data.kind}>Tümü</a>
   <a href={qs(1)} class:active={data.tier === 1}>1. katman dergiler</a>
   <a href={qs(2)} class:active={data.tier === 2}>2. katman</a>
+  <a href={qs(null, 0, 'kurum')} class:active={data.kind === 'kurum'}>Kurum ve rehberler</a>
+  <a href={qs(null, 0, 'onbaski')} class:active={data.kind === 'onbaski'}>Ön baskılar</a>
 </nav>
 
 <ol class="list">
@@ -76,6 +80,7 @@
         {#if w.status === 'rejected'}<span class="tag">alakasız</span>{/if}
         {#if w.journal_tier}<span class="tier t{w.journal_tier}">{w.journal_tier}. katman</span>{/if}
         {#if w.is_preprint}<span class="tag">ön baskı</span>{/if}
+        {#if KIND_TAG[w.kind]}<span class="tag">{KIND_TAG[w.kind]}</span>{/if}
         {#each types(w.pub_types) as t}<span class="tag">{t}</span>{/each}
       </div>
       {#if link(w)}
@@ -92,8 +97,8 @@
 </ol>
 
 <nav class="pager">
-  {#if data.page > 0}<a href={qs(data.tier, data.page - 1)}>← Daha yeni</a>{/if}
-  {#if data.hasMore}<a href={qs(data.tier, data.page + 1)}>Daha eski →</a>{/if}
+  {#if data.page > 0}<a href={qs(data.tier, data.page - 1, data.kind)}>← Daha yeni</a>{/if}
+  {#if data.hasMore}<a href={qs(data.tier, data.page + 1, data.kind)}>Daha eski →</a>{/if}
 </nav>
 
 <style>

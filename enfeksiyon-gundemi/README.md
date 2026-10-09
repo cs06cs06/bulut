@@ -5,7 +5,7 @@ bir klinisyen-editör gözüyle değerlendiren ve dijital bir dergi gibi sunan k
 
 > Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
 
-Durum: **2. aşama** (PubMed toplama, triyaj ve editör yazıları). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
+Durum: **4. aşama** (PubMed + dergi beslemeleri, kurumlar, ön baskılar; triyaj ve editör yazıları). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
 
 ---
 
@@ -13,7 +13,7 @@ Durum: **2. aşama** (PubMed toplama, triyaj ve editör yazıları). Ayrıntıl�
 
 | Parça | Nerede çalışır | Ne yapar |
 |---|---|---|
-| Toplayıcı (`pipeline/`) | GitHub Actions, her gün 04:47 ve 12:17 (TR) | PubMed'den yeni kayıtları çeker, yinelenenleri birleştirir, veritabanına yazar |
+| Toplayıcı (`pipeline/`) | GitHub Actions, her gün 04:47 ve 12:17 (TR) | PubMed, dergi RSS'leri, kurumlar (WHO, CDC, ECDC, IDSA, ESCMID, EUCAST, CLSI, KLİMİK) ve ön baskı sunucularından yeni kayıtları çeker, yinelenenleri birleştirir |
 | Değerlendirme (`pipeline/`) | Toplamanın hemen ardından | Haiku ile triyaj, Opus ile editör yazıları (Anthropic Batch API, %50 indirimli) |
 | Veritabanı (`db/`) | Cloudflare D1 | Tüm kayıtlar, çalıştırma günlükleri |
 | Uygulama (`web/`) | Cloudflare Pages | Telefonda okuduğunuz arayüz |
@@ -49,6 +49,9 @@ arayüzünden düzenleyebilirsiniz (dosyayı açın → kalem simgesi → "Commi
 
 - repo → **Actions** sekmesinde kırmızı çarpılı bir çalıştırma varsa tıklayın; hata mesajı Türkçe yazılır.
 - Toplama başarısız olursa bir sonraki çalıştırmada eksik günler kendiliğinden yeniden denenir.
+- Bir kaynağa ulaşılamazsa diğerleri etkilenmez; durum **Ayarlar → Sistem durumu**'nda görünür.
+- Bir kurum sitesi tasarımını değiştirirse o kaynak "bağlantı bulunamadı" uyarısı verir; `config/sources.yaml`'daki
+  ilgili `link` deseni güncellenmeli ya da kaynak geçici olarak kapatılmalıdır.
 
 ## Geliştirici notları
 
@@ -63,7 +66,8 @@ cd pipeline && LOCAL_DB=/tmp/eg.db npm run collect
 cd web && npm ci && npm run build
 ```
 
-- PubMed sorgusu: `config/pubmed.yaml` (MeSH + başlık/özet terimleri, bloklar hâlinde)
+- PubMed sorgusu: `config/pubmed.yaml` (MeSH + başlık/özet terimleri, bloklar hâlinde; aynı terimler diğer kaynaklarda anahtar kelime süzgeci olarak da kullanılır)
+- Diğer kaynaklar: `config/sources.yaml` (her biri `enabled: false` ile kapatılabilir)
 - Dergi katmanları: `config/journals.yaml`
 - Kota/sınırlar: `config/limits.yaml` (D1 ücretsiz katman: günde 100.000 satır yazma, veritabanı başına 500 MB)
 - Yapay zekâ: `config/ai.yaml` (modeller, günlük yazı sayısı, aylık bütçe tavanı), `config/topics.yaml` (konu etiketleri)

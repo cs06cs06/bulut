@@ -26,6 +26,8 @@ export interface WorkForAi {
   kind: string;
   doi: string | null;
   pmid: string | null;
+  pmcid?: string | null;
+  fulltext_url?: string | null;
 }
 
 const arr = (json: string | null): string[] => {
@@ -50,9 +52,11 @@ export function describeWork(w: WorkForAi, opts: { full?: boolean } = {}): strin
   lines.push(`Dergi katmanı: ${w.journal_tier ? `${w.journal_tier}. katman` : 'listede yok'}${w.is_turkish_journal ? ' (Türkiye kaynaklı dergi)' : ''}`);
   if (w.pub_date) lines.push(`Yayın tarihi: ${w.pub_date}`);
   const types = arr(w.pub_types);
-  if (types.length) lines.push(`Yayın türü (PubMed): ${types.join(', ')}`);
+  if (types.length) lines.push(`Yayın türü: ${types.join(', ')}`);
   if (w.is_preprint) lines.push('Not: Bu bir ÖN BASKIDIR (hakem değerlendirmesinden geçmemiş).');
-  if (w.kind === 'report') lines.push('Not: Bu bir kitap bölümü / rapor kaydıdır.');
+  if (w.kind === 'report') lines.push('Not: Bu bir rapor / kurum yayını kaydıdır (hakemli dergi makalesi değil).');
+  if (w.kind === 'guideline') lines.push('Not: Bu bir klinik rehber ya da rehber duyurusudur.');
+  if (!w.pmid && !w.doi && w.kind !== 'article') lines.push('Not: Metin kurumun web sayfasından otomatik alınmıştır; menü vb. kalıntılar içerebilir.');
   const authors = arr(w.authors);
   if (opts.full && authors.length) lines.push(`Yazarlar: ${authors.length > 6 ? `${authors.slice(0, 6).join(', ')} ve ark.` : authors.join(', ')}`);
   const mesh = arr(w.mesh);
@@ -61,7 +65,7 @@ export function describeWork(w: WorkForAi, opts: { full?: boolean } = {}): strin
   if (kw.length) lines.push(`Anahtar kelimeler: ${kw.slice(0, 12).join('; ')}`);
   if (opts.full) {
     const grants = arr(w.grants);
-    lines.push(`Finansman (PubMed kaydı): ${grants.length ? grants.join('; ') : 'belirtilmemiş'}`);
+    lines.push(`Finansman (kayıttaki): ${grants.length ? grants.join('; ') : 'belirtilmemiş'}`);
     lines.push(`Çıkar çatışması beyanı: ${w.coi ?? 'kayıtta yok'}`);
   }
   lines.push('');
@@ -137,15 +141,25 @@ export function buildReviewParams(
   cfg: AiConfig,
   systemPrompt: string,
   topics: Topic[],
+  fullText?: { text: string; source: string; truncated: boolean } | null,
 ): Params {
   const parts: string[] = [];
   parts.push('Aşağıdaki yayın için editör yazısını hazırla.');
   parts.push('');
-  parts.push('Dayanak: yalnızca aşağıdaki künye ve ÖZET (tam metin yok).');
+  parts.push(
+    fullText
+      ? `Dayanak: künye, özet ve TAM METİN (${fullText.source}${fullText.truncated ? '; uzunluk sınırı nedeniyle sonu kısaltıldı' : ''}). Tablolar ve şekiller metne dahil değildir.`
+      : 'Dayanak: yalnızca aşağıdaki künye ve ÖZET (tam metin yok).',
+  );
   if (triage.study_type) parts.push(`Ön değerlendirmedeki yayın türü: ${triage.study_type}`);
   parts.push('');
   parts.push(describeWork(w, { full: true }));
   parts.push('');
+  if (fullText) {
+    parts.push('## Tam metin');
+    parts.push(fullText.text);
+    parts.push('');
+  }
   if (related.length) {
     parts.push('## Daha önce sunulan, konuca ilişkili olabilecek yazılar');
     for (const r of related) parts.push(`- [id ${r.id}] ${r.created_at.slice(0, 10)} — ${r.title_tr}: ${r.hook}`);

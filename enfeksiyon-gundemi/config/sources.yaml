@@ -1,0 +1,154 @@
+# Ek kaynaklar (PubMed dışındakiler)
+# ----------------------------------------------------------------------------
+# Her kaynak "enabled: false" yapılarak kapatılabilir.
+# filter: keywords  → yalnızca enfeksiyon/mikrobiyoloji anahtar kelimeleri geçen kayıtlar alınır
+#                     (genel tıp dergileri ve kurum yayınları için; kelimeler config/pubmed.yaml'dan gelir)
+# filter: none      → tüm kayıtlar alınır (alana özgü dergiler)
+# kind: article | report | guideline  (arayüzdeki ve triyajdaki yayın türü ipucu)
+# fetch_detail: true → beslemedeki açıklama kısaysa yazının kendi sayfası okunur (çalıştırma başına en fazla 10)
+# ----------------------------------------------------------------------------
+
+# PubMed indekslemesindeki gecikmeyi kapatmak için dergi RSS beslemeleri
+rss:
+  - id: lancet_id
+    name: Lancet Infect Dis
+    url: https://www.thelancet.com/rssfeed/laninf_online.xml
+    filter: none
+  - id: lancet_microbe
+    name: Lancet Microbe
+    url: https://www.thelancet.com/rssfeed/lanmic_online.xml
+    filter: none
+  - id: lancet_hiv
+    name: Lancet HIV
+    url: https://www.thelancet.com/rssfeed/lanhiv_online.xml
+    filter: none
+  - id: cid
+    name: Clin Infect Dis
+    url: https://academic.oup.com/rss/site_5269/3135.xml
+    filter: none
+  - id: jac
+    name: J Antimicrob Chemother
+    url: https://academic.oup.com/rss/site_5267/3133.xml
+    filter: none
+  - id: cmi
+    name: Clin Microbiol Infect
+    url: https://www.clinicalmicrobiologyandinfection.org/current.rss
+    filter: none
+  - id: jhi
+    name: J Hosp Infect
+    url: https://www.journalofhospitalinfection.com/current.rss
+    filter: none
+  - id: eid
+    name: Emerg Infect Dis
+    url: https://wwwnc.cdc.gov/eid/rss/ahead-of-print.xml
+    fetch_detail: true      # beslemedeki metin kısa: yazının sayfası okunur
+    filter: none
+  - id: nejm
+    name: N Engl J Med
+    url: https://www.nejm.org/action/showFeed?jc=nejm&type=etoc&feed=rss
+    filter: keywords
+  - id: lancet
+    name: Lancet
+    url: https://www.thelancet.com/rssfeed/lancet_online.xml
+    filter: keywords
+  - id: jama
+    name: JAMA
+    url: https://jamanetwork.com/rss/site_3/67.xml
+    filter: keywords
+  - id: bmj
+    name: BMJ
+    url: https://www.bmj.com/rss/recent.xml
+    filter: keywords
+
+# Kurumlar: rehberler, salgın bildirimleri, raporlar
+agencies:
+  - id: mmwr
+    name: CDC MMWR
+    type: rss
+    url: https://tools.cdc.gov/api/v2/resources/media/342778.rss
+    fetch_detail: true      # beslemedeki metin kısa: yazının sayfası okunur
+    # MMWR başlıkları çoğu zaman yalnızca etken adını içerir; alan dışı olanları triyaj eler
+    filter: none
+    kind: report
+  - id: ecdc_news
+    name: ECDC
+    type: rss
+    url: https://www.ecdc.europa.eu/en/taxonomy/term/1307/feed
+    fetch_detail: true      # beslemedeki metin kısa: yazının sayfası okunur
+    filter: none
+    kind: report
+  - id: ecdc_publications
+    name: ECDC
+    type: rss
+    url: https://www.ecdc.europa.eu/en/taxonomy/term/1244/feed
+    fetch_detail: true      # beslemedeki metin kısa: yazının sayfası okunur
+    filter: none
+    kind: report
+  - id: who_don
+    name: WHO Disease Outbreak News
+    type: who_don
+    url: https://www.who.int/api/news/diseaseoutbreaknews
+    kind: report
+
+# Web sayfası izleme (RSS'i olmayan kaynaklar). Sayfadaki bağlantılardan "link" desenine
+# uyan yeniler kayıt olarak eklenir; sayfa tasarımı değişirse sağlık panosu uyarı verir.
+pages:
+  - id: idsa
+    name: IDSA
+    url: https://www.idsociety.org/practice-guideline/all-practice-guidelines
+    link: ^https://www\.idsociety\.org/practice-guideline/[a-z0-9-]+/?$
+    exclude: (practice-guidelines|all-practice-guidelines|guidelines-in-development)/?$
+    kind: guideline
+  - id: escmid
+    name: ESCMID
+    url: https://www.escmid.org/guidelines-journals/guidelines/published-guidelines/
+    # ESCMID rehberleri dergi makalelerine bağlanır; başlık tablodaki açıklamadan alınır,
+    # makale sayfaları ayrıca indirilmez (özet PubMed/dergi beslemesinden gelir)
+    link: ^https://(www\.clinicalmicrobiologyandinfection\.(com|org)/article/|academic\.oup\.com/|journals\.lww\.com/|doi\.org/|www\.sciencedirect\.com/|link\.springer\.com/|onlinelibrary\.wiley\.com/)
+    kind: guideline
+    fetch_detail: false
+  - id: eucast
+    name: EUCAST
+    url: https://www.eucast.org/
+    link: ^https://www\.eucast\.org/news-detail/[a-z0-9-]+/?$
+    kind: report
+  - id: clsi
+    name: CLSI
+    url: https://clsi.org/about/press-releases/
+    link: ^https://clsi\.org/about/press-releases/[a-z0-9-]+/?$
+    kind: report
+  - id: klimik
+    name: KLİMİK
+    url: https://www.klimik.org.tr/category/haberler/
+    link: ^https://www\.klimik\.org\.tr/20\d\d/\d\d/\d\d/[^/]+/?$
+    kind: report
+    language: tr
+  - id: saglik_bakanligi
+    name: T.C. Sağlık Bakanlığı
+    url: https://hsgm.saglik.gov.tr/tr/duyurular.html
+    link: ^https://hsgm\.saglik\.gov\.tr/tr/.+\.html$
+    kind: report
+    language: tr
+    # Ekim 2026 testinde sayfaya erişilemedi; erişim sağlanırsa açılabilir.
+    enabled: false
+
+# Ön baskılar (ayrı etiketlenir)
+preprints:
+  medrxiv:
+    enabled: true
+    # Bu kategoriler doğrudan alınır; diğerleri anahtar kelime süzgecinden geçer
+    categories: [infectious diseases, hiv aids]
+    keyword_categories: [epidemiology, public and global health, pediatrics, intensive care and critical care medicine]
+  biorxiv:
+    enabled: true
+    categories: []
+    keyword_categories: [microbiology]
+  europepmc:
+    # Europe PMC: diğer ön baskı sunucuları (Research Square, SSRN, Preprints.org vb.)
+    enabled: true
+    max_per_run: 300
+
+# Zenginleştirme: özeti/üst verisi eksik kayıtları Crossref ve OpenAlex ile tamamlar
+enrich:
+  enabled: true
+  max_per_run: 150
