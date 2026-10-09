@@ -31,6 +31,7 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       ACCESS_TEAM_DOMAIN: ${{ secrets.EG_ACCESS_TEAM_DOMAIN }}
       ACCESS_AUD: ${{ secrets.EG_ACCESS_AUD }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -47,6 +48,10 @@ jobs:
         run: |
           npx wrangler pages project create enfeksiyon-gundemi --production-branch=main \
             || echo "Proje zaten var."
+      - name: Soru-cevap anahtarını aktar
+        # Anahtar GitHub Secrets'tan Cloudflare'in şifreli ortam değişkenine aktarılır; günlüğe yazılmaz.
+        if: env.ANTHROPIC_API_KEY != ''
+        run: printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler pages secret put ANTHROPIC_API_KEY --project-name=enfeksiyon-gundemi
       - name: Yayınla
         run: npx wrangler pages deploy --branch=main --commit-dirty=true
       - name: Giriş korumasını doğrula

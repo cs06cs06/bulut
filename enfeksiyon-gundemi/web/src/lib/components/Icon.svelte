@@ -1,6 +1,6 @@
 <script lang="ts">
   // Arayüz simgeleri (çizgi stili, 24×24)
-  type Name = 'history' | 'home' | 'compass' | 'bookmark' | 'settings' | 'bell' | 'share' | 'search' | 'alert' | 'back' | 'external' | 'check';
+  type Name = 'history' | 'home' | 'compass' | 'bookmark' | 'settings' | 'bell' | 'share' | 'search' | 'alert' | 'back' | 'external' | 'check' | 'chat' | 'send';
   let { name, filled = false, size = 22 }: { name: Name; filled?: boolean; size?: number } = $props();
 </script>
 
@@ -43,5 +43,9 @@
     <path d="M14 4h6v6M20 4l-9 9" fill="none" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" fill="none" />
   {:else if name === 'check'}
     <path d="M5 12.5 10 17l9-10" fill="none" />
+  {:else if name === 'chat'}
+    <path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" /><path d="M8 10h8M8 13h5" fill="none" />
+  {:else if name === 'send'}
+    <path d="M12 19V5M6 11l6-6 6 6" fill="none" />
   {/if}
 </svg>

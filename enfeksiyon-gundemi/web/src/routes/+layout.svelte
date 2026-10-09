@@ -12,6 +12,7 @@
   const tabs = [
     { href: '/', label: 'Ana Sayfa', icon: 'home' },
     { href: '/kesfet', label: 'Keşfet', icon: 'compass' },
+    { href: '/sor', label: 'Sor', icon: 'chat' },
     { href: '/kaydedilenler', label: 'Kaydedilenler', icon: 'bookmark' },
     { href: '/ayarlar', label: 'Ayarlar', icon: 'settings' },
   ] as const;
@@ -153,7 +154,7 @@
     z-index: 20;
     width: min(calc(100% - 24px), 520px);
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     padding: 6px;
     border-radius: 24px;
     background: var(--glass);
