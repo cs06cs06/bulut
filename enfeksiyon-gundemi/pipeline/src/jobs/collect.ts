@@ -156,8 +156,8 @@ export async function collectSources(db: Db, entries: SourceEntry[], log: RunLog
   const keywordFilter = buildKeywordFilter(loadPubmedConfig());
   const out: SourceRunSummary[] = [];
   for (const { source, lookbackDays } of entries) {
-    // PubMed ve yapay zekâ işleri için kotada yer bırak
-    if ((await writesToday(db)) > DAILY_WRITE_LIMIT * 0.7) {
+    // Yapay zekâ işleri için kotada yer bırak (ek kaynaklar az yazar ve PubMed'in geriye dönük taramasından önce çalışır)
+    if ((await writesToday(db)) > DAILY_WRITE_LIMIT * 0.85) {
       out.push({ id: source.id, name: source.name, ok: true, found: 0, added: 0, merged: 0, skipped: true });
       continue;
     }
@@ -239,15 +239,7 @@ async function main() {
   const client = new PubmedClient({ apiKey: env.NCBI_API_KEY, email: env.NCBI_EMAIL });
   const log = await RunLog.start(db, 'collect');
   try {
-    const s = await collectPubmed(db, client, log);
-    const pubmedStatus = s.failedDays.length === 0 ? 'ok' : s.days.length > 0 ? 'partial' : 'failed';
-    await log.event(
-      pubmedStatus === 'ok' ? 'info' : 'warn',
-      SOURCE,
-      `PubMed: ${s.days.length} gün tarandı, ${s.added} yeni kayıt eklendi.` +
-        (s.backfillRemaining ? ' Geriye dönük tarama sürüyor.' : ''),
-    );
-
+    // Ek kaynaklar önce: az yazarlar ve geriye dönük PubMed taraması günlük kotayı tüketmeden okunmalılar
     console.log('Ek kaynaklar:');
     const srcCfg = loadSourcesConfig();
     const others = await collectSources(db, buildSources(srcCfg, loadPubmedConfig()), log);
@@ -260,6 +252,16 @@ async function main() {
         `${others.reduce((n, o) => n + o.added, 0)} yeni kayıt.` +
         (failed.length ? ` Ulaşılamayan: ${failed.map((f) => f.name).join(', ')}.` : '') +
         (skipped.length ? ` ${skipped.length} kaynak veritabanı kotası nedeniyle ertelendi.` : ''),
+    );
+
+    console.log('PubMed:');
+    const s = await collectPubmed(db, client, log);
+    const pubmedStatus = s.failedDays.length === 0 ? 'ok' : s.days.length > 0 ? 'partial' : 'failed';
+    await log.event(
+      pubmedStatus === 'ok' ? 'info' : 'warn',
+      SOURCE,
+      `PubMed: ${s.days.length} gün tarandı, ${s.added} yeni kayıt eklendi.` +
+        (s.backfillRemaining ? ' Geriye dönük tarama sürüyor.' : ''),
     );
 
     let enrich = { checked: 0, improved: 0 };
