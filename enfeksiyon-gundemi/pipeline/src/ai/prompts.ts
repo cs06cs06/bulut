@@ -132,6 +132,7 @@ export interface RelatedReview {
   title_tr: string;
   hook: string;
   created_at: string;
+  after?: string | null; // yazının "Şimdi" bölümü: ilişkiyi (destek/çelişki) değerlendirmek için
 }
 
 export function buildReviewParams(
@@ -162,7 +163,10 @@ export function buildReviewParams(
   }
   if (related.length) {
     parts.push('## Daha önce sunulan, konuca ilişkili olabilecek yazılar');
-    for (const r of related) parts.push(`- [id ${r.id}] ${r.created_at.slice(0, 10)} — ${r.title_tr}: ${r.hook}`);
+    for (const r of related) {
+      const after = r.after ? ` (O yazıdaki sonuç: ${r.after.length > 300 ? `${r.after.slice(0, 300)}…` : r.after})` : '';
+      parts.push(`- [id ${r.id}] ${r.created_at.slice(0, 10)} — ${r.title_tr}: ${r.hook}${after}`);
+    }
   } else {
     parts.push('## Daha önce sunulan yazılar\n(Arşivde bu konuda henüz yazı yok.)');
   }

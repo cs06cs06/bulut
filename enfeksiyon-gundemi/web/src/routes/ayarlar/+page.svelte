@@ -63,8 +63,20 @@
 
 <section class="card">
   <h2>Diğer</h2>
+  <a class="link" href="/baski">Geçmiş baskılar</a>
+  <a class="link" href="/saglik">Sistem sağlığı</a>
   <a class="link" href="/kayitlar">Toplanan tüm kayıtlar</a>
   <a class="link" href="/cdn-cgi/access/logout" data-sveltekit-reload>Çıkış yap</a>
+</section>
+
+<section class="card about">
+  <h2>Hakkında</h2>
+  <p>
+    Enfeksiyon Gündemi; PubMed, dergi beslemeleri, kurumlar (WHO, CDC, ECDC, IDSA, ESCMID, EUCAST, CLSI, KLİMİK) ve ön baskı
+    sunucularından her sabah yeni yayınları toplar. Yayınlar yapay zekâ ile ön değerlendirmeden geçer; en önemlileri için editör
+    yazısı hazırlanır. Pazar sabahları haftanın öne çıkanları baskısı yayımlanır.
+  </p>
+  <p>Yazılar yapay zekâ ile hazırlanır ve hata içerebilir; her yazıdan orijinal yayına ulaşabilirsiniz.</p>
 </section>
 
 <p class="disclaimer">Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.</p>
@@ -181,6 +193,12 @@
   .stats span {
     font-size: 0.75rem;
     color: var(--muted);
+  }
+  .about p {
+    margin: 0 0 8px;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    color: var(--text-2);
   }
   .link {
     display: block;

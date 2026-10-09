@@ -23,7 +23,7 @@ function message(model: string, body: unknown, stop: Anthropic.StopReason = 'end
 const reviewBody = {
   title_tr: 'Türkçe başlık', hook: 'Kanca cümlesi.', impact: 'important', before: 'önce', after: 'sonra',
   in_practice: 'pratik', evidence_design: 'RKÇ, n=500', evidence_results: 'RR 0,8', evidence_maturity: 'mature',
-  limitations: 'tek merkez', funding_coi: 'endüstri', context: 'bağlam', related_review_ids: [], turkey: 'yerel veriyle karşılaştırılmalı',
+  limitations: 'tek merkez', funding_coi: 'endüstri', context: 'bağlam', relations: [], turkey: 'yerel veriyle karşılaştırılmalı',
   topics: ['sepsis'], guideline_changes: [], guideline_key_points: [],
 };
 
@@ -34,6 +34,7 @@ class FakeAi implements AiClient {
   refuseReview = new Set<string>(); // custom_id
   fallbackCalls = 0;
   holdNext = false;
+  reviewExtra: Record<string, unknown> = {};
   private n = 0;
 
   async createBatch(requests: BatchRequest[]) {
@@ -57,12 +58,22 @@ class FakeAi implements AiClient {
           study_type: 'rct', title_tr: 'TR başlık', summary_tr: important ? 'kısa not' : '', reason: 'gerekçe',
         });
       } else {
-        msg = message(r.params.model, reviewBody, this.refuseReview.has(r.custom_id) ? 'refusal' : 'end_turn');
+        msg = message(r.params.model, { ...reviewBody, ...this.reviewExtra }, this.refuseReview.has(r.custom_id) ? 'refusal' : 'end_turn');
       }
       yield { custom_id: r.custom_id, result: { type: 'succeeded' as const, message: msg } };
     }
   }
+  weeklyCalls = 0;
   async createWithFallback(params: Anthropic.MessageCreateParamsNonStreaming) {
+    if (JSON.stringify(params.output_config).includes('"intro"')) {
+      this.weeklyCalls++;
+      const ids = [...String(params.messages[0].content).matchAll(/\[id (\d+)\]/g)].map((m) => Number(m[1]));
+      return message(params.model, {
+        title: 'Haftanın başlığı',
+        intro: 'Bu haftanın en önemli üç gelişmesi…',
+        top: [...ids.slice(0, 3), 9999].map((id) => ({ review_id: id, why: 'neden' })),
+      });
+    }
     this.fallbackCalls++;
     return message('claude-opus-5', reviewBody);
   }
@@ -82,6 +93,7 @@ async function seed(n: number, extra: ReturnType<typeof rec>[] = []) {
 
 const deps = (db: Awaited<ReturnType<typeof freshDb>>, ai: AiClient, log: RunLog) => ({
   db, ai, log, sleep: async () => {}, cfg: { ...loadAiConfig(), batch: { max_wait_minutes: 0 } },
+  now: () => new Date('2026-10-09T06:00:00Z'), // cuma: haftalık baskı devreye girmez
 });
 
 test('triyaj → seçim → editör yazısı uçtan uca', async () => {
@@ -230,4 +242,37 @@ test('alakalı yayınlar arama dizinine eklenir; triyajı bitmeyenler beklenir',
   assert.equal(await updateSearchIndex(db, 100), 0, 'aynı yayın iki kez dizinlenmez');
   await storeRecords(db, [rec({ pmid: '960', title: 'A new trial of sepsis fluids in adults with a long title' })], loadJournalTiers());
   assert.equal(await updateSearchIndex(db, 100), 0, 'triyajı bitmemiş yayın beklenir');
+});
+
+test('yazılar arası ilişkiler kaydedilir; var olmayan yazıya bağlantı atılır', async () => {
+  const db = await seed(1);
+  const ai = new FakeAi();
+  const log = await RunLog.start(db, 'process');
+  await runProcess(deps(db, ai, log));
+  const [{ id: first }] = await db.all<{ id: number }>('SELECT id FROM reviews');
+  await storeRecords(db, [rec({ pmid: '700', title: 'Second sepsis trial of early antibiotics with long title text', abstract: `Sepsis ${'x '.repeat(300)}` })], loadJournalTiers());
+  ai.reviewExtra = { relations: [{ review_id: first, relation: 'contradicts', note: 'çelişiyor' }, { review_id: 4242, relation: 'supports', note: 'uydurma' }] };
+  await runProcess(deps(db, ai, log));
+  const links = await db.all<{ dst_review_id: number; relation: string }>('SELECT dst_review_id, relation FROM review_links');
+  assert.deepEqual(links.map((l) => [l.dst_review_id, l.relation]), [[first, 'contradicts']]);
+  const reviewReq = [...ai.batches.values()].flat().filter((r) => r.custom_id === 'w2' && r.params.model.includes('opus'))[0];
+  assert.match(String(reviewReq.params.messages[0].content), new RegExp(`\\[id ${first}\\]`), 'önceki yazı bağlam olarak verilir');
+});
+
+test('pazar günü haftalık baskı bir kez hazırlanır', async () => {
+  const db = await seed(4);
+  const ai = new FakeAi();
+  const log = await RunLog.start(db, 'process');
+  const sunday = { ...deps(db, ai, log), now: () => new Date('2026-10-11T06:00:00Z') };
+  const s = await runProcess(sunday);
+  assert.ok(s.weeklyIssue);
+  const [issue] = await db.all<{ issue_date: string; start_date: string; body: string; review_ids: string }>('SELECT * FROM issues');
+  assert.equal(issue.issue_date, '2026-10-11');
+  assert.equal(issue.start_date, '2026-10-05');
+  assert.equal(JSON.parse(issue.review_ids).length, 4);
+  assert.equal(JSON.parse(issue.body).top.length, 3, 'listede olmayan kimlik atılır, en fazla üç');
+  await runProcess({ ...sunday, now: () => new Date('2026-10-12T06:00:00Z') }); // pazartesi: aynı hafta tekrarlanmaz
+  assert.equal(ai.weeklyCalls, 1);
+  const u = await db.all<{ kind: string }>("SELECT kind FROM ai_usage WHERE kind = 'weekly'");
+  assert.equal(u.length, 1);
 });
