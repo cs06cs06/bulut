@@ -5,7 +5,7 @@ bir klinisyen-editör gözüyle değerlendiren ve dijital bir dergi gibi sunan k
 
 > Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
 
-Durum: **5. aşama** (çok kaynaklı toplama, triyaj, editör yazıları ve soru-cevap). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
+Durum: **6. aşama** (çok kaynaklı toplama, triyaj, editör yazıları, soru-cevap ve sistem sağlığı panosu). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
 
 ---
 
@@ -48,7 +48,12 @@ arayüzünden düzenleyebilirsiniz (dosyayı açın → kalem simgesi → "Commi
 
 ## Sorun olursa
 
+- Önce uygulamada **Ayarlar → Sistem sağlığı**'na bakın: her kaynağın durumu (yeşil/sarı/kırmızı), son hatalar
+  (sade dille), beklenti sapması uyarıları, yapay zekâ maliyeti ve veritabanı kotaları orada. Bir sorun olduğunda
+  başlıktaki saat simgesinde sarı ya da kırmızı bir nokta belirir. Eşikler: `config/limits.yaml` → `health`.
 - repo → **Actions** sekmesinde kırmızı çarpılı bir çalıştırma varsa tıklayın; hata mesajı Türkçe yazılır.
+- GitHub, uzun süre etkinlik olmayan depolarda zamanlanmış işleri durdurabilir; toplama iş akışı bunu önlemek için
+  her çalıştırmada kendini yeniden etkinleştirir. Yine de durduysa: Actions → "Günlük toplama" → *Enable workflow*.
 - Toplama başarısız olursa bir sonraki çalıştırmada eksik günler kendiliğinden yeniden denenir.
 - Bir kaynağa ulaşılamazsa diğerleri etkilenmez; durum **Ayarlar → Sistem durumu**'nda görünür.
 - Bir kurum sitesi tasarımını değiştirirse o kaynak "bağlantı bulunamadı" uyarısı verir; `config/sources.yaml`'daki

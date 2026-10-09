@@ -42,10 +42,11 @@
           e.stopPropagation();
           updOpen = !updOpen;
         }}
-        aria-label="Son güncelleme"
+        aria-label={data.status.health === 'ok' ? 'Son güncelleme' : 'Son güncelleme — sistemde dikkat gerektiren durum var'}
         aria-expanded={updOpen}
       >
         <Icon name="history" size={21} />
+        {#if data.status.health !== 'ok'}<span class="dot {data.status.health}"></span>{/if}
       </button>
       {#if updOpen}
         <div class="upd-pop" role="status">
@@ -56,6 +57,10 @@
           {:else}
             <span>Henüz güncelleme yapılmadı.</span>
           {/if}
+          {#each data.status.issues.slice(0, 3) as i}
+            <span class="issue {i.level}">{i.text}</span>
+          {/each}
+          <a class="health-link" href="/saglik">Sistem sağlığı →</a>
         </div>
       {/if}
     </header>
@@ -126,6 +131,37 @@
     font-size: 0.75rem;
     letter-spacing: 0.06em;
     text-transform: uppercase;
+  }
+  .dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid var(--bg-elev);
+  }
+  .dot.warn {
+    background: #e0a526;
+  }
+  .dot.error {
+    background: #d9534f;
+  }
+  .upd-pop .issue {
+    margin-top: 6px;
+    padding-left: 8px;
+    border-left: 3px solid #e0a526;
+    font-size: 0.82rem;
+  }
+  .upd-pop .issue.error {
+    border-left-color: #d9534f;
+  }
+  .health-link {
+    margin-top: 8px;
+    color: var(--gold);
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-decoration: none;
   }
   .upd-pop .muted {
     color: var(--muted);

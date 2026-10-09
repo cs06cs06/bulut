@@ -105,6 +105,14 @@ export class D1Rest implements Db {
     const result = await this.post({ batch: stmts.map((s) => ({ sql: s.sql, params: s.params ?? [] })) });
     return result.map((r) => r.results ?? []);
   }
+
+  /** Veritabanı dosya boyutu (bayt); sağlık panosundaki 500 MB sınırı göstergesi için */
+  async sizeBytes(): Promise<number | null> {
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/d1/database/${this.databaseId}`;
+    const res = await fetchWithRetry(url, { headers: { Authorization: `Bearer ${this.apiToken}` } }, { limiter: this.limiter });
+    const json = (await res.json()) as { result?: { file_size?: number } };
+    return typeof json.result?.file_size === 'number' ? json.result.file_size : null;
+  }
 }
 
 // ---------------------------------------------------------------------------
