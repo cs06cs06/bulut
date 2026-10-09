@@ -166,6 +166,8 @@
   </section>
 </article>
 
+<a class="ask" href="/sor?yazi={r.id}"><Icon name="chat" size={18} /> Soru sor</a>
+
 <style>
   .topbar {
     position: sticky;
@@ -261,6 +263,23 @@
     line-height: 1.5;
     font-weight: 500;
     color: var(--text);
+  }
+  .ask {
+    position: fixed;
+    right: max(16px, calc(50% - 304px));
+    bottom: calc(86px + env(safe-area-inset-bottom));
+    z-index: 15;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: var(--gold);
+    color: var(--bg);
+    font-weight: 600;
+    font-size: 0.92rem;
+    text-decoration: none;
+    box-shadow: var(--shadow);
   }
   .linked {
     margin: 12px 0 0;

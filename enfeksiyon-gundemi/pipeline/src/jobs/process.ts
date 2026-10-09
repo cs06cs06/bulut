@@ -30,6 +30,7 @@ import {
   type Stmt,
 } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
+import { updateSearchIndex } from '../lib/searchindex.ts';
 import { fetchFullText, type FullText } from '../sources/fulltext.ts';
 
 export const PROMPT_VERSION = 'editor-v1';
@@ -54,6 +55,7 @@ export interface ProcessSummary {
   reviewed: number;
   reviewFailed: number;
   pendingBatches: number;
+  indexed: number;
   spentThisRun: number;
   monthSpent: number;
   budgetBlocked: boolean;
@@ -85,7 +87,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   const s: ProcessSummary = {
     triageSubmitted: 0, triaged: 0, ruleRejected: 0, reviewSubmitted: 0, reviewed: 0, reviewFailed: 0,
-    pendingBatches: 0, spentThisRun: 0, monthSpent: 0, budgetBlocked: false,
+    pendingBatches: 0, indexed: 0, spentThisRun: 0, monthSpent: 0, budgetBlocked: false,
   };
 
   const budgetLeft = async () => cfg.budget.monthly_usd - ((await monthSpend(db, now())) + meter.total());
@@ -337,7 +339,13 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
       let withFullText = 0;
       for (const c of candidates) {
         const ft = c.pmcid || c.fulltext_url ? await getFullText(c, fullTextMax) : null;
-        if (ft) withFullText++;
+        if (ft) {
+          withFullText++;
+          // Makaleye sonradan soru sorulduğunda da aynı metin kullanılır
+          await db.all(`INSERT OR REPLACE INTO fulltexts (work_id, source, text, created_at) VALUES (?, ?, ?, ?)`, [
+            c.id, ft.source, ft.text, now().toISOString(),
+          ]);
+        }
         const mine = new Set<string>(JSON.parse(c.t_topics ?? '[]'));
         const related = recent
           .map((r) => ({ r, overlap: (JSON.parse(r.topics ?? '[]') as string[]).filter((t) => mine.has(t)).length }))
@@ -382,6 +390,10 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
     await db.all(`UPDATE works SET status = 'triaged' WHERE id = ?`, [workId]); // sonraki çalıştırmaya
   }
 
+  // ---- 5) Soru-cevap için arşiv arama dizini ---------------------------------
+  // Dizin satırı başına birkaç satır yazıldığı varsayılır; kotanın sonunda yer bırakılır.
+  s.indexed = await updateSearchIndex(db, Math.min(3000, Math.floor(((await writesLeft()) - 3000) / 10)));
+
   s.spentThisRun = meter.total();
   await meter.flush(db);
   s.monthSpent = await monthSpend(db, now());
@@ -408,6 +420,7 @@ async function main() {
       SRC,
       `Triyaj: ${s.triaged} kayıt değerlendirildi (${s.ruleRejected} kural ile elendi). ` +
         `Editör: ${s.reviewed} yazı hazırlandı${s.reviewFailed ? `, ${s.reviewFailed} hazırlanamadı` : ''}. ` +
+        (s.indexed ? `Arama dizinine ${s.indexed} yayın eklendi. ` : '') +
         `Bu çalıştırmanın maliyeti ~$${s.spentThisRun.toFixed(2)}, bu ay toplam ~$${s.monthSpent.toFixed(2)}.` +
         (s.pendingBatches ? ` ${s.pendingBatches} toplu iş sürüyor, sonraki çalıştırmada tamamlanacak.` : ''),
     );

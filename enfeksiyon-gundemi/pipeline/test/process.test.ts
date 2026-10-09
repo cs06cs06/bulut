@@ -217,3 +217,17 @@ test('açık erişimli tam metin varsa yazı tam metne dayanır; yayımlanmış 
   const reviewReq = [...ai.batches.values()].flat().find((r) => r.custom_id.startsWith('f'));
   assert.ok(String(reviewReq?.params.messages[0].content).includes('## Tam metin'));
 });
+
+test('alakalı yayınlar arama dizinine eklenir; triyajı bitmeyenler beklenir', async () => {
+  const db = await seed(2, [rec({ pmid: '950', title: 'Kızamık aşılaması ve plant pathogens in greenhouse fields', abstract: 'plant study' })]);
+  const ai = new FakeAi();
+  const log = await RunLog.start(db, 'process');
+  const s = await runProcess(deps(db, ai, log));
+  assert.equal(s.indexed, 2, 'alakasız (bitki) yayın dizinlenmez');
+  const hits = await db.all<{ rowid: number }>(`SELECT rowid FROM works_fts WHERE works_fts MATCH ? ORDER BY bm25(works_fts)`, ['sepsis']);
+  assert.equal(hits.length, 2);
+  const { updateSearchIndex } = await import('../src/lib/searchindex.ts');
+  assert.equal(await updateSearchIndex(db, 100), 0, 'aynı yayın iki kez dizinlenmez');
+  await storeRecords(db, [rec({ pmid: '960', title: 'A new trial of sepsis fluids in adults with a long title' })], loadJournalTiers());
+  assert.equal(await updateSearchIndex(db, 100), 0, 'triyajı bitmemiş yayın beklenir');
+});

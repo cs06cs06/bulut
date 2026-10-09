@@ -5,7 +5,7 @@ bir klinisyen-editör gözüyle değerlendiren ve dijital bir dergi gibi sunan k
 
 > Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
 
-Durum: **4. aşama** (PubMed + dergi beslemeleri, kurumlar, ön baskılar; triyaj ve editör yazıları). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
+Durum: **5. aşama** (çok kaynaklı toplama, triyaj, editör yazıları ve soru-cevap). Ayrıntılı plan: [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
 
 ---
 
@@ -17,6 +17,7 @@ Durum: **4. aşama** (PubMed + dergi beslemeleri, kurumlar, ön baskılar; triya
 | Değerlendirme (`pipeline/`) | Toplamanın hemen ardından | Haiku ile triyaj, Opus ile editör yazıları (Anthropic Batch API, %50 indirimli) |
 | Veritabanı (`db/`) | Cloudflare D1 | Tüm kayıtlar, çalıştırma günlükleri |
 | Uygulama (`web/`) | Cloudflare Pages | Telefonda okuduğunuz arayüz |
+| Soru-cevap (`web/`) | Cloudflare Pages | "Sor" sekmesi ve makale sayfasındaki "Soru sor" düğmesi: arşivde arar, bulunan yayınlara dayanarak kaynak numaralarıyla yanıtlar |
 | Ayarlar (`config/`) | Bu repo | Arama sorguları, dergi katmanları, konular, yapay zekâ modelleri, bütçe |
 | Editör talimatları (`prompts/`) | Bu repo | Triyaj ve editör yazısı istemleri (düz Türkçe metin) |
 
@@ -71,11 +72,14 @@ cd web && npm ci && npm run build
 - Dergi katmanları: `config/journals.yaml`
 - Kota/sınırlar: `config/limits.yaml` (D1 ücretsiz katman: günde 100.000 satır yazma, veritabanı başına 500 MB)
 - Yapay zekâ: `config/ai.yaml` (modeller, günlük yazı sayısı, aylık bütçe tavanı), `config/topics.yaml` (konu etiketleri)
-- Editör istemleri: `prompts/triage.md`, `prompts/editor.md`
+- Editör istemleri: `prompts/triage.md`, `prompts/editor.md`; soru-cevap: `prompts/qa.md` (yanıt), `prompts/qa-plan.md` (arama terimleri)
+- Soru-cevap ayarları: `config/ai.yaml` → `qa` (model, en fazla kaynak ve soru sayısı). Arşiv araması yalnızca triyajda
+  alakalı bulunan yayınları kapsar; dizin her değerlendirme çalıştırmasında güncellenir.
 
 ## Maliyet kontrolü
 
 - Aylık bütçe tavanı `config/ai.yaml` → `budget.monthly_usd`. Dolarsa yeni değerlendirme başlatılmaz.
 - Günde en fazla `review.max_per_day` tam editör yazısı.
-- Aynı yayın asla iki kez değerlendirilmez; tüm çağrılar `ai_usage` tablosuna maliyetiyle kaydedilir.
+- Aynı yayın asla iki kez değerlendirilmez; tüm çağrılar (sorular dahil) `ai_usage` tablosuna maliyetiyle kaydedilir.
+- Bütçe dolduğunda yeni soru da alınmaz.
 - Ek güvenlik: Anthropic Console → Settings → Limits'te aylık harcama limiti.
