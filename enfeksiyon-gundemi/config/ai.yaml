@@ -19,6 +19,7 @@ review:
   min_importance: 4         # bu önem puanının (1–5) altındakiler tam yazı almaz
   candidate_days: 7         # seçilmeyen önemli yayınlar kaç gün aday kalır
   related_reviews: 5        # bağlam için verilecek en fazla geçmiş yazı
+  fulltext_max_chars: 40000 # açık erişimli tam metin varsa modele verilecek en fazla karakter (~10.000 token)
 
 budget:
   monthly_usd: 25           # aşılırsa yeni yapay zekâ işi başlatılmaz, panoda uyarı çıkar

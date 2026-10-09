@@ -30,6 +30,7 @@ import {
   type Stmt,
 } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
+import { fetchFullText, type FullText } from '../sources/fulltext.ts';
 
 export const PROMPT_VERSION = 'editor-v1';
 const SRC = 'ai';
@@ -42,6 +43,7 @@ export interface ProcessDeps {
   topics?: Topic[];
   now?: () => Date;
   sleep?: (ms: number) => Promise<void>;
+  fullText?: (w: WorkForAi, maxChars: number) => Promise<FullText | null>;
 }
 
 export interface ProcessSummary {
@@ -58,7 +60,11 @@ export interface ProcessSummary {
 }
 
 const WORK_COLS = `w.id, w.title, w.abstract, w.authors, w.journal, w.journal_abbr, w.journal_tier, w.is_turkish_journal,
-  w.pub_date, w.pub_types, w.mesh, w.keywords, w.coi, w.grants, w.is_preprint, w.kind, w.doi, w.pmid`;
+  w.pub_date, w.pub_types, w.mesh, w.keywords, w.coi, w.grants, w.is_preprint, w.kind, w.doi, w.pmid, w.pmcid, w.fulltext_url`;
+
+type Basis = 'abstract' | 'full_text';
+// Toplu iş kimliğinin ilk harfi yazının dayanağını taşır: w = özet, f = tam metin
+const basisOf = (customId: string): Basis => (customId.startsWith('f') ? 'full_text' : 'abstract');
 
 async function runBatches(db: Db, stmts: Stmt[], size = 50): Promise<void> {
   for (let i = 0; i < stmts.length; i += size) await db.batch(stmts.slice(i, i + size));
@@ -71,6 +77,8 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
   const topicCodes = new Set(topics.map((t) => t.kod));
   const now = deps.now ?? (() => new Date());
   const sleep = deps.sleep ?? ((ms: number) => new Promise((r) => setTimeout(r, ms)));
+  const getFullText = deps.fullText ?? fetchFullText;
+  const fullTextMax = cfg.review.fulltext_max_chars ?? 40_000;
   const meter = new UsageMeter(cfg.prices);
   const triagePrompt = loadPrompt('triage');
   const editorPrompt = loadPrompt('editor');
@@ -85,7 +93,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   // ---- Toplu iş sonuçlarını işleyiciler ----------------------------------
 
-  const refusedReviews: number[] = [];
+  const refusedReviews: { id: number; basis: Basis }[] = [];
 
   async function handleTriageResults(batchId: string): Promise<void> {
     const stmts: Stmt[] = [];
@@ -123,7 +131,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
     await runBatches(db, stmts);
   }
 
-  async function saveReview(workId: number, msg: Anthropic.Message, isBatch: boolean): Promise<'ok' | 'refused' | 'error'> {
+  async function saveReview(workId: number, msg: Anthropic.Message, isBatch: boolean, basis: Basis): Promise<'ok' | 'refused' | 'error'> {
     meter.add('review', msg.model, isBatch, msg.usage);
     const parsed = parseReview(msg, topicCodes);
     if (!parsed.ok) {
@@ -142,7 +150,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
       {
         sql: `INSERT OR REPLACE INTO reviews (work_id, impact, title_tr, hook, body, topics, basis, model, prompt_version, created_at)
               VALUES (?,?,?,?,?,?,?,?,?,?)`,
-        params: [workId, v.impact, v.title_tr, v.hook, JSON.stringify(body), JSON.stringify(v.topics), 'abstract', msg.model, PROMPT_VERSION, now().toISOString()],
+        params: [workId, v.impact, v.title_tr, v.hook, JSON.stringify(body), JSON.stringify(v.topics), basis, msg.model, PROMPT_VERSION, now().toISOString()],
       },
       { sql: `UPDATE works SET status = 'reviewed' WHERE id = ?`, params: [workId] },
     ]);
@@ -157,8 +165,9 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
         await db.all(`UPDATE works SET status = 'triaged' WHERE id = ? AND status = 'review_pending'`, [workId]);
         continue;
       }
-      const outcome = await saveReview(workId, r.result.message, true);
-      if (outcome === 'refused') refusedReviews.push(workId);
+      const basis = basisOf(r.custom_id);
+      const outcome = await saveReview(workId, r.result.message, true, basis);
+      if (outcome === 'refused') refusedReviews.push({ id: workId, basis });
       else if (outcome === 'error') {
         await db.all(`UPDATE works SET status = 'review_failed' WHERE id = ?`, [workId]);
         s.reviewFailed++;
@@ -308,7 +317,8 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
           `SELECT ${WORK_COLS}, t.title_tr, t.study_type, t.topics AS t_topics
            FROM works w JOIN triage t ON t.work_id = w.id
            WHERE w.status = 'triaged' AND t.relevant = 1 AND t.importance >= ? AND w.first_seen_at >= ?
-             AND w.abstract IS NOT NULL
+             AND w.abstract IS NOT NULL AND (LENGTH(w.abstract) >= 400 OR w.pmcid IS NOT NULL OR w.fulltext_url IS NOT NULL)
+             AND NOT (w.is_preprint = 1 AND w.linked_work_id IS NOT NULL) -- dergide yayımlanmış hâli varsa o değerlendirilir
            ORDER BY t.importance DESC, COALESCE(w.journal_tier, 3),
                     CASE WHEN w.pub_types LIKE '%Guideline%' OR w.pub_types LIKE '%Randomized Controlled Trial%'
                               OR w.pub_types LIKE '%Meta-Analysis%' THEN 0 ELSE 1 END,
@@ -323,7 +333,11 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
         `SELECT id, title_tr, hook, created_at, topics FROM reviews WHERE created_at >= ? ORDER BY created_at DESC LIMIT 300`,
         [new Date(now().getTime() - 180 * 864e5).toISOString()],
       );
-      const reqs: BatchRequest[] = candidates.map((c) => {
+      const reqs: BatchRequest[] = [];
+      let withFullText = 0;
+      for (const c of candidates) {
+        const ft = c.pmcid || c.fulltext_url ? await getFullText(c, fullTextMax) : null;
+        if (ft) withFullText++;
         const mine = new Set<string>(JSON.parse(c.t_topics ?? '[]'));
         const related = recent
           .map((r) => ({ r, overlap: (JSON.parse(r.topics ?? '[]') as string[]).filter((t) => mine.has(t)).length }))
@@ -331,17 +345,21 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
           .sort((a, b) => b.overlap - a.overlap)
           .slice(0, cfg.review.related_reviews)
           .map((x) => x.r);
-        return { custom_id: `w${c.id}`, params: buildReviewParams(c, c, related, cfg, editorPrompt, topics) };
-      });
+        reqs.push({ custom_id: `${ft ? 'f' : 'w'}${c.id}`, params: buildReviewParams(c, c, related, cfg, editorPrompt, topics, ft) });
+      }
       await submit('review', reqs, candidates.map((c) => c.id));
       s.reviewSubmitted = reqs.length;
-      await log.event('info', SRC, `${reqs.length} yayın editör değerlendirmesine gönderildi.`);
+      await log.event(
+        'info',
+        SRC,
+        `${reqs.length} yayın editör değerlendirmesine gönderildi` + (withFullText ? ` (${withFullText} tanesi tam metinle).` : '.'),
+      );
     }
   }
   await finishBatches('review', cfg.batch.max_wait_minutes * 60_000);
 
   // ---- 4) Güvenlik filtresine takılan yazılar: yedek modelle tek tek yeniden dene
-  for (const workId of refusedReviews.slice(0, 5)) {
+  for (const { id: workId, basis } of refusedReviews.slice(0, 5)) {
     const [w] = await selectIn<WorkForAi & { title_tr: string | null; study_type: string | null }>(
       db,
       (ph) => `SELECT ${WORK_COLS}, t.title_tr, t.study_type FROM works w JOIN triage t ON t.work_id = w.id WHERE w.id IN (${ph})`,
@@ -349,8 +367,9 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
     );
     let outcome: 'ok' | 'refused' | 'error' = 'error';
     if (w) try {
-      const msg = await ai.createWithFallback(buildReviewParams(w, w, [], cfg, editorPrompt, topics));
-      outcome = await saveReview(workId, msg, false);
+      const ft = basis === 'full_text' ? await getFullText(w, fullTextMax) : null;
+      const msg = await ai.createWithFallback(buildReviewParams(w, w, [], cfg, editorPrompt, topics, ft));
+      outcome = await saveReview(workId, msg, false, ft ? 'full_text' : 'abstract');
     } catch (e) {
       await log.event('warn', SRC, `Yazı ${workId} yedek modelle de hazırlanamadı.`, String(e));
     }
@@ -359,7 +378,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
       s.reviewFailed++;
     }
   }
-  for (const workId of refusedReviews.slice(5)) {
+  for (const { id: workId } of refusedReviews.slice(5)) {
     await db.all(`UPDATE works SET status = 'triaged' WHERE id = ?`, [workId]); // sonraki çalıştırmaya
   }
 

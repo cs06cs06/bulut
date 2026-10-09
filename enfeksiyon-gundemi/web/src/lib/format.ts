@@ -54,6 +54,12 @@ export function parseList(json: string | null | undefined): string[] {
   }
 }
 
-export function sourceLink(w: { pmid: string | null; doi: string | null }): string | null {
-  return w.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${w.pmid}/` : w.doi ? `https://doi.org/${w.doi}` : null;
+/** Orijinal yayının bağlantısı: PubMed, DOI ya da (kurum duyuruları için) kaynak sayfa */
+export function sourceLink(w: { pmid: string | null; doi: string | null; url?: string | null }): string | null {
+  return w.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${w.pmid}/` : w.doi ? `https://doi.org/${w.doi}` : (w.url ?? null);
+}
+
+/** Paylaşım için tercih edilen bağlantı: DOI kalıcıdır, sonra PubMed, sonra kaynak sayfa */
+export function shareLink(w: { pmid: string | null; doi: string | null; url?: string | null }): string | null {
+  return w.doi ? `https://doi.org/${w.doi}` : w.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${w.pmid}/` : (w.url ?? null);
 }

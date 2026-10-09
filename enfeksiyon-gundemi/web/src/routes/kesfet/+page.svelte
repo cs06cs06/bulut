@@ -9,6 +9,7 @@
   const chips = [
     { value: null, label: 'Tümü' },
     { value: 'onbaski', label: 'Ön baskılar' },
+    { value: 'kurum', label: 'Kurum ve rehberler' },
     ...TOPICS.map((t) => ({ value: `konu:${t.kod}`, label: t.ad })),
   ];
 </script>
@@ -29,6 +30,7 @@
     <div class="nhead">
       <span class="imp" title="Önem puanı">{'●'.repeat(Math.max(1, Math.min(5, n.importance)))}</span>
       {#if n.is_preprint}<span class="pre">ön baskı</span>{/if}
+      {#if n.kind === 'guideline'}<span class="pre">rehber</span>{:else if n.kind === 'report'}<span class="pre">kurum</span>{/if}
     </div>
     <strong>{n.title_tr ?? n.title}</strong>
     {#if n.summary_tr}<p>{n.summary_tr}</p>{/if}

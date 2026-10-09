@@ -1,5 +1,7 @@
 // Tarayıcı tarafı işlemler: kaydet, okundu, paylaş.
 
+import { shareLink } from './format';
+
 export async function setState(id: number, change: { read?: boolean; saved?: boolean }): Promise<boolean> {
   try {
     const res = await fetch('/api/durum', {
@@ -15,10 +17,16 @@ export async function setState(id: number, change: { read?: boolean; saved?: boo
 
 /**
  * Paylaşım: uygulama kişisel ve giriş korumalı olduğu için uygulama bağlantısı değil,
- * yayının orijinal bağlantısı (DOI/PubMed) paylaşılır.
+ * yayının orijinal bağlantısı (DOI/PubMed/kaynak sayfa) paylaşılır.
  */
-export async function shareWork(w: { title_tr: string; hook?: string; doi: string | null; pmid: string | null }): Promise<string | null> {
-  const url = w.doi ? `https://doi.org/${w.doi}` : w.pmid ? `https://pubmed.ncbi.nlm.nih.gov/${w.pmid}/` : undefined;
+export async function shareWork(w: {
+  title_tr: string;
+  hook?: string;
+  doi: string | null;
+  pmid: string | null;
+  url?: string | null;
+}): Promise<string | null> {
+  const url = shareLink(w) ?? undefined;
   const text = w.hook ? `${w.title_tr}\n\n${w.hook}` : w.title_tr;
   try {
     if (navigator.share) {

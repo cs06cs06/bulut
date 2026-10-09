@@ -12,7 +12,8 @@
   const r = $derived(data.review as Record<string, any>);
   const b = $derived(data.body);
   const authors = $derived(parseList(r.authors as string));
-  const link = $derived(sourceLink({ pmid: r.pmid, doi: r.doi }));
+  const link = $derived(sourceLink({ pmid: r.pmid, doi: r.doi, url: r.url }));
+  const linkedLink = $derived(r.linked_id ? sourceLink({ pmid: r.linked_pmid, doi: r.linked_doi, url: r.linked_url }) : null);
   const topics = $derived(parseTopics(r.topics as string));
   const v = $derived(visualFor(topics));
   let saved = $state(false);
@@ -34,7 +35,7 @@
     }
   }
   async function share() {
-    const msg = await shareWork({ title_tr: r.title_tr, hook: r.hook, doi: r.doi, pmid: r.pmid });
+    const msg = await shareWork({ title_tr: r.title_tr, hook: r.hook, doi: r.doi, pmid: r.pmid, url: r.url });
     if (msg) showToast(msg);
   }
   function back() {
@@ -72,6 +73,18 @@
 
 <article>
   <p class="hook">{r.hook}</p>
+
+  {#if r.linked_id}
+    <p class="linked">
+      {#if r.is_preprint}
+        Bu ön baskının hakemli dergide yayımlanmış hâli var{r.linked_journal ? ` (${r.linked_journal})` : ''}.
+      {:else}
+        Bu çalışma daha önce ön baskı olarak paylaşılmıştı.
+      {/if}
+      {#if r.linked_review}<a href="/yazi/{r.linked_review}">Diğer yazıya git</a>
+      {:else if linkedLink}<a href={linkedLink} target="_blank" rel="noopener noreferrer">{r.is_preprint ? 'Dergi yayını' : 'Ön baskı'}</a>{/if}
+    </p>
+  {/if}
 
   {#if b.guideline_changes?.length}
     <section class="box gold">
@@ -248,6 +261,20 @@
     line-height: 1.5;
     font-weight: 500;
     color: var(--text);
+  }
+  .linked {
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border: 1px solid var(--gold-line);
+    border-radius: 12px;
+    background: var(--gold-soft);
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .linked a {
+    color: var(--gold);
+    font-weight: 600;
+    margin-left: 4px;
   }
   section {
     margin-top: 26px;

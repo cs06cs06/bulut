@@ -14,7 +14,7 @@ Alakasız sayılanlar:
 ## Önem (importance, 1–5)
 
 Bir enfeksiyon hastalıkları uzmanının pratiği açısından değerlendir:
-- **5**: Pratiği değiştirebilecek yayın. Büyük, iyi tasarlanmış RKÇ; önemli bir rehberin yeni sürümü veya kritik güncellemesi; yeni ve ciddi bir halk sağlığı tehdidi (yeni salgın, yeni direnç mekanizmasının yayılması); kurumsal bir uyarı (CDC, WHO, ECDC vb.).
+- **5**: Pratiği değiştirebilecek yayın. Büyük, iyi tasarlanmış RKÇ; önemli bir rehberin yeni sürümü veya kritik güncellemesi; yeni ve ciddi bir halk sağlığı tehdidi (yeni salgın, yeni direnç mekanizmasının yayılması); yeni ve ciddi bir kurumsal uyarı (CDC, WHO, ECDC vb.).
 - **4**: Önemli gelişme. Sağlam meta-analiz, büyük kohort, yeni ilacın faz 2–3 sonuçları, güçlü tanısal doğruluk çalışması, önemli sürveyans verisi, saygın bir derleme.
 - **3**: Bilgi için değerli. Orta ölçekli çalışmalar, ilginç bulgular, ilgili derlemeler, önemli bir konuda yerel veri.
 - **2**: Sınırlı değer. Küçük, tek merkezli, tanımlayıcı çalışmalar; dar kapsamlı konular.
@@ -25,6 +25,9 @@ Dikkat edilecekler:
 - Vaka sunumları ve mektuplar varsayılan olarak 1–2'dir. İstisna: yeni bir patojen, yeni bir direnç mekanizması veya ciddi bir güvenlik sinyali bildiriyorsa 3–4 olabilir.
 - Türkiye'den veya Türkiye'yi ilgilendiren (KKKA, bruselloz, yerel direnç verisi gibi) yayınları bir puan yukarı değerlendirmeyi düşün; bunu gerekçede belirt.
 - Ön baskılar (henüz hakem değerlendirmesinden geçmemiş) için bir puan aşağı değerlendir; çok önemli bulgular istisnadır.
+- Kurum yayınları (WHO, CDC/MMWR, ECDC, IDSA, ESCMID, EUCAST, CLSI, KLİMİK, Sağlık Bakanlığı vb.): yalnızca gerçekten yeni ve önemli bir salgın bildirimi, güvenlik uyarısı, rehber güncellemesi ya da kırılma noktası/test yöntemi değişikliği 4–5 alır. Rutin sürveyans raporları ve genel bilgilendirme sayfaları 2–3 alır. Kurumun kendi haberleri (atama, toplantı, ödül, etkinlik, kurs, basın bülteni) alakasızdır.
+- Başka bir kaynaktan aktarılan ve yeni bilgi içermeyen haber metinleri en fazla 2 alır.
+- Metin bir web sayfasından otomatik alındıysa menü, çerez uyarısı gibi kalıntılar içerebilir; bunları yok say.
 - Yalnızca verilen metne dayan. Özet yoksa başlık, dergi ve yayın türüne göre temkinli puan ver.
 
 ## Çıktı alanları

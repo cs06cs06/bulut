@@ -24,10 +24,14 @@ export const load: PageServerLoad = async ({ platform, params }) => {
   const row = await db
     .prepare(
       `SELECT r.work_id AS id, r.impact, r.title_tr, r.hook, r.body, r.basis, r.model, r.created_at, r.topics,
-              w.title, w.authors, w.journal, w.journal_abbr, w.pub_date, w.doi, w.pmid, w.pmcid, w.is_preprint, w.pub_types,
-              rs.read_at, rs.saved_at
+              w.title, w.authors, w.journal, w.journal_abbr, w.pub_date, w.doi, w.pmid, w.pmcid, w.url, w.is_preprint, w.pub_types, w.kind,
+              rs.read_at, rs.saved_at,
+              l.id AS linked_id, l.is_preprint AS linked_is_preprint, COALESCE(l.journal_abbr, l.journal) AS linked_journal,
+              l.doi AS linked_doi, l.pmid AS linked_pmid, l.url AS linked_url, lr.work_id AS linked_review
        FROM reviews r JOIN works w ON w.id = r.work_id
        LEFT JOIN reading_state rs ON rs.work_id = r.work_id
+       LEFT JOIN works l ON l.id = w.linked_work_id
+       LEFT JOIN reviews lr ON lr.work_id = l.id
        WHERE r.work_id = ?1`,
     )
     .bind(id)

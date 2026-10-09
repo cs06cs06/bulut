@@ -7,6 +7,7 @@ export interface WorkRow {
   id: number;
   pmid: string | null;
   doi: string | null;
+  url: string | null;
   title: string;
   journal: string | null;
   journal_abbr: string | null;
@@ -27,10 +28,19 @@ export const load: PageServerLoad = async ({ platform, url }) => {
   const tier = url.searchParams.get('katman');
   const page = Math.max(0, Number(url.searchParams.get('sayfa') ?? 0) || 0);
   const tierFilter = tier === '1' || tier === '2' ? Number(tier) : null;
+  const kind = url.searchParams.get('tur');
+  const kindFilter = kind === 'kurum' || kind === 'onbaski' ? kind : null;
+  const where = tierFilter
+    ? 'WHERE w.journal_tier = ?1'
+    : kindFilter === 'kurum'
+      ? "WHERE w.kind IN ('report', 'guideline')"
+      : kindFilter === 'onbaski'
+        ? 'WHERE w.is_preprint = 1'
+        : '';
 
-  const listSql = `SELECT w.id, w.pmid, w.doi, w.title, w.journal, w.journal_abbr, w.journal_tier, w.pub_date, w.pub_types,
+  const listSql = `SELECT w.id, w.pmid, w.doi, w.url, w.title, w.journal, w.journal_abbr, w.journal_tier, w.pub_date, w.pub_types,
                           w.kind, w.is_preprint, w.status, t.title_tr, t.importance
-                   FROM works w LEFT JOIN triage t ON t.work_id = w.id ${tierFilter ? 'WHERE w.journal_tier = ?1' : ''}
+                   FROM works w LEFT JOIN triage t ON t.work_id = w.id ${where}
                    ORDER BY w.first_seen_at DESC, w.id DESC LIMIT ${PAGE_SIZE + 1} OFFSET ${page * PAGE_SIZE}`;
   const listStmt = tierFilter ? db.prepare(listSql).bind(tierFilter) : db.prepare(listSql);
 
@@ -51,6 +61,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
     hasMore: works.length > PAGE_SIZE,
     page,
     tier: tierFilter,
+    kind: kindFilter,
     lastRun: (lastRun.results?.[0] ?? null) as { started_at: string; finished_at: string | null; status: string } | null,
     sources: (sourceState.results ?? []) as {
       source: string;

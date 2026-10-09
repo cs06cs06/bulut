@@ -70,3 +70,19 @@ test('aynı DOI ama farklı PMID (mektup + yanıt) iki ayrı kayıt olur', async
   assert.equal(r.added, 3);
   assert.equal((await db.all('SELECT * FROM work_sources')).length, 3);
 });
+
+test('birleştirmede eksik alanlar tamamlanır, değişiklik yoksa satır yazılmaz', async () => {
+  const db = await freshDb();
+  await storeRecords(db, [rec({ source: 'rss:lancet', sourceId: 'u', doi: '10.1/y', abstract: 'kısa tanıtım', url: 'https://x' })], tiers);
+  const before = db.rowsWritten;
+  await storeRecords(db, [rec({ pmid: '77', doi: '10.1/y', abstract: 'BACKGROUND: çok daha uzun ve ayrıntılı PubMed özeti' })], tiers);
+  const w = await db.all<{ pmid: string; abstract: string; url: string }>('SELECT pmid, abstract, url FROM works');
+  assert.equal(w.length, 1);
+  assert.equal(w[0].pmid, '77');
+  assert.match(w[0].abstract, /PubMed özeti/);
+  assert.equal(w[0].url, 'https://x');
+  // Aynı kayıt tekrar gelirse güncelleme yazılmaz
+  const r = await storeRecords(db, [rec({ source: 'rss:lancet', sourceId: 'u', doi: '10.1/y', abstract: 'kısa tanıtım' })], tiers);
+  assert.equal(r.unchanged, 1);
+  assert.ok(before >= 0);
+});
