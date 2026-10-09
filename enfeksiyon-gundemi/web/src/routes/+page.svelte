@@ -2,7 +2,6 @@
   import Chips from '$lib/components/Chips.svelte';
   import HeroCard from '$lib/components/HeroCard.svelte';
   import ReviewRow from '$lib/components/ReviewRow.svelte';
-  import { fmtTime } from '$lib/format';
   import { TOPIC_NAME } from '$lib/topics';
   import { showToast } from '$lib/toast.svelte';
 
@@ -20,12 +19,6 @@
   ]);
   const currentLabel = $derived(chips.find((c) => c.value === data.f)?.label ?? '');
 </script>
-
-{#if status.lastCollect}
-  <p class="updated">
-    Son güncelleme {fmtTime(status.lastCollect)}{status.newRecords ? ` · ${status.newRecords.toLocaleString('tr-TR')} yeni kayıt tarandı` : ''}
-  </p>
-{/if}
 
 <Chips items={chips} current={data.f} />
 
@@ -50,11 +43,6 @@
 <p class="disclaimer">Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.</p>
 
 <style>
-  .updated {
-    margin: 4px 0 2px;
-    font-size: 0.78rem;
-    color: var(--muted);
-  }
   .carousel {
     display: flex;
     gap: 14px;

@@ -1,6 +1,6 @@
 <script lang="ts">
   // Arayüz simgeleri (çizgi stili, 24×24)
-  type Name = 'home' | 'compass' | 'bookmark' | 'settings' | 'bell' | 'share' | 'search' | 'alert' | 'back' | 'external' | 'check';
+  type Name = 'history' | 'home' | 'compass' | 'bookmark' | 'settings' | 'bell' | 'share' | 'search' | 'alert' | 'back' | 'external' | 'check';
   let { name, filled = false, size = 22 }: { name: Name; filled?: boolean; size?: number } = $props();
 </script>
 
@@ -15,7 +15,9 @@
   stroke-linejoin="round"
   aria-hidden="true"
 >
-  {#if name === 'home'}
+  {#if name === 'history'}
+    <path d="M3 12a9 9 0 1 0 3-6.7L3 8" fill="none" /><path d="M3 3v5h5" fill="none" /><path d="M12 7v5l3.5 2" fill="none" />
+  {:else if name === 'home'}
     <path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
   {:else if name === 'compass'}
     <circle cx="12" cy="12" r="9" fill="none" /><path d="m15.5 8.5-2 5-5 2 2-5z" />

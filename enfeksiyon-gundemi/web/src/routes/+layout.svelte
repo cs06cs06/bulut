@@ -5,6 +5,7 @@
   import { page } from '$app/state';
   import Icon from '$lib/components/Icon.svelte';
   import { toast } from '$lib/toast.svelte';
+  import { fmtTime } from '$lib/format';
 
   let { children, data } = $props();
 
@@ -17,16 +18,45 @@
 
   const active = (href: string) => (href === '/' ? page.url.pathname === '/' : page.url.pathname.startsWith(href));
   const reading = $derived(page.url.pathname.startsWith('/yazi/'));
+  let updOpen = $state(false);
+  $effect(() => {
+    page.url.pathname; // sayfa değişince balonu kapat
+    updOpen = false;
+  });
 </script>
 
 <svelte:head>
   <title>Enfeksiyon Gündemi</title>
 </svelte:head>
 
+<svelte:window onclick={() => (updOpen = false)} />
+
 <div class="app">
   {#if !reading}
     <header>
       <a href="/" class="brand brand-font">Enfeksiyon Gündemi</a>
+      <button
+        class="upd icon-btn"
+        onclick={(e) => {
+          e.stopPropagation();
+          updOpen = !updOpen;
+        }}
+        aria-label="Son güncelleme"
+        aria-expanded={updOpen}
+      >
+        <Icon name="history" size={21} />
+      </button>
+      {#if updOpen}
+        <div class="upd-pop" role="status">
+          {#if data.status.lastCollect}
+            <strong>Son güncelleme</strong>
+            <span>{fmtTime(data.status.lastCollect)}</span>
+            {#if data.status.newRecords}<span class="muted">{data.status.newRecords.toLocaleString('tr-TR')} yeni kayıt tarandı</span>{/if}
+          {:else}
+            <span>Henüz güncelleme yapılmadı.</span>
+          {/if}
+        </div>
+      {/if}
     </header>
   {/if}
 
@@ -66,6 +96,39 @@
     background: var(--glass);
     backdrop-filter: saturate(160%) blur(16px);
     -webkit-backdrop-filter: saturate(160%) blur(16px);
+  }
+  .upd {
+    position: absolute;
+    right: 8px;
+    top: calc(50% + env(safe-area-inset-top) / 2);
+    transform: translateY(-50%);
+    color: var(--gold);
+  }
+  .upd-pop {
+    position: absolute;
+    right: 12px;
+    top: calc(100% - 4px);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 200px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: var(--surface);
+    border: 1px solid var(--gold-line);
+    box-shadow: var(--shadow);
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .upd-pop strong {
+    color: var(--gold);
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .upd-pop .muted {
+    color: var(--muted);
+    font-size: 0.82rem;
   }
   .brand {
     font-size: 1.32rem;
