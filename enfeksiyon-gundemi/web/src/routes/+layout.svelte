@@ -27,10 +27,6 @@
   {#if !reading}
     <header>
       <a href="/" class="brand brand-font">Enfeksiyon Gündemi</a>
-      <a href="/ayarlar#durum" class="bell icon-btn" aria-label="Bildirimler">
-        <Icon name="bell" />
-        {#if data.status.warnings.length}<span class="dot warn"></span>{:else if data.status.unread}<span class="dot"></span>{/if}
-      </a>
     </header>
   {/if}
 
@@ -65,8 +61,8 @@
     z-index: 10;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+    justify-content: center;
+    padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
     background: var(--glass);
     backdrop-filter: saturate(160%) blur(16px);
     -webkit-backdrop-filter: saturate(160%) blur(16px);
@@ -78,23 +74,7 @@
     text-transform: uppercase;
     text-decoration: none;
     color: var(--text);
-  }
-  .bell {
-    position: relative;
-    color: var(--gold);
-  }
-  .dot {
-    position: absolute;
-    top: 8px;
-    right: 9px;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--gold);
-    border: 2px solid var(--bg);
-  }
-  .dot.warn {
-    background: #e5534b;
+    text-align: center;
   }
   main {
     padding: 4px 16px calc(96px + env(safe-area-inset-bottom));

@@ -3,7 +3,7 @@
   import HeroCard from '$lib/components/HeroCard.svelte';
   import Icon from '$lib/components/Icon.svelte';
   import ReviewRow from '$lib/components/ReviewRow.svelte';
-  import { fmtDay, fmtTime, sourceLink } from '$lib/format';
+  import { fmtTime } from '$lib/format';
   import { TOPIC_NAME } from '$lib/topics';
   import { showToast } from '$lib/toast.svelte';
 
@@ -55,25 +55,6 @@
     {#if data.f === 'yeni'}Tüm yazıları okudunuz. Yeni yazılar her sabah gelir.{:else if data.f}Bu filtrede yazı yok.{:else}Henüz editör yazısı yok. İlk değerlendirmeler tamamlandığında burada görünecek.{/if}
   </p>
 {/each}
-
-{#if data.notes.length}
-  <div class="notes-head">
-    <h2 class="section-title">Kısa notlar</h2>
-    <a href="/kesfet">Tümü →</a>
-  </div>
-  <ul class="notes">
-    {#each data.notes as n (n.id)}
-      <li>
-        <strong>{n.title_tr ?? n.title}</strong>
-        <p>{n.summary_tr}</p>
-        <span class="meta">
-          {n.journal ?? ''}{n.pub_date ? ` · ${fmtDay(n.pub_date)}` : ''}
-          {#if sourceLink(n)}· <a href={sourceLink(n)} target="_blank" rel="noopener noreferrer">kaynak</a>{/if}
-        </span>
-      </li>
-    {/each}
-  </ul>
-{/if}
 
 <p class="disclaimer">Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.</p>
 
@@ -141,42 +122,6 @@
   .empty {
     color: var(--muted);
     padding: 24px 4px;
-  }
-  .notes-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-  }
-  .notes-head a {
-    color: var(--gold);
-    text-decoration: none;
-    font-size: 0.9rem;
-  }
-  .notes {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .notes li {
-    padding: 14px 0;
-    border-bottom: 1px solid var(--line);
-  }
-  .notes strong {
-    font-size: 0.98rem;
-    line-height: 1.35;
-  }
-  .notes p {
-    margin: 6px 0;
-    color: var(--text-2);
-    line-height: 1.5;
-    font-size: 0.93rem;
-  }
-  .meta {
-    font-size: 0.8rem;
-    color: var(--muted);
-  }
-  .meta a {
-    color: var(--gold);
   }
   .disclaimer {
     margin: 32px 0 8px;

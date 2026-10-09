@@ -5,7 +5,7 @@
   import Icon from '$lib/components/Icon.svelte';
   import TopicArt from '$lib/components/TopicArt.svelte';
   import { BASIS_NOTE, IMPACT_LABEL, MATURITY_LABEL, fmtDay, parseList, sourceLink } from '$lib/format';
-  import { TOPIC_NAME, parseTopics, visualFor } from '$lib/topics';
+  import { parseTopics, visualFor } from '$lib/topics';
   import { showToast } from '$lib/toast.svelte';
 
   let { data } = $props();
@@ -72,12 +72,6 @@
 
 <article>
   <p class="hook">{r.hook}</p>
-
-  {#if topics.length}
-    <div class="topics">
-      {#each topics as t}<a href="/?f=konu:{t}">{TOPIC_NAME[t] ?? t}</a>{/each}
-    </div>
-  {/if}
 
   {#if b.guideline_changes?.length}
     <section class="box gold">
@@ -254,20 +248,6 @@
     line-height: 1.5;
     font-weight: 500;
     color: var(--text);
-  }
-  .topics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 4px;
-  }
-  .topics a {
-    font-size: 0.78rem;
-    padding: 4px 10px;
-    border-radius: 999px;
-    background: var(--surface-2);
-    color: var(--text-2);
-    text-decoration: none;
   }
   section {
     margin-top: 26px;
