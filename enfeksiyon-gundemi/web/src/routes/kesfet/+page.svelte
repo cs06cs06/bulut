@@ -1,62 +1,45 @@
 <script lang="ts">
   import Chips from '$lib/components/Chips.svelte';
   import Icon from '$lib/components/Icon.svelte';
-  import ReviewRow from '$lib/components/ReviewRow.svelte';
   import { fmtDay, sourceLink } from '$lib/format';
   import { TOPICS } from '$lib/topics';
-  import { showToast } from '$lib/toast.svelte';
 
   let { data } = $props();
 
   const chips = [
     { value: null, label: 'Tümü' },
-    { value: 'pratik', label: 'Pratiği değiştirebilir' },
-    { value: 'onemli', label: 'Önemli' },
-    { value: 'bilgi', label: 'Bilgi için' },
     { value: 'onbaski', label: 'Ön baskılar' },
     ...TOPICS.map((t) => ({ value: `konu:${t.kod}`, label: t.ad })),
   ];
-  const showNotes = $derived(!data.f || data.f.startsWith('konu:') || data.f === 'onbaski');
 </script>
 
 <h1 class="title">Keşfet</h1>
 
 <form class="search" method="GET" action="/kesfet" role="search">
   <Icon name="search" size={20} />
-  <input name="q" type="search" value={data.q} placeholder="Arşivde ara: karbapenem, kandida, aşı…" enterkeyhint="search" autocomplete="off" />
+  <input name="q" type="search" value={data.q} placeholder="Kısa notlarda ara: karbapenem, kandida, aşı…" enterkeyhint="search" autocomplete="off" />
   {#if data.f}<input type="hidden" name="f" value={data.f} />{/if}
 </form>
 
 <Chips items={chips} current={data.f} base="/kesfet" />
 
-{#if data.reviews.length}
-  <h2 class="section-title">Editör yazıları</h2>
-  {#each data.reviews as card (card.id)}
-    <ReviewRow {card} ontoast={showToast} />
-  {/each}
-{:else if data.q || (data.f && !showNotes)}
-  <p class="empty">Bu aramada editör yazısı bulunamadı.</p>
-{/if}
-
-{#if showNotes}
-  <h2 class="section-title">{data.q ? 'Kısa notlar ve diğer yayınlar' : 'Kısa notlar'}</h2>
-  {#each data.notes as n (n.id)}
-    <div class="note">
-      <div class="nhead">
-        <span class="imp" title="Önem puanı">{'●'.repeat(Math.max(1, Math.min(5, n.importance)))}</span>
-        {#if n.is_preprint}<span class="pre">ön baskı</span>{/if}
-      </div>
-      <strong>{n.title_tr ?? n.title}</strong>
-      {#if n.summary_tr}<p>{n.summary_tr}</p>{/if}
-      <span class="meta">
-        {n.journal ?? ''}{n.pub_date ? ` · ${fmtDay(n.pub_date)}` : ''}
-        {#if sourceLink(n)}· <a href={sourceLink(n)} target="_blank" rel="noopener noreferrer">kaynak</a>{/if}
-      </span>
+<h2 class="section-title">{data.q ? 'Kısa notlar ve diğer yayınlar' : 'Kısa notlar'}</h2>
+{#each data.notes as n (n.id)}
+  <div class="note">
+    <div class="nhead">
+      <span class="imp" title="Önem puanı">{'●'.repeat(Math.max(1, Math.min(5, n.importance)))}</span>
+      {#if n.is_preprint}<span class="pre">ön baskı</span>{/if}
     </div>
-  {:else}
-    <p class="empty">Kayıt bulunamadı.</p>
-  {/each}
-{/if}
+    <strong>{n.title_tr ?? n.title}</strong>
+    {#if n.summary_tr}<p>{n.summary_tr}</p>{/if}
+    <span class="meta">
+      {n.journal ?? ''}{n.pub_date ? ` · ${fmtDay(n.pub_date)}` : ''}
+      {#if sourceLink(n)}· <a href={sourceLink(n)} target="_blank" rel="noopener noreferrer">kaynak</a>{/if}
+    </span>
+  </div>
+{:else}
+  <p class="empty">Kayıt bulunamadı.</p>
+{/each}
 
 <a class="all" href="/kayitlar">Toplanan tüm kayıtlar (triyajda elenenler dahil) →</a>
 
