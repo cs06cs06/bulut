@@ -215,6 +215,19 @@ export async function linkPreprints(db: Db): Promise<void> {
   ]);
 }
 
+/** Sağlık panosu için veritabanı boyutunu kaydeder, 90 günden eski çalıştırma ayrıntılarını siler. */
+export async function housekeeping(db: Db, now = new Date()): Promise<void> {
+  const cutoff = new Date(now.getTime() - 90 * 864e5).toISOString();
+  await db.all(`DELETE FROM run_events WHERE created_at < ?`, [cutoff]);
+  if (db instanceof D1Rest) {
+    const size = await db.sizeBytes().catch(() => null);
+    if (size != null)
+      await db.all(`INSERT INTO app_state (key, value) VALUES ('db_size', ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`, [
+        String(size),
+      ]);
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Komut satırından çalıştırma
 
@@ -275,6 +288,7 @@ async function main() {
       }
     }
     await linkPreprints(db);
+    await housekeeping(db);
 
     const status = pubmedStatus === 'failed' ? 'failed' : pubmedStatus === 'partial' || failed.length ? 'partial' : 'ok';
     await log.finish(status, { pubmed: s, sources: others, enrich });

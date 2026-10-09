@@ -1,29 +1,28 @@
+import { quickHealth, type Issue, type Level } from '$lib/server/health';
 import type { LayoutServerLoad } from './$types';
 
 export interface Status {
   unread: number;
-  warnings: { level: string; message: string; created_at: string }[];
+  health: Level;
+  issues: Issue[];
   lastCollect: string | null;
   newRecords: number | null;
 }
 
-/** Her sayfada gerekli küçük durum bilgisi: okunmamış yazı sayısı ve uyarılar (zil + şerit). */
+/** Her sayfada gerekli küçük durum bilgisi: okunmamış yazı sayısı, son güncelleme ve sistem sağlığı özeti. */
 export const load: LayoutServerLoad = async ({ platform, depends }) => {
   depends('app:durum');
   const db = platform?.env.DB;
-  if (!db) return { status: { unread: 0, warnings: [], lastCollect: null, newRecords: null } satisfies Status };
+  if (!db) return { status: { unread: 0, health: 'ok', issues: [], lastCollect: null, newRecords: null } satisfies Status };
 
-  const [unread, warnings, lastCollect] = await db.batch([
-    db.prepare(
-      `SELECT COUNT(*) AS n FROM reviews r LEFT JOIN reading_state rs ON rs.work_id = r.work_id WHERE rs.read_at IS NULL`,
-    ),
-    db
-      .prepare(
-        `SELECT level, message, created_at FROM run_events
-         WHERE level IN ('warn','error') AND created_at >= ?1 ORDER BY id DESC LIMIT 5`,
-      )
-      .bind(new Date(Date.now() - 36 * 3600e3).toISOString()),
-    db.prepare(`SELECT finished_at, summary FROM runs WHERE kind = 'collect' AND status IN ('ok','partial') ORDER BY id DESC LIMIT 1`),
+  const [[unread, lastCollect], health] = await Promise.all([
+    db.batch([
+      db.prepare(
+        `SELECT COUNT(*) AS n FROM reviews r LEFT JOIN reading_state rs ON rs.work_id = r.work_id WHERE rs.read_at IS NULL`,
+      ),
+      db.prepare(`SELECT finished_at, summary FROM runs WHERE kind = 'collect' AND status IN ('ok','partial') ORDER BY id DESC LIMIT 1`),
+    ]),
+    quickHealth(db).catch(() => null),
   ]);
 
   const lc = lastCollect.results?.[0] as { finished_at: string; summary: string | null } | undefined;
@@ -37,7 +36,8 @@ export const load: LayoutServerLoad = async ({ platform, depends }) => {
   return {
     status: {
       unread: Number((unread.results?.[0] as { n: number } | undefined)?.n ?? 0),
-      warnings: (warnings.results ?? []) as Status['warnings'],
+      health: health?.level ?? 'ok',
+      issues: health?.issues ?? [],
       lastCollect: lc?.finished_at ?? null,
       newRecords,
     } satisfies Status,

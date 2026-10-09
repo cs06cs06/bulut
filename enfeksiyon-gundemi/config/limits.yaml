@@ -11,3 +11,15 @@ collect:
   max_new_records_per_run: 3000
   # Günlük kayıt sayısı, son 14 günün ortalamasının bu oranının altına düşerse uyarı ver.
   low_volume_warning_ratio: 0.5
+
+# Sistem sağlığı panosu (Ayarlar → Sistem sağlığı) ve başlıktaki uyarı noktası
+health:
+  # Bir kaynaktan bu kadar saattir başarılı veri gelmediyse sarı, ikinci süreyi aşarsa kırmızı
+  stale_hours: 30
+  dead_hours: 48
+  # Beklenti sapması: son günlerde gelen kayıt sayısı olağanın bu oranının altına düşerse uyarı.
+  # Yoğun kaynaklarda (günde 20+ kayıt) son 3 güne, seyreklerde son 7 güne bakılır.
+  deviation_ratio_busy: 0.5
+  deviation_ratio_sparse: 0.3
+  # Aylık yapay zekâ bütçesinin bu oranı harcanınca sarı uyarı
+  budget_warn_ratio: 0.8

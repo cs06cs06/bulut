@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { fmtTime } from '$lib/format';
 
   let { data } = $props();
 
@@ -29,21 +28,7 @@
     }
   }
 
-  const KIND_NAME: Record<string, string> = { collect: 'Toplama', process: 'Değerlendirme' };
-  const STATUS: Record<string, { label: string; cls: string }> = {
-    ok: { label: 'başarılı', cls: 'green' },
-    partial: { label: 'kısmen', cls: 'yellow' },
-    failed: { label: 'başarısız', cls: 'red' },
-    running: { label: 'sürüyor', cls: 'yellow' },
-  };
 
-  function sourceHealth(s: { last_success_at: string | null; last_error: string | null }) {
-    if (!s.last_success_at) return 'red';
-    const hours = (Date.now() - new Date(s.last_success_at).getTime()) / 3600e3;
-    if (hours > 48) return 'red';
-    if (hours > 30 || s.last_error) return 'yellow';
-    return 'green';
-  }
 </script>
 
 <h1 class="title">Ayarlar</h1>
@@ -60,36 +45,20 @@
 
 <section class="card" id="durum">
   <h2>Sistem durumu</h2>
-  {#each data.sources as s}
-    <div class="line">
-      <span class="light {sourceHealth(s)}"></span>
-      <span class="name">{s.name}</span>
-      <span class="val">son başarılı çekim: {fmtTime(s.last_success_at)}</span>
-    </div>
-    {#if s.backfill_cursor}<p class="sub">Geriye dönük tarama sürüyor.</p>{/if}
-  {/each}
+  <a class="health" href="/saglik">
+    <span class="light {data.status.health === 'ok' ? 'green' : data.status.health === 'warn' ? 'yellow' : 'red'}"></span>
+    <span class="htext">
+      <strong>{data.status.health === 'ok' ? 'Her şey yolunda' : data.status.health === 'warn' ? 'Dikkat gerektiren durumlar var' : 'Müdahale gerektiren bir sorun var'}</strong>
+      {#each data.status.issues.slice(0, 3) as i}<span>{i.text}</span>{/each}
+      <span class="go">Sistem sağlığı panosu →</span>
+    </span>
+  </a>
   <div class="stats">
     <div><strong>{Number(data.counts.works ?? 0).toLocaleString('tr-TR')}</strong><span>toplanan kayıt</span></div>
     <div><strong>{data.counts.reviews}</strong><span>editör yazısı</span></div>
     <div><strong>{Number(data.counts.pending ?? 0).toLocaleString('tr-TR')}</strong><span>değerlendirme bekleyen</span></div>
     <div><strong>${data.monthCost.toFixed(2)}</strong><span>bu ayki yapay zekâ maliyeti</span></div>
   </div>
-
-  <h3>Son çalıştırmalar</h3>
-  {#each data.runs as r}
-    <div class="line">
-      <span class="light {STATUS[r.status]?.cls ?? 'yellow'}"></span>
-      <span class="name">{KIND_NAME[r.kind] ?? r.kind}</span>
-      <span class="val">{fmtTime(r.finished_at ?? r.started_at)} · {STATUS[r.status]?.label ?? r.status}</span>
-    </div>
-  {/each}
-
-  {#if data.events.length}
-    <h3>Son uyarılar</h3>
-    {#each data.events as e}
-      <p class="event {e.level}"><span>{fmtTime(e.created_at)}</span> {e.message}</p>
-    {/each}
-  {/if}
 </section>
 
 <section class="card">
@@ -121,10 +90,6 @@
     text-transform: uppercase;
     color: var(--gold);
   }
-  h3 {
-    margin: 18px 0 8px;
-    font-size: 0.9rem;
-  }
   .seg {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -153,26 +118,30 @@
     color: var(--muted);
     line-height: 1.45;
   }
-  .line {
+  .health {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 0;
-    font-size: 0.9rem;
+    gap: 12px;
+    align-items: flex-start;
+    text-decoration: none;
+    color: var(--text);
   }
-  .name {
+  .health .light {
+    margin-top: 5px;
+  }
+  .htext {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+  }
+  .htext strong {
+    font-size: 0.98rem;
+  }
+  .htext .go {
+    color: var(--gold);
     font-weight: 600;
-  }
-  .val {
-    margin-left: auto;
-    color: var(--muted);
-    font-size: 0.8rem;
-    text-align: right;
-  }
-  .sub {
-    margin: 0 0 6px 20px;
-    font-size: 0.8rem;
-    color: var(--muted);
+    margin-top: 2px;
   }
   .light {
     width: 10px;
@@ -212,23 +181,6 @@
   .stats span {
     font-size: 0.75rem;
     color: var(--muted);
-  }
-  .event {
-    margin: 0 0 8px;
-    padding: 8px 10px;
-    border-radius: 10px;
-    font-size: 0.82rem;
-    line-height: 1.4;
-    background: var(--warn-bg);
-    color: var(--warn-text);
-  }
-  .event.error {
-    background: var(--err-bg);
-    color: var(--err-text);
-  }
-  .event span {
-    opacity: 0.7;
-    margin-right: 4px;
   }
   .link {
     display: block;
