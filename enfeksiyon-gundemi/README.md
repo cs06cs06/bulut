@@ -40,7 +40,10 @@ arayüzünden düzenleyebilirsiniz (dosyayı açın → kalem simgesi → "Commi
 
 3. Kod `main` dalına geldiğinde **Yayın** iş akışı veritabanını ve siteyi kendiliğinden kurar.
    Elle başlatmak için: repo → **Actions** → "Enfeksiyon Gündemi · Yayın" → **Run workflow**.
-4. **Giriş koruması (Cloudflare Access):** adım adım talimatlar 1. aşamanın sonunda verilecek.
+4. **Giriş koruması (Cloudflare Access):** Cloudflare → Workers & Pages → proje → Settings → *Restrict previews*;
+   ardından Zero Trust → Access → Applications'ta oluşan uygulamanın Subdomain kutusundaki `*` silinip kaydedilir
+   (böylece ana adres de korunur) ve *Restrict previews*'a bir kez daha basılır. Uygulamanın AUD değeri ve ekip alan adı
+   yukarıdaki iki secret'a girilir; uygulama bu imzayı ayrıca kendisi de doğrular.
 
 ## Sorun olursa
 
