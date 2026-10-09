@@ -25,6 +25,7 @@ export const STUDY_TYPES = [
 
 export const IMPACTS = ['practice_changing', 'important', 'informational'] as const;
 export const MATURITY = ['mature', 'promising_early', 'preliminary'] as const;
+export const RELATIONS = ['supports', 'contradicts', 'extends', 'updates', 'similar'] as const;
 
 export function triageSchema(topics: Topic[]) {
   return {
@@ -60,7 +61,7 @@ export function reviewSchema(topics: Topic[]) {
     additionalProperties: false,
     required: [
       'title_tr', 'hook', 'impact', 'before', 'after', 'in_practice', 'evidence_design', 'evidence_results',
-      'evidence_maturity', 'limitations', 'funding_coi', 'context', 'related_review_ids', 'turkey', 'topics',
+      'evidence_maturity', 'limitations', 'funding_coi', 'context', 'relations', 'turkey', 'topics',
       'guideline_changes', 'guideline_key_points',
     ],
     properties: {
@@ -76,7 +77,15 @@ export function reviewSchema(topics: Topic[]) {
       limitations: str,
       funding_coi: str,
       context: str,
-      related_review_ids: { type: 'array', items: { type: 'integer' } },
+      relations: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: false,
+          required: ['review_id', 'relation', 'note'],
+          properties: { review_id: { type: 'integer' }, relation: { type: 'string', enum: [...RELATIONS] }, note: str },
+        },
+      },
       turkey: str,
       topics: { type: 'array', items: { type: 'string', enum: topics.map((t) => t.kod) } },
       guideline_changes: {
@@ -106,6 +115,7 @@ export interface ReviewOutput {
   limitations: string;
   funding_coi: string;
   context: string;
+  relations: { review_id: number; relation: (typeof RELATIONS)[number]; note: string }[];
   related_review_ids: number[];
   turkey: string;
   topics: string[];
@@ -141,9 +151,18 @@ export function validateReview(v: unknown, topicCodes: Set<string>): ReviewOutpu
   if (!textFields.every((k) => isStr(o[k]))) return null;
   if (!IMPACTS.includes(o.impact as never) || !MATURITY.includes(o.evidence_maturity as never)) return null;
   if (!(o.title_tr as string).trim() || !(o.hook as string).trim()) return null;
+  const seen = new Set<number>();
+  const relations = (Array.isArray(o.relations) ? (o.relations as Record<string, unknown>[]) : [])
+    .filter(
+      (r) =>
+        r && Number.isInteger(r.review_id) && RELATIONS.includes(r.relation as never) && isStr(r.note) &&
+        !seen.has(r.review_id as number) && seen.add(r.review_id as number),
+    )
+    .slice(0, 5) as ReviewOutput['relations'];
   return {
     ...(o as unknown as ReviewOutput),
-    related_review_ids: Array.isArray(o.related_review_ids) ? (o.related_review_ids as unknown[]).filter(Number.isInteger) as number[] : [],
+    relations,
+    related_review_ids: relations.map((r) => r.review_id),
     topics: Array.isArray(o.topics) ? (o.topics as unknown[]).filter((t): t is string => isStr(t) && topicCodes.has(t)).slice(0, 3) : [],
     guideline_changes: Array.isArray(o.guideline_changes) ? (o.guideline_changes as ReviewOutput['guideline_changes']) : [],
     guideline_key_points: Array.isArray(o.guideline_key_points) ? (o.guideline_key_points as unknown[]).filter(isStr) : [],

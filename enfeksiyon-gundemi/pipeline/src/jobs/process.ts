@@ -30,10 +30,11 @@ import {
   type Stmt,
 } from '../lib/db.ts';
 import { RunLog } from '../lib/runlog.ts';
-import { updateSearchIndex } from '../lib/searchindex.ts';
+import { relatedByText, updateSearchIndex } from '../lib/searchindex.ts';
 import { fetchFullText, type FullText } from '../sources/fulltext.ts';
+import { maybeWeekly } from './weekly.ts';
 
-export const PROMPT_VERSION = 'editor-v1';
+export const PROMPT_VERSION = 'editor-v2';
 const SRC = 'ai';
 
 export interface ProcessDeps {
@@ -56,6 +57,7 @@ export interface ProcessSummary {
   reviewFailed: number;
   pendingBatches: number;
   indexed: number;
+  weeklyIssue: number | null;
   spentThisRun: number;
   monthSpent: number;
   budgetBlocked: boolean;
@@ -87,7 +89,7 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   const s: ProcessSummary = {
     triageSubmitted: 0, triaged: 0, ruleRejected: 0, reviewSubmitted: 0, reviewed: 0, reviewFailed: 0,
-    pendingBatches: 0, indexed: 0, spentThisRun: 0, monthSpent: 0, budgetBlocked: false,
+    pendingBatches: 0, indexed: 0, weeklyIssue: null, spentThisRun: 0, monthSpent: 0, budgetBlocked: false,
   };
 
   const budgetLeft = async () => cfg.budget.monthly_usd - ((await monthSpend(db, now())) + meter.total());
@@ -145,17 +147,31 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
       before: v.before, after: v.after, in_practice: v.in_practice,
       evidence: { design: v.evidence_design, results: v.evidence_results, maturity: v.evidence_maturity },
       limitations: v.limitations, funding_coi: v.funding_coi,
-      context: v.context, related_review_ids: v.related_review_ids, turkey: v.turkey,
+      context: v.context, relations: v.relations, related_review_ids: v.related_review_ids, turkey: v.turkey,
       guideline_changes: v.guideline_changes, guideline_key_points: v.guideline_key_points,
     };
-    await db.batch([
+    const [inserted] = await db.batch([
       {
         sql: `INSERT OR REPLACE INTO reviews (work_id, impact, title_tr, hook, body, topics, basis, model, prompt_version, created_at)
-              VALUES (?,?,?,?,?,?,?,?,?,?)`,
+              VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id`,
         params: [workId, v.impact, v.title_tr, v.hook, JSON.stringify(body), JSON.stringify(v.topics), basis, msg.model, PROMPT_VERSION, now().toISOString()],
       },
       { sql: `UPDATE works SET status = 'reviewed' WHERE id = ?`, params: [workId] },
     ]);
+    // İlişkiler ayrı tabloya da yazılır: eski yazıda "sonradan gelen ilişkili yazılar" gösterilebilsin.
+    // Yalnızca gerçekten var olan yazılara bağlanır (model uydurma kimlik yazarsa atılır).
+    const reviewId = inserted?.[0]?.id as number | undefined;
+    if (reviewId && v.relations.length) {
+      await db.batch(
+        v.relations
+          .filter((r) => r.review_id !== reviewId)
+          .map((r) => ({
+            sql: `INSERT OR REPLACE INTO review_links (src_review_id, dst_review_id, relation, note)
+                  SELECT ?, id, ?, ? FROM reviews WHERE id = ?`,
+            params: [reviewId, r.relation, r.note, r.review_id],
+          })),
+      );
+    }
     s.reviewed++;
     return 'ok';
   }
@@ -331,9 +347,11 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
       : [];
 
     if (candidates.length) {
+      const relatedSince = new Date(now().getTime() - 365 * 864e5).toISOString();
       const recent = await db.all<RelatedReview & { topics: string | null }>(
-        `SELECT id, title_tr, hook, created_at, topics FROM reviews WHERE created_at >= ? ORDER BY created_at DESC LIMIT 300`,
-        [new Date(now().getTime() - 180 * 864e5).toISOString()],
+        `SELECT id, title_tr, hook, created_at, topics, json_extract(body, '$.after') AS after
+         FROM reviews WHERE created_at >= ? ORDER BY created_at DESC LIMIT 300`,
+        [relatedSince],
       );
       const reqs: BatchRequest[] = [];
       let withFullText = 0;
@@ -346,13 +364,17 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
             c.id, ft.source, ft.text, now().toISOString(),
           ]);
         }
+        // Bağlam: önce başlığı benzeyen yazılar (metin araması), kalan yer konu etiketi ortak olanlarla doldurulur
+        const max = cfg.review.related_reviews;
+        const byText = await relatedByText(db, c.title, c.id, relatedSince, Math.ceil(max / 2));
         const mine = new Set<string>(JSON.parse(c.t_topics ?? '[]'));
-        const related = recent
+        const byTopic = recent
           .map((r) => ({ r, overlap: (JSON.parse(r.topics ?? '[]') as string[]).filter((t) => mine.has(t)).length }))
           .filter((x) => x.overlap > 0)
           .sort((a, b) => b.overlap - a.overlap)
-          .slice(0, cfg.review.related_reviews)
           .map((x) => x.r);
+        const related: RelatedReview[] = [];
+        for (const r of [...byText, ...byTopic]) if (related.length < max && !related.some((x) => x.id === r.id)) related.push(r);
         reqs.push({ custom_id: `${ft ? 'f' : 'w'}${c.id}`, params: buildReviewParams(c, c, related, cfg, editorPrompt, topics, ft) });
       }
       await submit('review', reqs, candidates.map((c) => c.id));
@@ -390,7 +412,15 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
     await db.all(`UPDATE works SET status = 'triaged' WHERE id = ?`, [workId]); // sonraki çalıştırmaya
   }
 
-  // ---- 5) Soru-cevap için arşiv arama dizini ---------------------------------
+  // ---- 5) Haftalık "öne çıkanlar" baskısı (pazar; kaçarsa pazartesi)
+  try {
+    s.weeklyIssue = await maybeWeekly({ db, ai, cfg, meter, log, prompt: loadPrompt('weekly'), now: now(), budgetLeft });
+  } catch (e) {
+    if (e instanceof QuotaExceededError) throw e;
+    await log.event('warn', 'weekly', 'Haftalık baskı hazırlanırken hata oluştu.', String(e));
+  }
+
+  // ---- 6) Soru-cevap için arşiv arama dizini ---------------------------------
   // Dizin satırı başına birkaç satır yazıldığı varsayılır; kotanın sonunda yer bırakılır.
   s.indexed = await updateSearchIndex(db, Math.min(8000, Math.floor(((await writesLeft()) - 3000) / 10)));
 

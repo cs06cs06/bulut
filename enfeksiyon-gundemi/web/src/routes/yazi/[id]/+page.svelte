@@ -9,6 +9,22 @@
   import { showToast } from '$lib/toast.svelte';
 
   let { data } = $props();
+
+  // "Bu yazı → önceki yazı" ilişkisi ve tersi ("sonraki yazı bu yazıyı …")
+  const RELATION: Record<string, string> = {
+    supports: 'Destekliyor',
+    contradicts: 'Çelişiyor',
+    extends: 'Genişletiyor',
+    updates: 'Güncelliyor',
+    similar: 'Benzer konu',
+  };
+  const LATER: Record<string, string> = {
+    supports: 'Bu yazıyı destekliyor',
+    contradicts: 'Bu yazıyla çelişiyor',
+    extends: 'Bu yazıyı genişletiyor',
+    updates: 'Bu yazıyı güncelliyor',
+    similar: 'Benzer konu',
+  };
   const r = $derived(data.review as Record<string, any>);
   const b = $derived(data.body);
   const authors = $derived(parseList(r.authors as string));
@@ -137,7 +153,25 @@
     <p>{b.context}</p>
     {#if data.related.length}
       <ul class="related">
-        {#each data.related as rel}<li><a href="/yazi/{rel.work_id}">{rel.title_tr}</a></li>{/each}
+        {#each data.related as rel}
+          <li>
+            {#if rel.relation}<span class="rel {rel.relation}">{RELATION[rel.relation] ?? rel.relation}</span>{/if}
+            <a href="/yazi/{rel.work_id}">{rel.title_tr}</a>
+            <span class="rel-meta">{fmtDay(rel.created_at)}{rel.note ? ` · ${rel.note}` : ''}</span>
+          </li>
+        {/each}
+      </ul>
+    {/if}
+    {#if data.later.length}
+      <h3 class="later-title">Sonradan gelen ilişkili yazılar</h3>
+      <ul class="related">
+        {#each data.later as rel}
+          <li>
+            {#if rel.relation}<span class="rel {rel.relation}">{LATER[rel.relation] ?? rel.relation}</span>{/if}
+            <a href="/yazi/{rel.work_id}">{rel.title_tr}</a>
+            <span class="rel-meta">{fmtDay(rel.created_at)}{rel.note ? ` · ${rel.note}` : ''}</span>
+          </li>
+        {/each}
       </ul>
     {/if}
   </section>
@@ -380,10 +414,54 @@
     text-decoration-color: color-mix(in srgb, var(--muted) 50%, transparent);
   }
   .related {
-    padding-left: 18px;
+    list-style: none;
+    padding: 0;
+    margin: 10px 0 0;
+  }
+  .related li {
+    padding: 10px 0;
+    border-top: 1px solid var(--line);
+    line-height: 1.45;
   }
   .related a {
     color: var(--gold);
+  }
+  .rel {
+    display: inline-block;
+    margin-right: 6px;
+    padding: 1px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    background: var(--slate-soft);
+    color: var(--slate);
+    vertical-align: 1px;
+  }
+  .rel.supports {
+    background: rgba(58, 167, 109, 0.14);
+    color: #3aa76d;
+  }
+  .rel.contradicts {
+    background: var(--coral-soft);
+    color: var(--coral);
+  }
+  .rel.updates {
+    background: var(--gold-soft);
+    color: var(--gold);
+  }
+  .rel-meta {
+    display: block;
+    color: var(--muted);
+    font-size: 0.82rem;
+    margin-top: 2px;
+  }
+  .later-title {
+    margin: 18px 0 0;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
   }
   .ref {
     border-top: 1px solid var(--line);

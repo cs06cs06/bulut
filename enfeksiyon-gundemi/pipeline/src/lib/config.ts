@@ -106,6 +106,7 @@ export interface AiConfig {
     related_reviews: number;
     fulltext_max_chars?: number;
   };
+  weekly?: { model: string; effort: Effort; max_tokens: number };
   budget: { monthly_usd: number };
   batch: { max_wait_minutes: number };
   prices: Record<string, ModelPrice>;

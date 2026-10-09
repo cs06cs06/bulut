@@ -44,3 +44,49 @@ export async function updateSearchIndex(db: Db, maxRows: number): Promise<number
   );
   return rows.length;
 }
+
+const STOP = new Set(
+  'with from that this were have been their among versus after before during between into than more less over under study trial patients patient adults children results using based analysis effect effects associated association risk outcomes outcome clinical among case report review systematic meta randomised randomized cohort retrospective prospective multicentre multicenter national single centre center years year infection infections'.split(
+    ' ',
+  ),
+);
+
+/** Başlığın ayırt edici kelimelerinden bir FTS5 sorgusu (benzer yazıları bulmak için) */
+export function titleQuery(title: string): string | null {
+  const words = [
+    ...new Set(
+      foldTr(title.toLowerCase())
+        .replace(/[^\p{L}\p{N}\s-]/gu, ' ')
+        .split(/[\s-]+/)
+        .filter((w) => w.length >= 4 && !STOP.has(w) && !/^\d+$/.test(w)),
+    ),
+  ].slice(0, 10);
+  return words.length >= 2 ? words.map((w) => `"${w}"`).join(' OR ') : null;
+}
+
+export interface TextRelated {
+  id: number; // reviews.id
+  title_tr: string;
+  hook: string;
+  created_at: string;
+  after: string | null;
+  topics: string | null;
+}
+
+/** Başlığı benzeyen, daha önce yazılmış editör yazıları (arama dizini üzerinden) */
+export async function relatedByText(db: Db, title: string, workId: number, sinceIso: string, limit: number): Promise<TextRelated[]> {
+  const q = titleQuery(title);
+  if (!q) return [];
+  try {
+    return await db.all<TextRelated>(
+      `SELECT r.id, r.title_tr, r.hook, r.created_at, json_extract(r.body, '$.after') AS after, r.topics
+       FROM (SELECT rowid, bm25(works_fts, 3.0, 1.0, 2.0) AS score FROM works_fts WHERE works_fts MATCH ? ORDER BY score LIMIT 200) h
+       JOIN reviews r ON r.work_id = h.rowid
+       WHERE r.work_id != ? AND r.created_at >= ?
+       ORDER BY h.score LIMIT ?`,
+      [q, workId, sinceIso, limit],
+    );
+  } catch {
+    return []; // dizin henüz boşsa ya da sorgu çözümlenemezse konu eşleşmesiyle devam edilir
+  }
+}

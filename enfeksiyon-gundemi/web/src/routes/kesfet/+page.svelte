@@ -10,6 +10,7 @@
     { value: null, label: 'Tümü' },
     { value: 'onbaski', label: 'Ön baskılar' },
     { value: 'kurum', label: 'Kurum ve rehberler' },
+    { value: 'gozden', label: 'Gözden kaçmasın' },
     ...TOPICS.map((t) => ({ value: `konu:${t.kod}`, label: t.ad })),
   ];
 </script>
@@ -24,7 +25,10 @@
 
 <Chips items={chips} current={data.f} base="/kesfet" />
 
-<h2 class="section-title">{data.q ? 'Kısa notlar ve diğer yayınlar' : 'Kısa notlar'}</h2>
+<h2 class="section-title">{data.f === 'gozden' ? 'Gözden kaçmasın' : data.q ? 'Kısa notlar ve diğer yayınlar' : 'Kısa notlar'}</h2>
+{#if data.f === 'gozden'}
+  <p class="why">Ön değerlendirmede düşük puan alan ama 1. katman dergide, rehberde, RKÇ ya da meta-analiz olarak yayımlanan yayınlar (son 14 gün). Yapay zekânın gözden kaçırmış olabileceklerine bir kez göz atın.</p>
+{/if}
 {#each data.notes as n (n.id)}
   <div class="note">
     <div class="nhead">
@@ -46,6 +50,12 @@
 <a class="all" href="/kayitlar">Toplanan tüm kayıtlar (triyajda elenenler dahil) →</a>
 
 <style>
+  .why {
+    margin: -4px 0 12px;
+    color: var(--muted);
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
   .title {
     font-size: 1.6rem;
     margin: 8px 0 12px;
@@ -108,6 +118,8 @@
     font-size: 0.93rem;
   }
   .meta {
+    display: block;
+    margin-top: 4px;
     font-size: 0.8rem;
     color: var(--muted);
   }
