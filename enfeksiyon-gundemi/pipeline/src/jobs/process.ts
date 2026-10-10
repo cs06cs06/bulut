@@ -32,7 +32,7 @@ import {
 import { RunLog } from '../lib/runlog.ts';
 import { relatedByText, updateSearchIndex } from '../lib/searchindex.ts';
 import { fetchFullText, type FullText } from '../sources/fulltext.ts';
-import { maybeWeekly } from './weekly.ts';
+import { maybeWeekly, trDay } from './weekly.ts';
 
 export const PROMPT_VERSION = 'editor-v2';
 const SRC = 'ai';
@@ -319,7 +319,8 @@ export async function runProcess(deps: ProcessDeps): Promise<ProcessSummary> {
 
   // ---- 3) Seçim ve editör yazıları -----------------------------------------
   if (!s.budgetBlocked && !(await hasActive('review')) && (await budgetLeft()) > 0) {
-    const today = now().toISOString().slice(0, 10);
+    // Günlük tavan Türkiye gününe göre sayılır (günlük baskıyla aynı gün)
+    const today = new Date(`${trDay(now())}T00:00:00+03:00`).toISOString();
     const [{ n: totalReviews }] = await db.all<{ n: number }>(
       `SELECT (SELECT COUNT(*) FROM reviews) + (SELECT COUNT(*) FROM ai_batches WHERE kind = 'review') AS n`,
     );

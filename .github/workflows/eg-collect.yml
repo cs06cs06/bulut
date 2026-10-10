@@ -4,8 +4,14 @@ name: "Enfeksiyon Gündemi · Günlük toplama"
 on:
   schedule:
     # Saatler UTC'dir (Türkiye = UTC+3). Saat başlarında GitHub yoğun olduğu için dakikalar kaydırıldı.
+    # GitHub zamanlanmış işleri yoğunlukta saatlerce geciktirebilir ya da atlayabilir; bu yüzden
+    # güne yayılmış yedek çalıştırmalar var. Her çalıştırma kaldığı yerden devam eder; iş yoksa birkaç
+    # dakikada biter ve günlük yazı tavanı (8) aşılmaz.
+    - cron: "47 23 * * *"  # 02:47 — erken deneme
     - cron: "47 1 * * *"   # 04:47 — ana çalıştırma (baskı ~06:30'a hazır olsun)
+    - cron: "47 3 * * *"   # 06:47 — yedek
     - cron: "17 9 * * *"   # 12:17 — toparlama (sabah yarım kalanlar için)
+    - cron: "17 15 * * *"  # 18:17 — akşam yedeği
   workflow_dispatch:
   push:
     branches: [ccr-88cdf477-ndx7x5]
