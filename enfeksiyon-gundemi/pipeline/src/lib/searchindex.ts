@@ -5,29 +5,38 @@ import type { Db, Stmt } from './db.ts';
 /** Türkçe "ı/İ" FTS5'in aksan temizliğinde "i"ye dönmez; dizin ve sorgu aynı biçimde katlanır. */
 export const foldTr = (s: string) => s.replace(/[ıİ]/g, 'i');
 
-const CURSOR_KEY = 'fts_cursor';
+// İmleç: dizinlenen son triyaj kaydının zamanı ve yayın kimliği (triyaj bitiş sırasıyla ilerlenir)
+const CURSOR_KEY = 'fts_cursor_v2';
+const COUNT_KEY = 'fts_count';
+// Eski (kimlik sıralı) imleç: eski kodun aynı yayınları ikinci kez eklememesi için "hepsi bitti" değerine çekilir
+const LEGACY_KEY = 'fts_cursor';
+const LEGACY_DONE = '1000000000000';
+
+const upsert = (db: Db, key: string, value: string) =>
+  db.all(`INSERT INTO app_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`, [key, value]);
 
 /**
- * Henüz dizinlenmemiş yayınları ekler. Yayınlar kimlik sırasıyla işlenir; triyajı bitmemiş
- * en küçük kimliğe kadar ilerlenir, böylece hiçbir alakalı yayın atlanmaz.
+ * Henüz dizinlenmemiş alakalı yayınları ekler. Yayınlar triyajın bittiği sırayla işlenir; böylece
+ * triyaj birikimi olsa da yeni değerlendirilen yayınlar hemen aranabilir olur.
  */
 export async function updateSearchIndex(db: Db, maxRows: number): Promise<number> {
   if (maxRows <= 0) return 0;
-  const cursor = Number((await db.all<{ value: string }>(`SELECT value FROM app_state WHERE key = ?`, [CURSOR_KEY]))[0]?.value ?? 0);
-  const [{ bound }] = await db.all<{ bound: number | null }>(
-    `SELECT COALESCE((SELECT MIN(id) - 1 FROM works WHERE status IN ('new', 'triage_pending')), (SELECT MAX(id) FROM works), 0) AS bound`,
+  const state = Object.fromEntries(
+    (await db.all<{ key: string; value: string }>(`SELECT key, value FROM app_state WHERE key IN (?, ?)`, [CURSOR_KEY, COUNT_KEY])).map((r) => [
+      r.key,
+      r.value,
+    ]),
   );
-  const upper = Number(bound ?? 0);
-  if (upper <= cursor) return 0;
+  const cur = state[CURSOR_KEY] ? (JSON.parse(state[CURSOR_KEY]) as { at: string; id: number }) : { at: '', id: 0 };
 
-  const rows = await db.all<{ id: number; title: string; abstract: string | null; title_tr: string | null; summary_tr: string | null }>(
-    `SELECT w.id, w.title, w.abstract, t.title_tr, t.summary_tr
-     FROM works w JOIN triage t ON t.work_id = w.id
-     WHERE w.id > ? AND w.id <= ? AND t.relevant = 1
-     ORDER BY w.id LIMIT ?`,
-    [cursor, upper, maxRows],
+  const rows = await db.all<{ id: number; at: string; title: string; abstract: string | null; title_tr: string | null; summary_tr: string | null }>(
+    `SELECT w.id, t.created_at AS at, w.title, w.abstract, t.title_tr, t.summary_tr
+     FROM triage t JOIN works w ON w.id = t.work_id
+     WHERE t.relevant = 1 AND (t.created_at > ? OR (t.created_at = ? AND t.work_id > ?))
+     ORDER BY t.created_at, t.work_id LIMIT ?`,
+    [cur.at, cur.at, cur.id, maxRows],
   );
-  const next = rows.length === maxRows ? rows[rows.length - 1].id : upper;
+  if (!rows.length) return 0;
   const stmts: Stmt[] = rows.map((r) => ({
     sql: 'INSERT INTO works_fts (rowid, title, abstract, tr) VALUES (?, ?, ?, ?)',
     params: [
@@ -38,10 +47,10 @@ export async function updateSearchIndex(db: Db, maxRows: number): Promise<number
     ],
   }));
   for (let i = 0; i < stmts.length; i += 50) await db.batch(stmts.slice(i, i + 50));
-  await db.all(
-    `INSERT INTO app_state (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = excluded.value`,
-    [CURSOR_KEY, String(next)],
-  );
+  const last = rows[rows.length - 1];
+  await upsert(db, CURSOR_KEY, JSON.stringify({ at: last.at, id: last.id }));
+  await upsert(db, COUNT_KEY, String(Number(state[COUNT_KEY] ?? 0) + rows.length));
+  await upsert(db, LEGACY_KEY, LEGACY_DONE);
   return rows.length;
 }
 
