@@ -1,0 +1,102 @@
+# YouTube kanalı: sıradaki konudan baştan sona bir video üretir.
+name: "YouTube Kanalı · Video üret"
+
+on:
+  schedule:
+    # Saat UTC'dir (Türkiye = UTC+3). Her gün çalışır; yalnızca config/channel.yaml → schedule.days
+    # günlerinde video üretir, diğer günler bir dakikada biter.
+    - cron: "23 5 * * *" # 08:23
+  workflow_dispatch:
+    inputs:
+      topic_id:
+        description: "İsteğe bağlı: data/backlog.yaml'daki konunun id değeri (boş: sıradaki konu)"
+        required: false
+        default: ""
+
+concurrency:
+  group: youtube-kanal
+  cancel-in-progress: false
+
+permissions:
+  contents: write # bölüm metinlerini kaydetmek ve videoyu "Releases"a eklemek için
+  actions: write # "zamanlamayı canlı tut" adımı için
+
+jobs:
+  produce:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+      YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+      YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+      TOPIC_ID: ${{ inputs.topic_id }}
+    defaults:
+      run:
+        working-directory: youtube-kanal/pipeline
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: youtube-kanal/pipeline/package-lock.json
+      - name: Araçları kur (ffmpeg, yazı tipi, Chromium)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg fonts-inter fonts-dejavu-core > /dev/null
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Yarım kalan çalışmayı geri yükle
+        uses: actions/cache/restore@v4
+        with:
+          path: youtube-kanal/work
+          key: yt-work-${{ github.run_id }}
+          restore-keys: yt-work-
+      - name: Video üret
+        id: produce
+        run: npm run produce
+      - name: Bölüm metinlerini kaydet
+        if: ${{ !cancelled() }}
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add youtube-kanal/data youtube-kanal/episodes
+          if git diff --cached --quiet; then echo "Kaydedilecek değişiklik yok."; exit 0; fi
+          git commit -q -m "YouTube kanalı: ${{ steps.produce.outputs.episode || 'konu listesi' }}"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep $((i * 5)); done
+          echo "::error::Değişiklikler depoya gönderilemedi"; exit 1
+      - name: Videoyu "Releases"a ekle
+        if: ${{ steps.produce.outputs.out_dir != '' }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EP: ${{ steps.produce.outputs.episode }}
+          OUT: ${{ steps.produce.outputs.out_dir }}
+          TITLE: ${{ steps.produce.outputs.title }}
+        run: |
+          gh release delete "yt-$EP" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "yt-$EP" "$OUT/video.mp4" "$OUT/thumbnail.jpg" "$OUT/captions.srt" "$OUT/upload.txt" \
+            --target "${{ github.ref_name }}" --title "🎬 $TITLE" --notes-file "$OUT/upload.txt" --latest=false
+          echo "### 📥 İndir: $(gh release view "yt-$EP" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"
+          rm -rf "youtube-kanal/work/$EP" && mkdir -p youtube-kanal/work && touch youtube-kanal/work/.keep
+      - name: Yarım kalan çalışmayı sakla
+        # Başarısız çalıştırmada ses ve ekran görüntüleri bir sonraki denemede yeniden kullanılır.
+        if: ${{ !cancelled() }}
+        uses: actions/cache/save@v4
+        with:
+          path: youtube-kanal/work
+          key: yt-work-${{ github.run_id }}
+      - name: Zamanlamayı canlı tut
+        # GitHub, uzun süre etkinlik olmayan depolarda zamanlanmış işleri kapatır; yeniden etkinleştirmek süreyi sıfırlar.
+        if: ${{ !cancelled() && github.event_name == 'schedule' }}
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/yt-produce.yml/enable" \
+            && echo "Zamanlama etkin tutuldu." || echo "::warning::Zamanlama yenilenemedi."

@@ -1,0 +1,25 @@
+{
+  "name": "youtube-kanal-pipeline",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "ideas": "tsx src/jobs/ideas.ts",
+    "produce": "tsx src/jobs/produce.ts",
+    "demo": "tsx src/jobs/demo.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
+    "playwright": "^1.56.1",
+    "yaml": "^2.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3"
+  }
+}
