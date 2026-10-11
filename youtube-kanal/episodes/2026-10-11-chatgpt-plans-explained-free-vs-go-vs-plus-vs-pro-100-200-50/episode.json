@@ -16,13 +16,16 @@
     "episode": "2026-10-11-chatgpt-plans-explained-free-vs-go-vs-plus-vs-pro-100-200-50"
   },
   "created": "2026-10-11T18:55:22.536Z",
-  "updated": "2026-10-11T19:02:58.295Z",
+  "updated": "2026-10-11T19:06:47.604Z",
   "stages": {
     "research": "2026-10-11T18:58:06.794Z",
     "script": "2026-10-11T18:59:57.914Z",
     "metadata": "2026-10-11T19:00:10.717Z",
     "voice": "2026-10-11T19:02:37.198Z",
-    "capture": "2026-10-11T19:02:58.295Z"
+    "capture": "2026-10-11T19:02:58.295Z",
+    "render": "2026-10-11T19:06:47.366Z",
+    "thumbnail": "2026-10-11T19:06:47.604Z"
   },
-  "cost_usd": 1.1648
+  "cost_usd": 1.1648,
+  "duration_seconds": 546
 }
