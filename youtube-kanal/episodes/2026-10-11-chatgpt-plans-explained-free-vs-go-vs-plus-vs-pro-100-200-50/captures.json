@@ -2,9 +2,8 @@
   {
     "scene": "s01",
     "url": "https://chatgpt.com/pricing",
-    "ok": false,
-    "error": "Sayfa HTTP 403 döndürdü",
-    "shots": 0
+    "ok": true,
+    "shots": 2
   },
   {
     "scene": "s03",
@@ -21,9 +20,8 @@
   {
     "scene": "s06",
     "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
-    "ok": false,
-    "error": "Sayfa HTTP 403 döndürdü",
-    "shots": 0
+    "ok": true,
+    "shots": 3
   },
   {
     "scene": "s09",
@@ -34,8 +32,7 @@
   {
     "scene": "s11",
     "url": "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
-    "ok": false,
-    "error": "Sayfa HTTP 403 döndürdü",
-    "shots": 0
+    "ok": true,
+    "shots": 3
   }
 ]

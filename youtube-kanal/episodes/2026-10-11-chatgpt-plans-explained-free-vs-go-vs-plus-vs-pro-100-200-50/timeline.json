@@ -7,7 +7,7 @@
     "audioOffset": 0.25,
     "audioDuration": 34.925714,
     "chapter": "Intro",
-    "visual": "bullets"
+    "visual": "browser"
   },
   {
     "id": "s02",
@@ -57,7 +57,7 @@
     "audioOffset": 0.25,
     "audioDuration": 26.98449,
     "chapter": "",
-    "visual": "bullets"
+    "visual": "browser"
   },
   {
     "id": "s07",
@@ -107,7 +107,7 @@
     "audioOffset": 0.25,
     "audioDuration": 43.467755,
     "chapter": "Pro tiers",
-    "visual": "bullets"
+    "visual": "browser"
   },
   {
     "id": "s12",
