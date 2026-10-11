@@ -1,0 +1,162 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 35.63333333333333,
+    "frames": 1069,
+    "audioOffset": 0.25,
+    "audioDuration": 34.925714,
+    "chapter": "Intro",
+    "visual": "browser"
+  },
+  {
+    "id": "s02",
+    "start": 35.63333333333333,
+    "duration": 35.43333333333333,
+    "frames": 1063,
+    "audioOffset": 0.25,
+    "audioDuration": 34.716735,
+    "chapter": "Prices",
+    "visual": "compare"
+  },
+  {
+    "id": "s03",
+    "start": 71.06666666666666,
+    "duration": 25.133333333333333,
+    "frames": 754,
+    "audioOffset": 0.25,
+    "audioDuration": 24.42449,
+    "chapter": "",
+    "visual": "browser"
+  },
+  {
+    "id": "s04",
+    "start": 96.2,
+    "duration": 41.2,
+    "frames": 1236,
+    "audioOffset": 0.25,
+    "audioDuration": 40.489796,
+    "chapter": "Models",
+    "visual": "browser"
+  },
+  {
+    "id": "s05",
+    "start": 137.4,
+    "duration": 39.233333333333334,
+    "frames": 1177,
+    "audioOffset": 0.25,
+    "audioDuration": 38.530612,
+    "chapter": "",
+    "visual": "compare"
+  },
+  {
+    "id": "s06",
+    "start": 176.63333333333333,
+    "duration": 27.7,
+    "frames": 831,
+    "audioOffset": 0.25,
+    "audioDuration": 26.98449,
+    "chapter": "",
+    "visual": "browser"
+  },
+  {
+    "id": "s07",
+    "start": 204.33333333333334,
+    "duration": 42.36666666666667,
+    "frames": 1271,
+    "audioOffset": 0.25,
+    "audioDuration": 41.639184,
+    "chapter": "Context & limits",
+    "visual": "compare"
+  },
+  {
+    "id": "s08",
+    "start": 246.7,
+    "duration": 21.6,
+    "frames": 648,
+    "audioOffset": 0.25,
+    "audioDuration": 20.897959,
+    "chapter": "",
+    "visual": "callout"
+  },
+  {
+    "id": "s09",
+    "start": 268.3,
+    "duration": 31.866666666666667,
+    "frames": 956,
+    "audioOffset": 0.25,
+    "audioDuration": 31.164082,
+    "chapter": "Features",
+    "visual": "browser"
+  },
+  {
+    "id": "s10",
+    "start": 300.1666666666667,
+    "duration": 43.06666666666667,
+    "frames": 1292,
+    "audioOffset": 0.25,
+    "audioDuration": 42.34449,
+    "chapter": "",
+    "visual": "bullets"
+  },
+  {
+    "id": "s11",
+    "start": 343.23333333333335,
+    "duration": 44.2,
+    "frames": 1326,
+    "audioOffset": 0.25,
+    "audioDuration": 43.467755,
+    "chapter": "Pro tiers",
+    "visual": "browser"
+  },
+  {
+    "id": "s12",
+    "start": 387.43333333333334,
+    "duration": 24.8,
+    "frames": 744,
+    "audioOffset": 0.25,
+    "audioDuration": 24.084898,
+    "chapter": "",
+    "visual": "callout"
+  },
+  {
+    "id": "s13",
+    "start": 412.23333333333335,
+    "duration": 42.266666666666666,
+    "frames": 1268,
+    "audioOffset": 0.25,
+    "audioDuration": 41.560816,
+    "chapter": "Which to pick",
+    "visual": "bullets"
+  },
+  {
+    "id": "s14",
+    "start": 454.5,
+    "duration": 27.233333333333334,
+    "frames": 817,
+    "audioOffset": 0.25,
+    "audioDuration": 26.514286,
+    "chapter": "",
+    "visual": "steps"
+  },
+  {
+    "id": "s15",
+    "start": 481.73333333333335,
+    "duration": 35.666666666666664,
+    "frames": 1070,
+    "audioOffset": 0.25,
+    "audioDuration": 34.951837,
+    "chapter": "",
+    "visual": "bullets"
+  },
+  {
+    "id": "s16",
+    "start": 517.4,
+    "duration": 29.033333333333335,
+    "frames": 871,
+    "audioOffset": 0.25,
+    "audioDuration": 28.316735,
+    "chapter": "",
+    "visual": "outro"
+  }
+]

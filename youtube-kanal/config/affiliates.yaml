@@ -1,0 +1,43 @@
+# Satış ortaklığı (affiliate) bağlantıları
+# ----------------------------------------------------------------------------
+# Videoda adı geçen her araç için buraya kendi bağlantınızı ekleyin. Açıklamaya otomatik
+# eklenir ve videonun sonunda "link in the description" denir.
+#
+# Nasıl alınır: aracın sitesinin en altında genelde "Affiliates" / "Partners" bağlantısı vardır.
+# Başvuru birkaç dakika sürer, onay birkaç gün. Onaylanana kadar normal site adresini yazın.
+#
+# Biçim:
+#   - name: Araç adı (videoda geçtiği gibi)
+#     aliases: [başka yazılışlar]       # isteğe bağlı
+#     url: https://...                   # sizin bağlantınız
+#     affiliate: true                    # false ise "affiliate" uyarısı bu bağlantı için eklenmez
+#     note: "Free plan available"        # isteğe bağlı kısa not
+# ----------------------------------------------------------------------------
+
+- name: Notion
+  aliases: [Notion AI]
+  url: https://www.notion.so
+  affiliate: false
+
+- name: Canva
+  aliases: [Canva AI, Canva Magic Studio]
+  url: https://www.canva.com
+  affiliate: false
+
+- name: ElevenLabs
+  url: https://elevenlabs.io
+  affiliate: false
+
+- name: Gamma
+  aliases: [Gamma app]
+  url: https://gamma.app
+  affiliate: false
+
+- name: Make
+  aliases: [Make.com]
+  url: https://www.make.com
+  affiliate: false
+
+- name: Descript
+  url: https://www.descript.com
+  affiliate: false

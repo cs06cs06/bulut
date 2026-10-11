@@ -1,0 +1,107 @@
+# Kanal ayarları
+# ----------------------------------------------------------------------------
+# Videolar İngilizce üretilir (ABD/İngiltere izleyicisi, yüksek reklam geliri).
+# Bu dosyayı GitHub'da kalem simgesiyle düzenleyebilirsiniz; değişiklik bir sonraki
+# çalıştırmada geçerli olur.
+# ----------------------------------------------------------------------------
+
+name: "Tool Tutor"                # kanal adı (kapak, açılış ve kapanışta görünür)
+tagline: "Learn AI tools in minutes"
+language: en
+
+# Kanalın konusu: yapay zekânın konu fikri üretirken ve senaryo yazarken uyduğu çerçeve.
+niche: >
+  Practical, step-by-step tutorials and honest comparisons of AI tools and productivity
+  software for knowledge workers, freelancers and small business owners. Every video
+  solves one concrete task the viewer is searching for right now.
+
+audience: >
+  Non-technical professionals (marketers, freelancers, students, small business owners)
+  who want to get a specific job done with an AI or SaaS tool, fast.
+
+# Fikir üretiminde YouTube aramalarının tohumları (araç adları ve genel kalıplar).
+# Affiliate (satış ortaklığı) programı olan araçları buraya eklemek gelir için en hızlı yoldur.
+seeds:
+  - ChatGPT
+  - Claude AI
+  - Notion AI
+  - Canva AI
+  - ElevenLabs
+  - Perplexity
+  - Gamma app
+  - Zapier AI
+  - Make.com
+  - Descript
+  - CapCut
+  - Google Gemini
+  - Microsoft Copilot
+  - "AI tools for"
+
+# Video biçimleri ve hedef uzunluk
+video:
+  target_minutes: 8.5             # 8 dakikayı geçen videolara ara reklam (mid-roll) eklenebilir
+  min_minutes: 6
+  words_per_minute: 150           # senaryo uzunluğunu hesaplamak için
+  fps: 30
+  width: 1920
+  height: 1080
+  formats:                        # yapay zekânın seçebileceği video türleri
+    - tutorial                    # "How to do X with Y" — adım adım
+    - comparison                  # "X vs Y" — tablo ve karar önerisi
+    - listicle                    # "5 AI tools that ..." — her araç için kısa demo
+
+# Görsel kimlik (açılış kartları, alt yazılar, kapak)
+brand:
+  accent: "#FFD60A"               # vurgu rengi (sarı)
+  accent2: "#3A86FF"              # ikinci renk (mavi)
+  background: "#0B0F19"           # koyu arka plan
+  text: "#F5F7FA"
+  font: "Inter"
+
+# Seslendirme
+voice:
+  provider: elevenlabs            # elevenlabs | openai | silent (silent: sessiz önizleme, test için)
+  elevenlabs:
+    voice_id: "JBFqnCBsd6RMkjVDRZzb"   # ElevenLabs ses kitaplığından bir ses kimliği
+    model_id: "eleven_multilingual_v2"
+    stability: 0.45
+    similarity_boost: 0.8
+  openai:
+    model: "gpt-4o-mini-tts"
+    voice: "alloy"
+    instructions: "Friendly, upbeat YouTube tutorial narrator. Clear, natural pace."
+  lead_in_seconds: 0.25           # her sahnenin başında kısa sessizlik
+  tail_seconds: 0.45              # her sahnenin sonunda kısa sessizlik
+  music: ""                       # isteğe bağlı fon müziği dosyası (ör. assets/music.mp3); telifsiz olmalı
+  music_volume: 0.08
+
+# Yayın takvimi: zamanlanmış iş her gün çalışır, yalnızca bu günlerde video üretir.
+# Elle "Run workflow" ile her zaman üretilebilir.
+schedule:
+  days: [mon, wed, fri]
+
+# Konu seçimi
+topics:
+  auto_approve: true              # true: onaylı konu yoksa en yüksek puanlı bekleyen konu üretilir
+                                  # false: yalnızca backlog.yaml'da "onaylı" işaretlenen konular üretilir
+  ideas_per_run: 12               # haftalık fikir üretiminde eklenecek konu sayısı
+
+# YouTube'a yükleme
+youtube:
+  upload: false                   # false: video GitHub'da "Releases" altında indirilmeye hazır olur, siz yüklersiniz
+                                  # true: API ile "özel" (private) olarak yüklenir (README'deki denetim notunu okuyun)
+  privacy: private                # private | unlisted | public (denetimden geçmemiş projelerde yalnızca private)
+  category_id: "28"               # 28 = Science & Technology, 27 = Education
+  made_for_kids: false
+  # YouTube, gerçek kişi/olay sanılabilecek gerçekçi yapay içerik için beyan ister. Ekran kaydı ve
+  # sentetik anlatıcı sesi bu kapsama genelde girmez; emin değilseniz true yapın.
+  contains_synthetic_media: false
+  default_tags: ["ai tools", "tutorial", "productivity"]
+
+# Açıklama metnine eklenen sabit satırlar
+description:
+  affiliate_disclosure: >
+    Some links above are affiliate links. If you sign up through them I may earn a small
+    commission at no extra cost to you. It helps keep the channel running.
+  ai_disclosure: "Narration in this video is AI-generated. Prices and features change often, so check the official pages before you buy."
+  footer: ""

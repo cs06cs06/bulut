@@ -1,0 +1,38 @@
+[
+  {
+    "scene": "s01",
+    "url": "https://chatgpt.com/pricing",
+    "ok": true,
+    "shots": 2
+  },
+  {
+    "scene": "s03",
+    "url": "https://chatgpt.com/pricing",
+    "ok": true,
+    "shots": 2
+  },
+  {
+    "scene": "s04",
+    "url": "https://help.openai.com/articles/11909943",
+    "ok": true,
+    "shots": 3
+  },
+  {
+    "scene": "s06",
+    "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+    "ok": true,
+    "shots": 3
+  },
+  {
+    "scene": "s09",
+    "url": "https://chatgpt.com/pricing",
+    "ok": true,
+    "shots": 3
+  },
+  {
+    "scene": "s11",
+    "url": "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
+    "ok": true,
+    "shots": 3
+  }
+]

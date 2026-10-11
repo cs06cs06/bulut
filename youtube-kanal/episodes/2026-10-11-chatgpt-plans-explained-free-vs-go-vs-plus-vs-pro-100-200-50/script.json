@@ -1,0 +1,436 @@
+{
+  "title": "ChatGPT Plans Explained: Free vs Go vs Plus vs Pro 100/200/500 – Which Should You Pay For?",
+  "format": "comparison",
+  "tools": [
+    "ChatGPT"
+  ],
+  "scenes": [
+    {
+      "id": "s01",
+      "chapter": "Intro",
+      "narration": "Most people paying for ChatGPT are on the wrong plan. They either pay for power they never touch, or they hit limits every week and don't know why. There are now six individual options: Free, Go, Plus, and three Pro tiers at one hundred, two hundred, and five hundred dollars a month. By the end of this video, you'll know what each one unlocks. Which models, which features like Dots and Sites, how much context, and which plan is the cheapest one that covers your work. Everything here is current as of October eleventh, 2026.",
+      "visual": {
+        "type": "browser",
+        "url": "https://chatgpt.com/pricing",
+        "steps": [
+          {
+            "action": "show",
+            "target": "",
+            "caption": "Six plans, one decision"
+          },
+          {
+            "action": "highlight",
+            "target": "Individual",
+            "caption": "Start on the Individual tab"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s02",
+      "chapter": "Prices",
+      "narration": "Let's start with money. Free is zero dollars. Go is about eight dollars a month in the US, but that number comes from third-party price trackers. It varies by region, and Go is only available in select regions. Plus is twenty dollars a month. Every third-party source agrees on that, though the official page text I checked didn't show it. The Pro prices are official: one hundred, two hundred, or five hundred dollars a month, billed monthly only. There's no annual Pro plan. Depending on where you live, prices may show in your local currency, or not at all.",
+      "visual": {
+        "type": "compare",
+        "heading": "Prices as of October 11, 2026",
+        "columns": [
+          "Free",
+          "Go",
+          "Plus",
+          "Pro"
+        ],
+        "rows": [
+          {
+            "label": "Price per month",
+            "values": [
+              "$0",
+              "About $8 (US)",
+              "$20",
+              "$100 / $200 / $500"
+            ]
+          },
+          {
+            "label": "Best for",
+            "values": [
+              "Trying ChatGPT",
+              "Longer conversations",
+              "Advanced work",
+              "Research and coding"
+            ]
+          },
+          {
+            "label": "Ads",
+            "values": [
+              "Not confirmed",
+              "May include ads",
+              "None stated",
+              "None stated"
+            ]
+          },
+          {
+            "label": "Scheduled tasks",
+            "values": [
+              "No",
+              "Yes",
+              "Yes",
+              "Yes"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "s03",
+      "chapter": "",
+      "narration": "Here's the official pricing page. Notice the small print under Go: this plan may include ads. That's the trade-off for the low price. Plus and Pro don't mention ads at all. On the Pro card, you'll see your choice of three usage tiers. Those are the one hundred, two hundred, and five hundred dollar options. They mostly differ in how much you can use, with one big exception we'll get to in the Pro section.",
+      "visual": {
+        "type": "browser",
+        "url": "https://chatgpt.com/pricing",
+        "steps": [
+          {
+            "action": "highlight",
+            "target": "This plan may include ads.",
+            "caption": "Go may show ads"
+          },
+          {
+            "action": "highlight",
+            "target": "Your choice of 3 usage tiers",
+            "caption": "Pro comes in three tiers"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s04",
+      "chapter": "Models",
+      "narration": "Now the confusing part: models. The official sources don't fully agree here. OpenAI's help center, updated around October ninth, says Free and Go chats run on GPT five point six Luna. The pricing page, though, says Free includes unlimited text chats with GPT six. So check your own model menu before trusting either. On paid plans, the menu shows GPT six, which runs on GPT six Sol. Look at this table. Plus gets the Medium and High thinking levels. Pro adds Extra High and the Pro setting, which runs on GPT six Astra. If you don't see GPT six at all, this FAQ explains why.",
+      "visual": {
+        "type": "browser",
+        "url": "https://help.openai.com/articles/11909943",
+        "steps": [
+          {
+            "action": "highlight",
+            "target": "Availability by ChatGPT plan",
+            "caption": "Which plan gets which level"
+          },
+          {
+            "action": "highlight",
+            "target": "Extra High",
+            "caption": "Extra High and Pro: Pro only"
+          },
+          {
+            "action": "scroll",
+            "target": "Why don't I see GPT-6?",
+            "caption": "Missing GPT-6? Start here"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s05",
+      "chapter": "",
+      "narration": "Here's the model picture side by side. Free and Go get a Think option instead of the slider, and it uses GPT five point six Luna, not Sol. Plus gets GPT six at Medium and High. Plus users can use Astra, but only inside ChatGPT Work and Codex, not in regular chat. Pro gets Astra in Chat, Work and Codex. Plus and Pro also unlock legacy models and image generation with Thinking. One gotcha: on Plus and Pro, Instant won't move itself up to a higher thinking level, and typing think harder doesn't switch it. You move the slider yourself.",
+      "visual": {
+        "type": "compare",
+        "heading": "Models by plan",
+        "columns": [
+          "Free",
+          "Go",
+          "Plus",
+          "Pro"
+        ],
+        "rows": [
+          {
+            "label": "Regular chat model",
+            "values": [
+              "Sources conflict",
+              "GPT-5.6 Luna",
+              "GPT-6 (Sol)",
+              "GPT-6 plus Pro"
+            ]
+          },
+          {
+            "label": "Thinking control",
+            "values": [
+              "Think option",
+              "Think option",
+              "Medium, High",
+              "Medium to Pro"
+            ]
+          },
+          {
+            "label": "GPT-6 Astra",
+            "values": [
+              "No",
+              "No",
+              "Work and Codex only",
+              "Chat, Work, Codex"
+            ]
+          },
+          {
+            "label": "Legacy models",
+            "values": [
+              "No",
+              "No",
+              "Yes",
+              "Yes"
+            ]
+          },
+          {
+            "label": "Images with Thinking",
+            "values": [
+              "No",
+              "No",
+              "Yes",
+              "Yes"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "s06",
+      "chapter": "",
+      "narration": "So where does GPT six Luna fit in? OpenAI's launch post clears that up. The Availability section says Free and Go users can access GPT six Luna in the desktop app, and that these models are not yet available in Chat. So if someone promises you GPT six Luna in your regular free chats, that's not what OpenAI says right now. It's a desktop app feature, through ChatGPT Work and Codex.",
+      "visual": {
+        "type": "browser",
+        "url": "https://openai.com/index/introducing-gpt-6-sol-and-luna/",
+        "steps": [
+          {
+            "action": "show",
+            "target": "",
+            "caption": "OpenAI's GPT-6 launch post"
+          },
+          {
+            "action": "scroll",
+            "target": "Availability",
+            "caption": "Luna for Free and Go: desktop app"
+          },
+          {
+            "action": "highlight",
+            "target": "These models are not yet available in Chat.",
+            "caption": "Not in regular chat yet"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s07",
+      "chapter": "Context & limits",
+      "narration": "Next, context. That's how much text ChatGPT can hold at once, and it's the most underrated difference between plans. In Instant mode, Free gets twenty-seven thousand tokens, roughly twelve pages. Go and Plus get fifty-four thousand, about forty pages. Pro jumps to a hundred twenty-eight thousand, around two hundred fifty pages. With reasoning, Go and Plus get about three hundred twenty pages, and Pro about six hundred eighty. If you paste long contracts, reports, or code, this row matters more than the model name. Speed differs too: Plus is listed as fast, and Ultrafast exists only on eligible Pro tiers.",
+      "visual": {
+        "type": "compare",
+        "heading": "Context and speed",
+        "columns": [
+          "Free",
+          "Go",
+          "Plus",
+          "Pro"
+        ],
+        "rows": [
+          {
+            "label": "Instant context",
+            "values": [
+              "27K",
+              "54K",
+              "54K",
+              "128K"
+            ]
+          },
+          {
+            "label": "Instant max input",
+            "values": [
+              "~12 pages",
+              "~40 pages",
+              "~40 pages",
+              "~250 pages"
+            ]
+          },
+          {
+            "label": "Reasoning context",
+            "values": [
+              "Varies",
+              "256K",
+              "256K",
+              "400K"
+            ]
+          },
+          {
+            "label": "Reasoning max input",
+            "values": [
+              "Varies",
+              "~320 pages",
+              "~320 pages",
+              "~680 pages"
+            ]
+          },
+          {
+            "label": "Response speed",
+            "values": [
+              "Limited",
+              "Limited",
+              "Fast",
+              "Ultrafast on eligible tiers"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "s08",
+      "chapter": "",
+      "narration": "A warning about the word unlimited. Unlimited chat is subject to abuse guardrails. GPT six Pro is not unlimited on any Pro tier, and Work and Codex allowances are separate from Chat. If you hit a limit, support can't reset it. You either wait for the reset time ChatGPT shows you, or switch to another model.",
+      "visual": {
+        "type": "callout",
+        "kind": "warning",
+        "text": "Unlimited has limits. GPT-6 Pro isn't unlimited on any tier, and support can't reset limits."
+      }
+    },
+    {
+      "id": "s09",
+      "chapter": "Features",
+      "narration": "Now features. Scroll down the pricing page to Compare features across plans. Two rows decide a lot of upgrades. Sites is included on Plus and Pro, not on Free or Go. Dots is Pro only. A few other rows worth knowing: scheduled tasks and voice with video start at Go. Deep research is limited on Free and Go, full on Plus, and maximum on Pro. ChatGPT Work on web and mobile starts at Plus. And Projects are on every plan, including Free.",
+      "visual": {
+        "type": "browser",
+        "url": "https://chatgpt.com/pricing",
+        "steps": [
+          {
+            "action": "scroll",
+            "target": "Compare features across plans",
+            "caption": "The full feature table"
+          },
+          {
+            "action": "highlight",
+            "target": "Sites",
+            "caption": "Sites: Plus and Pro"
+          },
+          {
+            "action": "highlight",
+            "target": "Dots",
+            "caption": "Dots: Pro only"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s10",
+      "chapter": "",
+      "narration": "So what are these new things? Dots is an always-on agent with its own memory and its own cloud computer. It keeps working after you log off. Based on release notes reported by third parties, Dots are on Pro, except in the European Economic Area, Switzerland and the UK, and on Business Premium. Space and Pages launched at DevDay on September twenty-ninth, and they aren't in the official comparison table. Reports say Space replaces Library on Pro, Business and Enterprise. Pages are documents inside Space that you and ChatGPT edit together. OpenAI hasn't confirmed whether Plus, Go or Free get Space, so don't upgrade just for it.",
+      "visual": {
+        "type": "bullets",
+        "heading": "Dots, Space and Pages",
+        "items": [
+          "Dots: always-on agent, Pro only",
+          "Not in EEA, Switzerland, UK",
+          "Space replaces Library on Pro",
+          "Pages: docs you co-edit with ChatGPT",
+          "Space on Plus or below: unconfirmed"
+        ]
+      }
+    },
+    {
+      "id": "s11",
+      "chapter": "Pro tiers",
+      "narration": "Considering Pro? Read this help article. Only Pro five hundred includes Ultrafast, and it has the highest included usage. But Ultrafast burns your allowance eight times faster, then charges credits at six times the standard rate. Pro two hundred gives more usage than Pro one hundred, and it's open to new subscribers again, but with a lower allowance than before. If you had it active between September twenty-second and twenty-ninth, you keep the old allowance until October twenty-ninth. On Pro one hundred, the Pro models share one weekly allowance. On Pro two hundred, hitting the weekly GPT six Pro limit switches you to GPT five point six Thinking at Medium.",
+      "visual": {
+        "type": "browser",
+        "url": "https://help.openai.com/en/articles/9793128-about-chatgpt-pro-tiers",
+        "steps": [
+          {
+            "action": "show",
+            "target": "",
+            "caption": "Official Pro tier guide"
+          },
+          {
+            "action": "highlight",
+            "target": "Which Pro plans include Ultrafast?",
+            "caption": "Ultrafast: Pro 500 only"
+          },
+          {
+            "action": "scroll",
+            "target": "Can I subscribe to Pro 200 again?",
+            "caption": "Pro 200 is back, smaller allowance"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s12",
+      "chapter": "",
+      "narration": "Here's a costly mistake. Buying credits on Pro one hundred or Pro two hundred does not give you Ultrafast. Credits only cover Codex, ChatGPT Work, and ChatGPT for Word, Excel and PowerPoint. And a grandfathered Pro two hundred allowance doesn't add Pro five hundred features. Also, Fast mode uses your allowance two and a half times faster than Standard.",
+      "visual": {
+        "type": "callout",
+        "kind": "tip",
+        "text": "Credits don't unlock Ultrafast. Only Pro 500 includes it, and credits cover only Codex, Work and Office apps."
+      }
+    },
+    {
+      "id": "s13",
+      "chapter": "Which to pick",
+      "narration": "So which plan should you pay for? Casual user, a few questions a day? Stay on Free. Chat a lot and want higher limits, longer context and scheduled tasks? Go is the cheap step up, if it's offered in your region and you're fine with possible ads. Need real reasoning, Sites, ChatGPT Work and Codex, custom GPTs or legacy models? Plus at twenty dollars is the sweet spot for most professionals. Move to Pro only for the GPT six Pro setting, Dots, or the biggest context. Then pick the tier by usage, unless you need Ultrafast. Two or more people? Look at Business, which adds an admin console and single sign-on.",
+      "visual": {
+        "type": "bullets",
+        "heading": "Pick the cheapest plan that fits",
+        "items": [
+          "Free: casual, occasional use",
+          "Go: higher limits on a budget",
+          "Plus: reasoning, Sites, Work, Codex",
+          "Pro: GPT-6 Pro, Dots, max context",
+          "Business: teams of two or more"
+        ]
+      }
+    },
+    {
+      "id": "s14",
+      "chapter": "",
+      "narration": "Once you've decided, here's how to act on it. To upgrade, sign in, open the pricing page and choose your plan. To switch between Pro tiers, go to Settings, then My Plan. To buy extra usage, open Settings, then Usage. In Codex, it's Usage and Billing. To cancel, do it on the platform where you paid: ChatGPT, Apple or Google Play. Uninstalling the app does not cancel your subscription.",
+      "visual": {
+        "type": "steps",
+        "heading": "Upgrade, switch, or cancel",
+        "steps": [
+          {
+            "text": "Upgrade from the pricing page",
+            "detail": "Sign in → Pricing → choose plan"
+          },
+          {
+            "text": "Switch between Pro 100, 200, 500",
+            "detail": "Settings → My Plan"
+          },
+          {
+            "text": "Buy extra usage credits",
+            "detail": "Settings → Usage, or Codex Usage & Billing"
+          },
+          {
+            "text": "Cancel where you paid",
+            "detail": "ChatGPT, Apple, or Google Play"
+          }
+        ]
+      }
+    },
+    {
+      "id": "s15",
+      "chapter": "",
+      "narration": "Three last gotchas. First, some official plan pages are out of date. The Go page still mentions GPT five auto messages, so trust the main pricing page and the help center. Second, if you subscribed through the App Store or Google Play, refunds go through Apple or Google, and cancelling doesn't automatically refund you. Third, merging into a Business workspace changes how your personal Pro subscription is handled. Keep the workspaces separate if you want to keep Pro. And if you're on an old desktop app, use the web version for the new Intelligent UI.",
+      "visual": {
+        "type": "bullets",
+        "heading": "Mistakes to avoid",
+        "items": [
+          "Some plan pages are outdated",
+          "App store refunds go through Apple, Google",
+          "Business merge affects personal Pro",
+          "Old desktop apps lack Intelligent UI"
+        ]
+      }
+    },
+    {
+      "id": "s16",
+      "chapter": "",
+      "narration": "Quick recap. Free for trying it out. Go for longer chats on a budget. Plus for most professionals who need reasoning and Sites. Pro for heavy research and coding, with the tier chosen by usage. Your next step: open your model menu, check which model and thinking levels you actually have, and compare that to the table. Links to the pricing page and help articles are in the description. If this saved you money, subscribe for more honest tool breakdowns.",
+      "visual": {
+        "type": "outro",
+        "heading": "Pick the plan, skip the overpay",
+        "cta": "Links are in the description"
+      }
+    }
+  ]
+}

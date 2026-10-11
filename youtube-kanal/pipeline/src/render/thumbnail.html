@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>thumbnail</title>
+<style>
+  :root { --accent: #FFD60A; --accent2: #3A86FF; --bg: #0B0F19; --text: #F5F7FA; --font: 'Inter', 'DejaVu Sans', sans-serif; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1280px; height: 720px; overflow: hidden; }
+  body { font-family: var(--font); color: var(--text); -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(700px 520px at 92% 30%, color-mix(in srgb, var(--accent2) 55%, transparent), transparent 70%),
+      radial-gradient(520px 420px at 0% 100%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 70%),
+      var(--bg); }
+  .shot { position: absolute; right: -90px; top: 120px; width: 760px; height: 470px; border-radius: 22px; overflow: hidden;
+    transform: perspective(1400px) rotateY(-16deg) rotateZ(2deg); background: #fff;
+    box-shadow: 0 40px 90px rgba(0,0,0,.6), 0 0 0 4px rgba(255,255,255,.85); }
+  .shot .bar { height: 30px; background: #eceff3; display: flex; gap: 8px; align-items: center; padding: 0 14px; }
+  .shot .bar i { width: 11px; height: 11px; border-radius: 50%; display: block; }
+  .shot img { width: 100%; height: calc(100% - 30px); object-fit: cover; object-position: top center; display: block; }
+  .logo { position: absolute; right: 70px; top: 190px; width: 520px; height: 340px; border-radius: 40px; display: grid; place-items: center;
+    background: linear-gradient(140deg, var(--accent2), color-mix(in srgb, var(--accent2) 40%, #000));
+    transform: rotate(4deg); box-shadow: 0 40px 90px rgba(0,0,0,.55); font-size: 84px; font-weight: 900; text-align: center; padding: 30px; line-height: 1; }
+  .text { position: absolute; left: 60px; top: 50%; transform: translateY(-50%); width: 640px;
+    font-size: 116px; font-weight: 900; line-height: .98; letter-spacing: -0.045em;
+    text-shadow: 0 6px 0 rgba(0,0,0,.55), 0 14px 40px rgba(0,0,0,.6); }
+  .text .hl { color: var(--accent); }
+  .badge { position: absolute; left: 60px; top: 52px; padding: 12px 26px; border-radius: 14px; background: var(--accent); color: var(--bg);
+    font-size: 40px; font-weight: 900; letter-spacing: .02em; transform: rotate(-3deg); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .arrow { position: absolute; left: 560px; bottom: 70px; width: 170px; height: 120px; color: var(--accent); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+  window.mountThumb = (spec) => {
+    const css = document.documentElement.style;
+    css.setProperty('--accent', spec.brand.accent);
+    css.setProperty('--accent2', spec.brand.accent2);
+    css.setProperty('--bg', spec.brand.background);
+    css.setProperty('--text', spec.brand.text);
+    css.setProperty('--font', `'${spec.brand.font}', 'Inter', 'DejaVu Sans', sans-serif`);
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    const words = spec.text.split(/\s+/).filter(Boolean);
+    const last = words.pop() || '';
+    const root = document.getElementById('root');
+    let html = '';
+    html += spec.image
+      ? `<div class="shot"><div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><img src="${spec.image}"></div>`
+      : `<div class="logo">${esc(spec.tool || '')}</div>`;
+    html += `<div class="text">${esc(words.join(' '))} <span class="hl">${esc(last)}</span></div>`;
+    if (spec.badge) html += `<div class="badge">${esc(spec.badge)}</div>`;
+    html += `<svg class="arrow" viewBox="0 0 170 120" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"><path d="M12 100 C 60 100, 110 80, 140 30"/><path d="M100 30 L 142 26 L 150 68"/></svg>`;
+    root.innerHTML = html;
+    // Metin sığmazsa küçült
+    const t = root.querySelector('.text');
+    let size = 116;
+    while ((t.scrollHeight > 520 || t.scrollWidth > 660) && size > 60) {
+      size -= 4;
+      t.style.fontSize = size + 'px';
+    }
+    return Promise.all([...document.images].map((img) => img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; })));
+  };
+</script>
+</body>
+</html>

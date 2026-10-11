@@ -1,0 +1,44 @@
+# YouTube kanalı: haftalık konu fikirleri (data/backlog.yaml'a eklenir).
+name: "YouTube Kanalı · Konu fikirleri"
+
+on:
+  schedule:
+    - cron: "41 4 * * 0" # pazar 07:41 (Türkiye)
+  workflow_dispatch:
+
+concurrency:
+  group: youtube-kanal
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  ideas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    defaults:
+      run:
+        working-directory: youtube-kanal/pipeline
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: youtube-kanal/pipeline/package-lock.json
+      - run: npm ci
+      - name: Fikir üret
+        run: npm run ideas
+      - name: Konu listesini kaydet
+        working-directory: .
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add youtube-kanal/data
+          if git diff --cached --quiet; then echo "Değişiklik yok."; exit 0; fi
+          git commit -q -m "YouTube kanalı: yeni konu fikirleri"
+          for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep $((i * 5)); done
+          echo "::error::Değişiklikler depoya gönderilemedi"; exit 1
