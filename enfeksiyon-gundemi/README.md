@@ -5,7 +5,9 @@ bir klinisyen-editör gözüyle değerlendiren ve telefonda dijital bir dergi gi
 
 > Bu uygulama klinik karar destek aracı değil, kişisel bir literatür takip aracıdır.
 
-- **Adres:** https://enfeksiyon-gundemi.pages.dev (yalnızca sizin e-postanızla, tek kullanımlık kodla giriş)
+- **Adres:** `https://enfeksiyon-gundemi.<alt-alan-adınız>.workers.dev` (yalnızca sizin e-postanızla, tek kullanımlık kodla giriş).
+  Eski adres https://enfeksiyon-gundemi.pages.dev de çalışır, ancak **pages.dev Türkiye'de erişime engelli** olduğu için
+  Türkiye'den workers.dev adresi kullanılmalıdır.
 - **Ayrıntılı plan:** [`../docs/klinik-editor-PLAN.md`](../docs/klinik-editor-PLAN.md)
 
 ---
@@ -89,7 +91,7 @@ Her dosyanın içinde açıklamalar Türkçedir.
 
    | Ad | Değer |
    |---|---|
-   | `CLOUDFLARE_API_TOKEN` | Cloudflare API jetonu (izinler: Account · D1 · Edit, Account · Cloudflare Pages · Edit) |
+   | `CLOUDFLARE_API_TOKEN` | Cloudflare API jetonu (izinler: Account · D1 · Edit, Account · Cloudflare Pages · Edit, Account · Workers Scripts · Edit) |
    | `CLOUDFLARE_ACCOUNT_ID` | Cloudflare hesap kimliği |
    | `NCBI_API_KEY` | NCBI API anahtarı |
    | `NCBI_EMAIL` | NCBI'ye bildirilen iletişim e-postası |
@@ -104,6 +106,11 @@ Her dosyanın içinde açıklamalar Türkçedir.
    (böylece ana adres de korunur) ve *Restrict previews*'a bir kez daha basılır. Uygulamanın AUD değeri ve ekip alan adı
    yukarıdaki iki secret'a girilir; uygulama bu imzayı ayrıca kendisi de doğrular. Yayın iş akışı her seferinde sitenin
    girişsiz açılmadığını kontrol eder.
+5. **workers.dev adresi (Türkiye'den erişim için):** Cloudflare → Workers & Pages → sağdaki *Subdomain* ile hesaba bir
+   workers.dev alt alan adı tanımlanır. Yayın iş akışı uygulamayı `enfeksiyon-gundemi` adlı Worker olarak da yayınlar.
+   Ardından Workers & Pages → enfeksiyon-gundemi → Settings → Domains & Routes → workers.dev satırında
+   **Cloudflare Access** açılır (yalnızca sizin e-postanıza izin verilir). Access açılmadan önce de uygulama giriş
+   imzası olmayan isteklere içerik göstermez.
 
 ## 7. Geliştirici notları
 

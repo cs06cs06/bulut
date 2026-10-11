@@ -9,7 +9,7 @@ export const handle: Handle = async ({ event, resolve }) => {
   event.locals.accessConfigured = isConfigured(team) && isConfigured(aud);
 
   if (event.locals.accessConfigured) {
-    const user = await verifyAccessJwt(event.request.headers.get('cf-access-jwt-assertion'), team!, aud!);
+    const user = await verifyAccessJwt(event.request.headers.get('cf-access-jwt-assertion'), team!, aud!, env?.ACCESS_ANY_AUD === '1');
     if (!user) {
       return new Response('Bu sayfaya erişim için giriş yapmanız gerekiyor.', {
         status: 403,

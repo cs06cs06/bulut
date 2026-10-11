@@ -1,0 +1,23 @@
+# workers.dev adresi için Worker yapılandırması (pages.dev Türkiye'de erişime engelli olduğu için).
+# Bu dosyadan dağıtım sırasında wrangler.worker.toml üretilir; elle düzenlemeyin.
+name = "enfeksiyon-gundemi"
+main = ".svelte-kit/cloudflare-worker/_worker.js"
+compatibility_date = "2026-09-01"
+compatibility_flags = ["nodejs_compat"]
+workers_dev = true
+preview_urls = false
+
+[assets]
+binding = "ASSETS"
+directory = ".svelte-kit/cloudflare-worker"
+
+[vars]
+ACCESS_TEAM_DOMAIN = "__ACCESS_TEAM_DOMAIN__"
+ACCESS_AUD = "__ACCESS_AUD__"
+ACCESS_ANY_AUD = "1"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "enfeksiyon-gundemi"
+database_id = "__D1_DATABASE_ID__"
+migrations_dir = "../db/migrations"

@@ -65,3 +65,33 @@ jobs:
             echo "::error::Site giriş yapmadan açılıyor! Cloudflare Access ayarlarını kontrol edin."
             exit 1
           fi
+      # pages.dev Türkiye'de erişime engelli olduğu için aynı uygulama workers.dev adresine de yayınlanır.
+      - name: workers.dev için derle
+        run: EG_WRANGLER_CONFIG=wrangler.worker.toml npm run build
+      - name: workers.dev'e yayınla
+        id: worker
+        continue-on-error: true
+        run: |
+          if ! out="$(npx wrangler deploy -c wrangler.worker.toml 2>&1)"; then
+            echo "$out" | tail -20
+            echo "::warning::workers.dev'e yayınlanamadı. Cloudflare API anahtarına 'Account · Workers Scripts · Edit' izni eklenmeli ve hesapta bir workers.dev alt alan adı olmalı (README → Kurulum)."
+            exit 1
+          fi
+          echo "$out" | grep -E "workers\.dev|Deployed|Uploaded" || true
+          url="$(echo "$out" | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -1)"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          if [ -n "$ANTHROPIC_API_KEY" ]; then
+            printf '%s' "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY -c wrangler.worker.toml > /dev/null
+            echo "Soru-cevap anahtarı aktarıldı."
+          fi
+      - name: workers.dev giriş korumasını doğrula
+        if: steps.worker.outcome == 'success' && env.ACCESS_AUD != '' && steps.worker.outputs.url != ''
+        run: |
+          sleep 10
+          code=$(curl -s -o /dev/null -w "%{http_code}" "${{ steps.worker.outputs.url }}/")
+          echo "Adres: ${{ steps.worker.outputs.url }} · girişsiz istek yanıtı: $code"
+          if [ "$code" = "200" ]; then
+            echo "::error::workers.dev adresi giriş yapmadan açılıyor!"
+            exit 1
+          fi
+

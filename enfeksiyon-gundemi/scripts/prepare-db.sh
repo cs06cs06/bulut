@@ -38,6 +38,11 @@ sed -e "s|__D1_DATABASE_ID__|${DB_ID}|" \
     -e "s|__ACCESS_TEAM_DOMAIN__|${ACCESS_TEAM_DOMAIN:-__ACCESS_TEAM_DOMAIN__}|" \
     -e "s|__ACCESS_AUD__|${ACCESS_AUD:-__ACCESS_AUD__}|" \
     wrangler.template.toml > wrangler.toml
+# Aynı değerlerle workers.dev Worker yapılandırması
+sed -e "s|__D1_DATABASE_ID__|${DB_ID}|" \
+    -e "s|__ACCESS_TEAM_DOMAIN__|${ACCESS_TEAM_DOMAIN:-__ACCESS_TEAM_DOMAIN__}|" \
+    -e "s|__ACCESS_AUD__|${ACCESS_AUD:-__ACCESS_AUD__}|" \
+    wrangler.worker.template.toml > wrangler.worker.toml
 
 # Şema güncellemeleri. Günlük yazma kotası dolduysa güncelleme ertesi güne kalır; iş durmaz.
 if ! out="$(npx wrangler d1 migrations apply "$DB_NAME" --remote 2>&1)"; then

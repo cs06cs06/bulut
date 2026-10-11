@@ -13,10 +13,17 @@ export function isConfigured(v: string | undefined): v is string {
   return !!v && !v.startsWith('__');
 }
 
+/**
+ * aud: Access uygulamasının AUD değeri (virgülle birden çok verilebilir).
+ * anyAud: workers.dev adresinde Access, Worker ayarlarından ayrı bir uygulama olarak açılır ve AUD değeri
+ * farklıdır. Orada imza ve ekip (issuer) doğrulanır, AUD aranmaz; ekipteki tek Access uygulamaları bu
+ * uygulamanın kendi adresleri olduğundan güvenlik düzeyi aynıdır.
+ */
 export async function verifyAccessJwt(
   token: string | null,
   teamDomain: string,
   aud: string,
+  anyAud = false,
 ): Promise<{ email: string } | null> {
   if (!token) return null;
   const issuer = `https://${teamDomain.replace(/^https?:\/\//, '').replace(/\/$/, '')}`;
@@ -26,7 +33,8 @@ export async function verifyAccessJwt(
     jwksCache.set(issuer, jwks);
   }
   try {
-    const { payload } = await jwtVerify(token, jwks, { issuer, audience: aud });
+    const audience = aud.split(',').map((a) => a.trim()).filter(Boolean);
+    const { payload } = await jwtVerify(token, jwks, anyAud ? { issuer } : { issuer, audience });
     return { email: String(payload.email ?? '') };
   } catch {
     return null;
