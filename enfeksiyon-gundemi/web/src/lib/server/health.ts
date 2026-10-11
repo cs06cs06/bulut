@@ -201,8 +201,8 @@ export async function fullHealth(db: D1Database, now = Date.now()) {
               (SELECT COUNT(*) FROM chat_messages WHERE role = 'user' AND created_at >= ?2) AS questions_month`,
     ).bind(day(now), new Date(Date.UTC(new Date(now).getUTCFullYear(), new Date(now).getUTCMonth(), 1)).toISOString()),
     db.prepare(`SELECT day, rows FROM db_writes WHERE day >= ?1 ORDER BY day`).bind(day(now - 13 * DAY)),
-    db.prepare(`SELECT key, value FROM app_state WHERE key IN ('db_size', 'fts_cursor')`),
-    db.prepare(`SELECT MAX(id) AS max_id FROM works`),
+    db.prepare(`SELECT key, value FROM app_state WHERE key IN ('db_size', 'fts_count')`),
+    db.prepare(`SELECT COUNT(*) AS relevant FROM triage WHERE relevant = 1`),
   ]);
 
   const runRows = runs.results as unknown as { id: number; kind: string; started_at: string; finished_at: string | null; status: string }[];
@@ -218,7 +218,7 @@ export async function fullHealth(db: D1Database, now = Date.now()) {
     : [];
   const stateMap = Object.fromEntries((state.results as unknown as { key: string; value: string }[]).map((r) => [r.key, r.value]));
   const q = queue.results[0] as Record<string, number>;
-  const maxId = Number((index.results[0] as { max_id: number | null })?.max_id ?? 0);
+  const relevant = Number((index.results[0] as { relevant: number | null })?.relevant ?? 0);
   const writeRows = writes.results as unknown as { day: string; rows: number }[];
 
   return {
@@ -246,8 +246,8 @@ export async function fullHealth(db: D1Database, now = Date.now()) {
       writes: writeRows,
       dbBytes: stateMap.db_size ? Number(stateMap.db_size) : null,
       dbLimit: D1_MAX_BYTES,
-      // Arama dizini: kimlik sırasıyla ilerler; kabaca ilerleme oranı
-      indexProgress: maxId ? Math.min(1, Number(stateMap.fts_cursor ?? 0) / maxId) : 0,
+      // Arama dizini: dizinlenen alakalı yayınların oranı
+      indexProgress: relevant ? Math.min(1, Number(stateMap.fts_count ?? 0) / relevant) : 0,
     },
   };
 }

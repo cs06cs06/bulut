@@ -276,3 +276,20 @@ test('pazar günü haftalık baskı bir kez hazırlanır', async () => {
   const u = await db.all<{ kind: string }>("SELECT kind FROM ai_usage WHERE kind = 'weekly'");
   assert.equal(u.length, 1);
 });
+
+test('arama dizini triyaj birikimi olsa da yeni değerlendirilen yayınları ekler', async () => {
+  const { updateSearchIndex } = await import('../src/lib/searchindex.ts');
+  const db = await freshDb();
+  await storeRecords(db, [1, 2, 3].map((i) => rec({ pmid: String(800 + i), title: `Candidemia treatment duration study number ${i} with a long title` })), loadJournalTiers());
+  const triage = (id: number, at: string) =>
+    db.all(`INSERT INTO triage (work_id, relevant, importance, topics, source, created_at) VALUES (?, 1, 3, '[]', 'model', ?)`, [id, at]);
+  await triage(3, '2026-10-10T05:00:00Z'); // en küçük kimlik (1) henüz triyajda değil
+  assert.equal(await updateSearchIndex(db, 100), 1);
+  await triage(1, '2026-10-10T06:00:00Z');
+  assert.equal(await updateSearchIndex(db, 100), 1);
+  assert.equal(await updateSearchIndex(db, 100), 0);
+  const hits = await db.all(`SELECT rowid FROM works_fts WHERE works_fts MATCH 'candidemia'`);
+  assert.equal(hits.length, 2);
+  const [legacy] = await db.all<{ value: string }>(`SELECT value FROM app_state WHERE key = 'fts_cursor'`);
+  assert.equal(legacy.value, '1000000000000', 'eski imleç kapatılır');
+});
