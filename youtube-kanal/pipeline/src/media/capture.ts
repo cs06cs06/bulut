@@ -202,7 +202,12 @@ export async function captureAll(
       out.push(p);
       continue;
     }
-    const c = await captureScene(browser, scene, outDir);
+    let c = await captureScene(browser, scene, outDir);
+    if (!c.ok) {
+      // Bot korumaları çoğu zaman aralıklı engeller; kısa bir beklemeden sonra bir kez daha dene.
+      await new Promise((r) => setTimeout(r, 4000));
+      c = await captureScene(browser, scene, outDir);
+    }
     console.log(`  ${scene.id} ${c.ok ? '✓' : '✗'} ${scene.visual.url}${c.error ? ` — ${c.error}` : ''}`);
     out.push(c);
   }
