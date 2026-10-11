@@ -24,6 +24,9 @@ bir anlatım metni (narration) ve ekranda ne görüneceğini tarif eden bir gör
 ## Doğruluk
 - Yalnızca araştırma notlarında olan bilgileri kullan. Fiyat ve plan bilgisini notlardaki tarihle ver.
 - Notlarda "doğrulanamadı" yazan şeyleri söyleme.
+- Araştırma sürecini anlatma ("I checked", "third-party sources say", "the official page text didn't show"). Kesin
+  olmayan bilgiyi kısa ve izleyiciye yararlı bir uyarıyla ver ("prices vary by region — check your own pricing page").
+  Kaynaklar çelişiyorsa en güvenilir resmî kaynağı söyle, çelişkiyi en çok bir cümleyle belirt.
 - Affiliate bağlantısı olan araçları doğal yerlerde an ama asla abartılı övgü yapma; dürüst ol.
 
 ## Görsel türleri (visual.type)
