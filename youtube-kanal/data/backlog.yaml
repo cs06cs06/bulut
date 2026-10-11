@@ -10,4 +10,145 @@
 #   üretiliyor  — şu an üretimde (yarıda kaldıysa bir sonraki çalıştırma devam eder)
 #   üretildi    — video hazır (episodes/ klasörüne bakın)
 # ----------------------------------------------------------------------------
-[]
+- id: how-to-use-chatgpt-s-new-interactive-answers-gpt-6-intellige
+  title: How to Use ChatGPT's New Interactive Answers (GPT-6 Intelligent UI Tutorial)
+  query: chatgpt new features 2026
+  tools:
+    - ChatGPT
+  format: tutorial
+  angle: In 8 minutes, get ChatGPT to build editable charts, side-by-side comparisons, calculators and diagrams you can use in real work.
+  why: GPT-6 ve Intelligent UI 7 Ekim'de çıktı ve 8 Ekim'den itibaren Free/Go kullanıcılarına da açılıyor, bu yüzden kitle çok geniş. 'chatgpt new features 2026' ve 'chatgpt 5' gibi aramalar talebi gösteriyor. İlk kapsamlı anlatımı yapan kanal aramayı uzun süre tutar. Plus aboneliği gelir potansiyeli taşıyor.
+  score: 9
+  status: bekliyor
+  added: 2026-10-11
+- id: claude-slides-tutorial-make-a-presentation-for-free-in-minut
+  title: "Claude Slides Tutorial: Make a Presentation for Free in Minutes"
+  query: how to use claude ai
+  tools:
+    - Claude
+    - Claude Slides
+  format: tutorial
+  angle: Go from a rough outline to a finished, on-brand slide deck with Claude Slides, including editing directly on the canvas, on the free plan.
+  why: 16 Eylül'den beri Claude Slides, Design ve Docs Free dahil tüm planlarda. Teknik olmayan kitle için en çok aranabilecek Claude özelliği bu. 'how to use claude ai' ve 'claude ai tutorial 2026' gibi güçlü aramalar var. Video Pro/Max yükseltmesine de yönlendirebilir.
+  score: 9
+  status: bekliyor
+  added: 2026-10-11
+- id: chatgpt-plans-explained-free-vs-go-vs-plus-vs-pro-100-200-50
+  title: "ChatGPT Plans Explained: Free vs Go vs Plus vs Pro 100/200/500 – Which Should You Pay For?"
+  query: chatgpt plans comparison
+  tools:
+    - ChatGPT
+  format: comparison
+  angle: A clear table of what each plan unlocks (GPT-6 vs GPT-6 Luna, Dots, Space, Pages, Sites, limits) so you pick the right plan without overpaying.
+  why: 29 Eylül'deki fiyat değişiklikleri (yeni Pro 500, yeniden açılan Pro 200) kafa karışıklığı yarattı. Konu herkese açık fiyat sayfası ve sürüm notlarıyla gösterilebilir. Satın alma niyeti yüksek olduğu için RPM de yüksek olur.
+  score: 8
+  status: üretiliyor
+  added: 2026-10-11
+  episode: 2026-10-11-chatgpt-plans-explained-free-vs-go-vs-plus-vs-pro-100-200-50
+- id: claude-slides-vs-gamma-vs-canva-best-ai-presentation-maker-i
+  title: "Claude Slides vs Gamma vs Canva: Best AI Presentation Maker in 2026?"
+  query: gamma app vs canva
+  tools:
+    - Claude Slides
+    - Gamma
+    - Canva
+  format: comparison
+  angle: The same prompt is run through all three tools and scored on design, editing, export to PPT and price, so you know which to use.
+  why: "'gamma app vs canva' ve 'how to use gamma app for ppt' aramaları güçlü. Claude Slides'ın ücretsiz olması karşılaştırmayı şimdi güncel kılıyor. Gamma ve Canva'nın affiliate ve ücretli planları gelir sağlar. Not: Gamma ve Canva'nın güncel özellikleri ve fiyatları çekimden önce doğrulanmalı."
+  score: 8
+  status: bekliyor
+  added: 2026-10-11
+- id: chatgpt-vs-claude-in-2026-gpt-6-vs-claude-opus-5-5-for-every
+  title: "ChatGPT vs Claude in 2026: GPT-6 vs Claude Opus 5.5 for Everyday Work"
+  query: chatgpt vs claude
+  tools:
+    - ChatGPT
+    - Claude
+  format: comparison
+  angle: The two models are tested on 5 real tasks (email, report, spreadsheet, slides, research) with a clear winner for each job and plan.
+  why: "'chatgpt vs claude' ve 'claude ai vs chatgpt' çok yüksek hacimli aramalar. GPT-6 (7 Ekim) ile Opus 5.5 ve Sonnet 5.5 (Eylül) yeni çıktı, bu yüzden eski karşılaştırmalar artık güncel değil. Abonelik kararı videoları iyi gelir getirir."
+  score: 8
+  status: bekliyor
+  added: 2026-10-11
+- id: turn-any-meeting-recording-into-notes-and-a-follow-up-email
+  title: Turn Any Meeting Recording into Notes and a Follow-Up Email with ChatGPT
+  query: how to use chatgpt effectively
+  tools:
+    - ChatGPT
+  format: tutorial
+  angle: Upload an audio file and get a transcript, summary, action items and a ready-to-send follow-up email in about 5 minutes.
+  why: Ses yükleme 6 Ekim'de ücretli planlara geldi ve somut bir iş problemini çözüyor. Bilgi çalışanı kitlesine birebir uyuyor. Uygulama içinde gösterilmesi gerektiği için üretilebilirlik puanı biraz düşük.
+  score: 7
+  status: bekliyor
+  added: 2026-10-11
+- id: notion-ai-skills-tutorial-automate-repetitive-work-with-reus
+  title: "Notion AI Skills Tutorial: Automate Repetitive Work with Reusable AI Instructions"
+  query: notion ai agent tutorial
+  tools:
+    - Notion AI
+    - Notion Agent
+  format: tutorial
+  angle: Build your first Notion AI skill, run it with '/', and use the public 'PRD from raw notes' and 'Exec-ready' templates to save hours each week.
+  why: Notion 3.7 Agent Skills 15 Eylül'de çıktı. 'notion ai agent' ve 'how to use notion ai agent' aramaları talep gösteriyor. Herkese açık şablon sayfaları ekran kaydına uygun. Notion'un ücretli AI planları gelir potansiyeli taşıyor.
+  score: 7
+  status: bekliyor
+  added: 2026-10-11
+- id: make-com-vs-n8n-vs-zapier-which-automation-tool-should-begin
+  title: "Make.com vs n8n vs Zapier: Which Automation Tool Should Beginners Choose?"
+  query: make.com vs n8n vs zapier
+  tools:
+    - Make.com
+    - n8n
+    - Zapier
+  format: comparison
+  angle: A side-by-side look at pricing, ease of use, AI agent features and templates, with a simple recommendation for freelancers and small businesses.
+  why: Birden fazla 'vs' araması autocomplete'te öne çıkıyor. Make ve Zapier affiliate programlarıyla gelir değeri yüksek. Fiyat sayfaları ve şablon galerileri herkese açık. Güncel özellikler doğrulanmadığı için içerik zamandan bağımsız tutulmalı ve fiyatlar çekim günü kontrol edilmeli.
+  score: 7
+  status: bekliyor
+  added: 2026-10-11
+- id: how-to-use-elevenlabs-for-youtube-voiceovers-beginner-tutori
+  title: How to Use ElevenLabs for YouTube Voiceovers (Beginner Tutorial)
+  query: how to use elevenlabs for youtube videos
+  tools:
+    - ElevenLabs
+  format: tutorial
+  angle: Write a script, pick or clone a voice, tune the settings and export a natural-sounding voiceover ready for your video.
+  why: Yüzsüz içerik üreticileri ve pazarlamacılar için güçlü ve sürekli bir talep var. ElevenLabs'in affiliate programı yüksek gelir sağlar. Son değişiklikler doğrulanmadığı için temel akışa odaklanılmalı ve yeni özellik iddiasında bulunulmamalı.
+  score: 7
+  status: bekliyor
+  added: 2026-10-11
+- id: how-to-use-perplexity-comet-browser-beginner-tutorial
+  title: "How to Use Perplexity Comet Browser: Beginner Tutorial"
+  query: how to use perplexity comet
+  tools:
+    - Perplexity
+    - Comet
+  format: tutorial
+  angle: Set up Comet and use it to research, summarize pages and handle web tasks faster than with a normal browser.
+  why: "'perplexity comet', 'perplexity comet browser' ve 'how to use perplexity comet' aramaları güçlü bir talep gösteriyor. Perplexity Pro ücretli planı gelir sağlar. Güncel sürüm doğrulanmadığı için çekimden önce özellikler kontrol edilmeli."
+  score: 7
+  status: bekliyor
+  added: 2026-10-11
+- id: what-are-chatgpt-dots-always-on-ai-agents-explained
+  title: What Are ChatGPT Dots? Always-On AI Agents Explained
+  query: chatgpt dots
+  tools:
+    - ChatGPT
+  format: tutorial
+  angle: Understand what Dots do, who can access them, what they cost, and realistic use cases, before you upgrade to Pro.
+  why: "'chatgpt dots' doğrudan autocomplete'te var ve özellik 29 Eylül'de çıktı. Ancak yalnızca Pro ve Business Premium'da, kademeli olarak açılıyor ve AB/İngiltere'de yok. Bu yüzden konu uygulama içi demo yerine sürüm notları üzerinden açıklayıcı olarak işlenmeli; puan bu nedenle orta."
+  score: 6
+  status: bekliyor
+  added: 2026-10-11
+- id: descript-vs-capcut-best-video-editor-for-talking-head-and-po
+  title: "Descript vs CapCut: Best Video Editor for Talking-Head and Podcast Videos"
+  query: descript vs capcut
+  tools:
+    - Descript
+    - CapCut
+  format: comparison
+  angle: The same clip is edited in both tools to show which is faster for text-based editing, captions and AI cleanup, and which plan is worth it.
+  why: "'descript vs capcut' ile her iki aracın 'how to use' aramaları yüksek hacimli. Descript'in affiliate programı ve iki aracın ücretli planları gelir getirir. Güncel özellikler doğrulanmadı, bu yüzden çekim günü kontrol edilmeli."
+  score: 6
+  status: bekliyor
+  added: 2026-10-11
