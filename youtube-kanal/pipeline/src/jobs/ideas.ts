@@ -9,6 +9,10 @@ import { collectSuggestions } from '../media/suggest.ts';
 import { generateIdeas } from '../stages/ideas.ts';
 
 export async function runIdeas(ai: AiClient = new AnthropicAiClient()): Promise<number> {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    warn('ANTHROPIC_API_KEY eklenmemiş (GitHub → Settings → Secrets and variables → Actions); fikir üretimi atlandı');
+    return 0;
+  }
   const channel = loadChannel();
   const aiCfg = loadAiConfig();
   const ledger = new UsageLedger();

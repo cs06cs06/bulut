@@ -18,6 +18,9 @@ test('slugify: Türkçe ve özel karakterler', () => {
   assert.equal(slugify('How to Use Notion AI (2026)!'), 'how-to-use-notion-ai-2026');
   assert.equal(slugify('Işık ve Gölge'), 'isik-ve-golge');
   assert.equal(slugify('!!!'), 'konu');
+  const long = slugify("How to Use ChatGPT's New Interactive Answers (GPT-6 Intelligent UI Tutorial)");
+  assert.ok(long.length <= 60 && !long.endsWith('intellige'), long);
+  assert.equal(long, 'how-to-use-chatgpt-s-new-interactive-answers-gpt-6');
 });
 
 test('normalizeTopics: elle eklenen konuya kimlik ve durum verir, tekrarları ayırır', () => {

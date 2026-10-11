@@ -40,8 +40,18 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Seslendirme anahtarını en başta denetle: eksikse yapay zekâ harcaması yapmadan dur.
-  const tts = ttsFromConfig(channel);
+  // Anahtarları en başta denetle: eksikse harcama yapmadan, hata yerine uyarıyla dur.
+  if (!process.env.ANTHROPIC_API_KEY) {
+    warn('ANTHROPIC_API_KEY eklenmemiş (GitHub → Settings → Secrets and variables → Actions); üretim atlandı');
+    return;
+  }
+  let tts;
+  try {
+    tts = ttsFromConfig(channel);
+  } catch (e) {
+    warn(`${(e as Error).message}; üretim atlandı`);
+    return;
+  }
 
   let backlog = loadBacklog();
   let topic = pickTopic(backlog, channel.topics.auto_approve, process.env.TOPIC_ID || undefined);

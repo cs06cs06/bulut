@@ -48,7 +48,12 @@ export function slugify(text: string): string {
       .replace(/ı/g, 'i')
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '')
-      .slice(0, 60)
+      .replace(/^(.{61,})$/, (slug: string) => {
+        // kelime ortasından kesme: 60. karakterden önceki son tireye kadar al
+        const cut = slug.slice(0, 61);
+        const i = cut.lastIndexOf('-');
+        return i > 30 ? cut.slice(0, i) : slug.slice(0, 60);
+      })
       .replace(/-+$/g, '') || 'konu'
   );
 }
@@ -62,7 +67,8 @@ export function normalizeTopics(raw: unknown): Topic[] {
   const out: Topic[] = [];
   for (const r of raw as Partial<Topic>[]) {
     if (!r || typeof r.title !== 'string' || !r.title.trim()) continue;
-    let id = typeof r.id === 'string' && r.id.trim() ? slugify(r.id) : slugify(r.title);
+    // Geçerli kimlik olduğu gibi korunur (bölüm klasörleri buna bağlı); yoksa başlıktan üretilir.
+    let id = typeof r.id === 'string' && /^[a-z0-9-]+$/.test(r.id) ? r.id : slugify(String(r.id ?? '') || r.title);
     while (seen.has(id)) id = `${id}-2`;
     seen.add(id);
     const status = STATUSES.includes(r.status as TopicStatus) ? (r.status as TopicStatus) : 'bekliyor';

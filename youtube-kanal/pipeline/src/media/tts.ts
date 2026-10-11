@@ -75,7 +75,9 @@ export function silent(wordsPerMinute: number): TtsProvider {
 
 export function ttsFromConfig(channel: ChannelConfig, env = process.env): TtsProvider {
   const v = channel.voice;
-  switch (v.provider) {
+  // TTS_PROVIDER ortam değişkeni ayarı geçici olarak geçersiz kılar (ör. silent ile sessiz deneme).
+  const provider = (env.TTS_PROVIDER as ChannelConfig['voice']['provider']) || v.provider;
+  switch (provider) {
     case 'elevenlabs':
       if (!env.ELEVENLABS_API_KEY) throw new Error('ELEVENLABS_API_KEY tanımlı değil (GitHub → Settings → Secrets)');
       return elevenLabs(v.elevenlabs, env.ELEVENLABS_API_KEY);
@@ -85,7 +87,7 @@ export function ttsFromConfig(channel: ChannelConfig, env = process.env): TtsPro
     case 'silent':
       return silent(channel.video.words_per_minute);
     default:
-      throw new Error(`Bilinmeyen seslendirme sağlayıcısı: ${v.provider}`);
+      throw new Error(`Bilinmeyen seslendirme sağlayıcısı: ${provider}`);
   }
 }
 
