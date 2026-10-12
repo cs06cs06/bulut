@@ -85,7 +85,7 @@ brand:
 voice:
   provider: elevenlabs
   elevenlabs:
-    voice_id: "pqHfZKP75CvOlQylNhV4"   # "Bill": yaşlı, sıcak Amerikalı erkek anlatıcı (alternatif: Brian nPczCjzI2devNBz1zQrb)
+    voice_id: "nPczCjzI2devNBz1zQrb"   # "Brian": derin, sıcak Amerikalı erkek anlatıcı (alternatif: Bill pqHfZKP75CvOlQylNhV4)
     model_id: "eleven_multilingual_v2"
     stability: 0.55
     similarity_boost: 0.8
