@@ -171,7 +171,7 @@ test('writeScript (listicle): listicle şemasıyla ister, madde ve görsel sayı
   const schema = ai.calls[0].schema as { required: string[] };
   assert.deepEqual(schema.required, ['title', 'hook', 'items', 'subscribe', 'outro', 'shorts']);
   assert.match(ai.calls[0].system, /Tam olarak 15 madde/);
-  assert.match(ai.calls[0].system, /Her madde için 3, kapanış için 2 tarif/);
+  assert.match(ai.calls[0].system, new RegExp(`Her madde için ${ch.listicle!.images_per_item}, kapanış için 2 tarif`));
   assert.match(ai.calls[0].system, /Kanca görselleri \(4 tarif\)/);
   assert.equal(res.value.scenes.length, 17);
 });

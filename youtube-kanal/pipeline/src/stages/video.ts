@@ -296,8 +296,7 @@ export function srtFromEvents(events: { start: number; end: number; text: string
 /** YouTube Studio'da yapılacaklar: bitiş ekranı, oynatma listesi, altyazı çevirisi, Shorts, Topluluk gönderisi. */
 function studioChecklist(meta: Metadata, script: Script, shorts: string[]): string[] {
   return [
-    '',
-    'YOUTUBE STUDIO CHECKLIST',
+    '\nYOUTUBE STUDIO CHECKLIST',
     '- End screen (last 20 s): add "Best for viewer" video + Subscribe element.' +
       (script.next_video ? ` The narration points to: "${script.next_video}".` : ''),
     meta.playlist ? `- Add to playlist: "${meta.playlist}" (create it if needed; series = binge-watching).` : '',

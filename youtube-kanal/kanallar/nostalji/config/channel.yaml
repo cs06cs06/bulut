@@ -46,7 +46,7 @@ video:
 
 listicle:
   items: 15                     # geri sayım: #15 → #1 (en güçlüsü sonda)
-  images_per_item: 3            # her görselden geniş/yakın kadrajlar alınır → ~5 sn'de bir görüntü değişimi
+  images_per_item: 4            # her görselden geniş/yakın kadrajlar alınır → ~5 sn'de bir görüntü değişimi
   intro_images: 4               # kanca "fragmanı": en çarpıcı maddelerden ~2 sn'lik kesitler
   outro_images: 2
 

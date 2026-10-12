@@ -150,12 +150,12 @@ Kendi konunuzu eklemek için listenin sonuna şunu yazmanız yeter:
 
 ## 5. Maliyet
 
-**Nostalji kanalı** (~11 dakikalık video, 15 madde × 3 görsel + giriş/kapanış ≈ 51 görsel):
+**Nostalji kanalı** (~11 dakikalık video, 15 madde × 4 görsel + giriş/kapanış ≈ 66 görsel):
 
 | Kalem | Video başına | Not |
 |---|---|---|
 | Claude (araştırma + senaryo + başlık) | ~1,5–2,5 $ | |
-| Görseller (Gemini Nano Banana 2.1, 2K) | ~2,6 $ | `images.size: 1K` ile ~1,8 $; `listicle.images_per_item` ile görsel sayısı |
+| Görseller (Gemini Nano Banana 2.1, 2K) | ~3,3 $ | `images.size: 1K` ile ~2,3 $; `listicle.images_per_item` ile görsel sayısı |
 | Seslendirme (Google Gemini TTS, ~12 dakika + Shorts) | ~0,2 $ | Aynı `GEMINI_API_KEY`; ses `voice.google.voice` (Gacrux). ElevenLabs'e geçilirse ticari lisans için ücretli plan gerekir (ayda 13 video ≈ Pro plan, 99 $) |
 
 `config/ai.yaml` → `budget.monthly_usd` (nostalji: 80 $) Claude ve görsel harcamasını sınırlar. Haftada 3 video ≈ ayda

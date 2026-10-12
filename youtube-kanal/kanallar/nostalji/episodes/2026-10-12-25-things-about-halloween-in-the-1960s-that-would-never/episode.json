@@ -17,7 +17,7 @@
     "episode": "2026-10-12-25-things-about-halloween-in-the-1960s-that-would-never"
   },
   "created": "2026-10-12T14:33:00.955Z",
-  "updated": "2026-10-12T16:57:58.632Z",
+  "updated": "2026-10-12T17:08:40.571Z",
   "stages": {
     "research": "2026-10-12T14:40:41.465Z",
     "script": "2026-10-12T16:42:36.130Z",
@@ -25,9 +25,9 @@
     "voice": "2026-10-12T16:57:58.626Z",
     "images": "2026-10-12T16:57:58.631Z",
     "capture": "2026-10-12T16:57:58.632Z",
-    "render": "2026-10-12T15:49:48.330Z",
-    "thumbnail": "2026-10-12T15:50:08.448Z"
+    "render": "2026-10-12T17:06:52.006Z",
+    "thumbnail": "2026-10-12T17:07:17.305Z"
   },
-  "cost_usd": 5.5751,
-  "duration_seconds": 2106
+  "cost_usd": 5.6255,
+  "duration_seconds": 715
 }
