@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 18.56,
+    "frames": 464,
+    "audioOffset": 0.4,
+    "audioDuration": 17.064,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 18.56,
+    "duration": 41.32,
+    "frames": 1033,
+    "audioOffset": -0.5960000000000001,
+    "audioDuration": 40.824,
+    "audioStart": 17.964,
+    "chapter": "#15 Trick-or-Treating With No Grown-Ups",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 59.88,
+    "duration": 38.92,
+    "frames": 973,
+    "audioOffset": -0.5920000000000059,
+    "audioDuration": 38.424,
+    "audioStart": 59.288,
+    "chapter": "#14 Sent to the Corner Store",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 98.8,
+    "duration": 44.48,
+    "frames": 1112,
+    "audioOffset": -0.5880000000000081,
+    "audioDuration": 43.968,
+    "audioStart": 98.21199999999999,
+    "chapter": "#13 Penny Candy, Your Own Money",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 143.28,
+    "duration": 39.64,
+    "frames": 991,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 39.144,
+    "audioStart": 142.68,
+    "chapter": "#12 Riding the City Bus Downtown",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 182.92,
+    "duration": 36.32,
+    "frames": 908,
+    "audioOffset": -0.5959999999999752,
+    "audioDuration": 35.808,
+    "audioStart": 182.324,
+    "chapter": "#11 A Dime for the Pay Phone",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 219.24,
+    "duration": 39.96,
+    "frames": 999,
+    "audioOffset": -0.6080000000000041,
+    "audioDuration": 39.456,
+    "audioStart": 218.632,
+    "chapter": "#10 Babysitting at Eleven or Twelve",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 259.2,
+    "duration": 49.48,
+    "frames": 1237,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 49.008,
+    "audioStart": 258.588,
+    "chapter": "#9 Saturday Matinee, No Adults",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 308.68,
+    "duration": 46.28,
+    "frames": 1157,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 45.744,
+    "audioStart": 308.096,
+    "chapter": "#8 Fireworks From the Roadside Stand",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 354.96,
+    "duration": 40.28,
+    "frames": 1007,
+    "audioOffset": -0.6199999999999477,
+    "audioDuration": 39.816,
+    "audioStart": 354.34000000000003,
+    "chapter": "#7 Swimming in the Creek",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 395.24,
+    "duration": 48.56,
+    "frames": 1214,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 48.024,
+    "audioStart": 394.65600000000006,
+    "chapter": "#6 The Paper Route at Eleven",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 443.8,
+    "duration": 44.72,
+    "frames": 1118,
+    "audioOffset": -0.6199999999999477,
+    "audioDuration": 44.256,
+    "audioStart": 443.18000000000006,
+    "chapter": "#5 Forts in the Woods",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 488.52,
+    "duration": 41.6,
+    "frames": 1040,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 41.088,
+    "audioStart": 487.93600000000004,
+    "chapter": "#4 Pond Hockey and Road Hockey",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 530.12,
+    "duration": 47.8,
+    "frames": 1195,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 47.304,
+    "audioStart": 529.524,
+    "chapter": "#3 Biking All Over Town, No Helmet",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 577.92,
+    "duration": 40.04,
+    "frames": 1001,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 39.528,
+    "audioStart": 577.328,
+    "chapter": "#2 Home When the Streetlights Came On",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 617.96,
+    "duration": 46.6,
+    "frames": 1165,
+    "audioOffset": -0.6040000000000418,
+    "audioDuration": 46.104,
+    "audioStart": 617.356,
+    "chapter": "#1 Walking to School at Six",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 664.56,
+    "duration": 23.44,
+    "frames": 586,
+    "audioOffset": -0.599999999999909,
+    "audioDuration": 23.208,
+    "audioStart": 663.96,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
