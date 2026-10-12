@@ -42,7 +42,9 @@
 <body>
 <div id="root"></div>
 <script>
-  window.mountThumb = (spec) => {
+  window.mountThumb = async (spec) => {
+    // Ölçümden önce yazı tipinin yüklenmesini bekle; yoksa yedek yazı tipine göre ölçülür ve metin taşar.
+    await Promise.all([document.fonts.load("900 104px 'Montserrat'"), document.fonts.load("800 40px 'Montserrat'")]).catch(() => {});
     const css = document.documentElement.style;
     css.setProperty('--accent', spec.brand.accent);
     css.setProperty('--accent2', spec.brand.accent2);
@@ -57,7 +59,7 @@
       root.innerHTML = `${spec.image ? `<img class="bar-img" src="${spec.image}">` : ''}<div class="bar-strip"><div class="bar-text">${esc(w.join(' '))}${last ? ` <b>${esc(last)}</b>` : ''}</div></div>`;
       const t = root.querySelector('.bar-text');
       let size = 104;
-      while (t.scrollWidth > 1220 && size > 50) { size -= 3; t.style.fontSize = size + 'px'; }
+      while (t.getBoundingClientRect().width > 1220 && size > 50) { size -= 3; t.style.fontSize = size + 'px'; }
       return Promise.all([...document.images].map((img) => img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; })));
     }
     const words = spec.text.split(/\s+/).filter(Boolean);

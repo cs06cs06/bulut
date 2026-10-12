@@ -53,6 +53,11 @@ export interface SceneSpec {
   last: boolean;
   total: number;
   videoTitle: string;
+  edit?: ChannelConfig['edit'];
+  cadence?: number;
+  punchAt?: number | null;
+  subscribeAt?: number | null;
+  assFile?: string;
   channel: string;
   chapter: string;
   visual: Visual;
@@ -70,6 +75,7 @@ export function sceneSpecs(
   captures: SceneCapture[],
   images: Record<string, string[]> = {},
   videoTitle = '',
+  extras: Record<string, { punchAt?: number | null; subscribeAt?: number | null; assFile?: string }> = {},
 ): SceneSpec[] {
   const byId = new Map(captures.map((c) => [c.sceneId, c]));
   const total = scenes.filter((s) => s.visual.type === 'photos' && s.visual.number > 0).length;
@@ -88,6 +94,9 @@ export function sceneSpecs(
       last: i === scenes.length - 1,
       total,
       videoTitle,
+      edit: channel.edit,
+      cadence: s.cadence,
+      ...extras[s.id],
       channel: channel.name,
       chapter,
       visual,
@@ -208,6 +217,39 @@ export async function buildAudio(
   } else {
     await ffmpeg(['-i', narration, '-af', 'loudnorm=I=-14:TP=-1.5:LRA=11', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', out]);
   }
+}
+
+/** Kısa, tok bir "pop" ses efekti (abone animasyonu için). */
+export async function makePop(out: string): Promise<string> {
+  await ffmpeg([
+    '-f', 'lavfi', '-i',
+    "aevalsrc='0.55*sin(2*PI*1500*t)*exp(-t*40)+0.6*sin(2*PI*190*t)*exp(-t*22)':s=48000:d=0.3",
+    '-af', 'pan=stereo|c0=c0|c1=c0', out,
+  ]);
+  return out;
+}
+
+/**
+ * Anlatımları mutlak zamanlarına (J-cut zaman çizelgesi) yerleştirip ses efektlerini ekler; hafif ses işleme
+ * (alçak frekans temizliği, sıkıştırma) ve YouTube ses seviyesi (-14 LUFS) uygular.
+ */
+export async function buildPlacedAudio(
+  placements: { file: string; start: number }[],
+  total: number,
+  out: string,
+  sfx: { file: string; start: number; volume?: number }[] = [],
+): Promise<void> {
+  const inputs = [...placements.map((p) => ({ ...p, volume: 1 })), ...sfx.map((s) => ({ ...s, volume: s.volume ?? 0.5 }))];
+  const args: string[] = [];
+  const parts: string[] = [];
+  inputs.forEach((p, i) => {
+    args.push('-i', p.file);
+    const ms = Math.max(0, Math.round(p.start * 1000));
+    parts.push(`[${i}:a]aresample=48000,aformat=sample_fmts=fltp:channel_layouts=stereo,volume=${p.volume},adelay=${ms}:all=1[a${i}]`);
+  });
+  const mix = `${inputs.map((_, i) => `[a${i}]`).join('')}amix=inputs=${inputs.length}:normalize=0:duration=longest:dropout_transition=0,apad,atrim=0:${total.toFixed(3)}`;
+  const chain = 'highpass=f=70,acompressor=threshold=-20dB:ratio=2.5:attack=8:release=120:makeup=2,loudnorm=I=-14:TP=-1.5:LRA=9';
+  await ffmpeg([...args, '-filter_complex', `${parts.join(';')};${mix},${chain}[out]`, '-map', '[out]', '-ar', '48000', '-c:a', 'aac', '-b:a', '192k', out]);
 }
 
 export async function muxFinal(segments: string[], audio: string, dir: string, out: string): Promise<number> {

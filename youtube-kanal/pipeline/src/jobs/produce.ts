@@ -15,7 +15,10 @@ import { imagesFromConfig, type ImageProvider } from '../media/images.ts';
 import { credsFromEnv, uploadVideo } from '../media/youtube.ts';
 import { generateIdeas } from '../stages/ideas.ts';
 import { buildVideo } from '../stages/video.ts';
-import { research, writeMetadata, writeScript, type Metadata } from '../stages/write.ts';
+import { research, writeMetadata, writePackaging, writeScript, type Metadata, type Packaging } from '../stages/write.ts';
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { ROOT } from '../lib/config.ts';
 import { collectSuggestions } from '../media/suggest.ts';
 
 const DAYS: Weekday[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
@@ -100,12 +103,26 @@ async function main(): Promise<void> {
       ep.finish('research');
     }
 
-    // 2) Senaryo
+    // 2) Paketleme: başlık ve kapak videodan önce (kanalın prompts/packaging.md dosyası varsa)
+    let packaging: Packaging | undefined;
+    if (existsSync(join(ROOT, 'prompts', 'packaging.md'))) {
+      if (ep.has('packaging.json')) packaging = ep.readJson<Packaging>('packaging.json');
+      else {
+        log('📦 Paketleme (başlık + kapak önce)');
+        const r = await writePackaging(ai, channel, aiCfg, topic, ep.read('research.md'));
+        charge(r.cost);
+        packaging = r.value;
+        ep.writeJson('packaging.json', packaging);
+      }
+      log(`   "${packaging.titles[0]}" · kapak: ${packaging.thumbnail_text} · puan ${packaging.score}/10`);
+    }
+
+    // 3) Senaryo
     let script: Script;
     if (ep.has('script.json')) script = ep.readJson<Script>('script.json');
     else {
       log('✍️  Senaryo');
-      const r = await writeScript(ai, channel, aiCfg, topic, ep.read('research.md'), links);
+      const r = await writeScript(ai, channel, aiCfg, topic, ep.read('research.md'), links, packaging);
       charge(r.cost);
       script = r.value;
       ep.writeJson('script.json', script);
@@ -119,7 +136,7 @@ async function main(): Promise<void> {
     if (ep.has('metadata.json')) meta = ep.readJson<Metadata>('metadata.json');
     else {
       log('🏷️  Başlık ve kapak metni');
-      const r = await writeMetadata(ai, channel, aiCfg, topic, script);
+      const r = await writeMetadata(ai, channel, aiCfg, topic, script, packaging);
       charge(r.cost);
       meta = r.value;
       ep.writeJson('metadata.json', meta);
@@ -166,6 +183,7 @@ async function main(): Promise<void> {
     ledger.add(0, { video: true });
 
     setOutput('out_dir', out.dir);
+    setOutput('shorts', out.shorts.join(' '));
     setOutput('title', meta.titles[0]);
     log(`\n✅ Hazır: ${meta.titles[0]} (${formatTimestamp(out.duration)}, bu çalıştırmada ${spent.toFixed(2)} $, bölüm toplamı ${ep.meta.cost_usd.toFixed(2)} $)`);
     summary(

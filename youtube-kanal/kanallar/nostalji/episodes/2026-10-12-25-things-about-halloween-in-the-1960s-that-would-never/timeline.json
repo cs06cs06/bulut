@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 23.52,
+    "frames": 588,
+    "audioOffset": 0.4,
+    "audioDuration": 22.008,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 23.52,
+    "duration": 40.68,
+    "frames": 1017,
+    "audioOffset": -0.6120000000000019,
+    "audioDuration": 40.176,
+    "audioStart": 22.907999999999998,
+    "chapter": "#15 The Bedsheet Ghost From the Closet",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 64.2,
+    "duration": 45.04,
+    "frames": 1126,
+    "audioOffset": -0.6159999999999997,
+    "audioDuration": 44.544,
+    "audioStart": 63.584,
+    "chapter": "#14 The Box With the Cellophane Window",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 109.24,
+    "duration": 46.44,
+    "frames": 1161,
+    "audioOffset": -0.6119999999999948,
+    "audioDuration": 45.936,
+    "audioStart": 108.628,
+    "chapter": "#13 Everybody Was the Same TV Hero",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 155.68,
+    "duration": 41.56,
+    "frames": 1039,
+    "audioOffset": -0.6160000000000139,
+    "audioDuration": 41.088,
+    "audioStart": 155.064,
+    "chapter": "#12 Grown-Ups Just Opened the Door",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 197.24,
+    "duration": 44.68,
+    "frames": 1117,
+    "audioOffset": -0.5880000000000223,
+    "audioDuration": 44.184,
+    "audioStart": 196.652,
+    "chapter": "#11 Real Darkness Before Supper Was Cold",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 241.92,
+    "duration": 45.44,
+    "frames": 1136,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 44.904,
+    "audioStart": 241.33599999999998,
+    "chapter": "#10 Halloween Apples on the Canadian Prairies",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 287.36,
+    "duration": 50.24,
+    "frames": 1256,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 49.776,
+    "audioStart": 286.74,
+    "chapter": "#9 Dragging Home the Pillowcase",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 337.6,
+    "duration": 48.8,
+    "frames": 1220,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 48.288,
+    "audioStart": 337.016,
+    "chapter": "#8 The Little Orange Box That Rattled",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 386.4,
+    "duration": 37.44,
+    "frames": 936,
+    "audioOffset": -0.5959999999999468,
+    "audioDuration": 36.936,
+    "audioStart": 385.80400000000003,
+    "chapter": "#7 Every House, Every Porch Light",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 423.84,
+    "duration": 43.36,
+    "frames": 1084,
+    "audioOffset": -0.5999999999999659,
+    "audioDuration": 42.864,
+    "audioStart": 423.24,
+    "chapter": "#6 Bobbing for Apples in the Washtub",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 467.2,
+    "duration": 43.92,
+    "frames": 1098,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 43.416,
+    "audioStart": 466.604,
+    "chapter": "#5 Soap on the Windows",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 511.12,
+    "duration": 40.64,
+    "frames": 1016,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 40.128,
+    "audioStart": 510.52,
+    "chapter": "#4 Come On In, Have Some Cider",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 551.76,
+    "duration": 39.48,
+    "frames": 987,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 38.976,
+    "audioStart": 551.148,
+    "chapter": "#3 Out With the Big Kids, No Parents",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 591.24,
+    "duration": 47.44,
+    "frames": 1186,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 46.968,
+    "audioStart": 590.624,
+    "chapter": "#2 Nobody Ever Checked the Candy",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 638.68,
+    "duration": 51.28,
+    "frames": 1282,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 50.784,
+    "audioStart": 638.092,
+    "chapter": "#1 The Neighbor Lady's Popcorn Balls",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 689.96,
+    "duration": 25.64,
+    "frames": 641,
+    "audioOffset": -0.58400000000006,
+    "audioDuration": 25.416,
+    "audioStart": 689.376,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]

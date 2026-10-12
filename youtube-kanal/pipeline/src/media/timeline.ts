@@ -7,8 +7,9 @@ export interface TimedScene {
   start: number; // saniye
   duration: number; // saniye (kare sayısı / fps)
   frames: number;
-  audioOffset: number; // sahne içinde sesin başladığı an
+  audioOffset: number; // sahne içinde sesin başladığı an (J-cut'ta negatif: ses görüntüden önce başlar)
   audioDuration: number;
+  audioStart: number; // sesin videodaki mutlak başlangıcı
 }
 
 export function buildTimeline(
@@ -28,9 +29,38 @@ export function buildTimeline(
       frames,
       audioOffset: opts.lead,
       audioDuration: audio,
+      audioStart: frameCursor / opts.fps + opts.lead,
     };
     frameCursor += frames;
     return t;
+  });
+}
+
+/**
+ * J-cut zaman çizelgesi: anlatımlar arka arkaya (aralarında kısa nefes) dizilir; görüntü bir sonraki sahneye,
+ * o sahnenin sesi başladıktan `jcut` saniye SONRA geçer. Böylece ses görüntüden önce gelir, kesmeler fark edilmez.
+ */
+export function buildJcutTimeline(
+  scenes: Pick<Scene, 'id'>[],
+  audioDurations: Record<string, number>,
+  opts: { fps: number; lead: number; gap: number; jcut: number; tail: number },
+): TimedScene[] {
+  const fps = opts.fps;
+  const a: number[] = [];
+  let cursor = opts.lead;
+  for (const s of scenes) {
+    const d = audioDurations[s.id];
+    if (d === undefined) throw new Error(`Sahne sesi eksik: ${s.id}`);
+    a.push(cursor);
+    cursor += d + opts.gap;
+  }
+  const lastEnd = a[a.length - 1] + audioDurations[scenes[scenes.length - 1].id] + opts.tail;
+  const cutFrames = scenes.map((_, i) => (i === 0 ? 0 : Math.round((a[i] + opts.jcut) * fps)));
+  cutFrames.push(Math.ceil(lastEnd * fps));
+  return scenes.map((s, i) => {
+    const start = cutFrames[i] / fps;
+    const frames = cutFrames[i + 1] - cutFrames[i];
+    return { id: s.id, start, duration: frames / fps, frames, audioOffset: a[i] - start, audioDuration: audioDurations[s.id], audioStart: a[i] };
   });
 }
 

@@ -252,10 +252,16 @@
     const root = document.getElementById('root');
     root.innerHTML = '';
     const v = spec.visual;
-    if (kind === 'lt') root.appendChild(el('div', 'lt', `<div class="bar"><div class="num">#${v.number}</div><div class="ttl">${accentLast(v.heading)}</div></div>`));
-    if (kind === 'chip') root.appendChild(el('div', 'numchip', `<b>#${v.number}</b>${spec.total ? ` / ${spec.total}` : ''}`));
+    const BELL = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.84V3.5a1.5 1.5 0 0 0-3 0v.66A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>';
+    const HAND = '<svg viewBox="0 0 24 24"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V10h.5V8.5a1.5 1.5 0 0 1 3 0V10h.5V9.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-1.2a5 5 0 0 1-3.9-1.9L4.6 14.9a1.5 1.5 0 0 1 2.3-1.9L9 15z" fill="#fff" stroke="#111" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+    if (kind === 'badge') root.appendChild(el('div', 'badge', `<div class="num">#${v.number}</div><div class="ttl"><span>${accentLast(v.heading)}</span></div>`));
+    if (kind === 'chip') root.appendChild(el('div', 'numchip', `<b>#${v.number}</b>`));
     if (kind === 'title') root.appendChild(el('div', 'ovl-title', `<span>${accentLast(spec.videoTitle)}</span>`));
-    if (kind === 'sub') root.appendChild(el('div', 'subpill', 'SUBSCRIBE'));
+    if (kind === 'sub1') root.appendChild(el('div', 'subcard', `<div class="pill red">${BELL}<span>SUBSCRIBE</span></div><div class="hand">${HAND}</div>`));
+    if (kind === 'sub2') root.appendChild(el('div', 'subcard', `<div class="pill grey">${BELL}<span>SUBSCRIBED</span><i class="check">✓</i></div>`));
+    if (kind === 'end') {
+      root.appendChild(el('div', 'endscr', `<div class="endttl">WATCH THIS <b>NEXT</b></div>`));
+    }
     return document.fonts.ready.then(() => true);
   };
 

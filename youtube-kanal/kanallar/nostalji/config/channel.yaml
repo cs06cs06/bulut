@@ -1,7 +1,7 @@
 # Kanal ayarları — Nostalji (ABD ve Kanada, 60 yaş üstü)
 # ----------------------------------------------------------------------------
 # Örnek alınan biçim: "Deutschland, wie es einmal war" (Almanya). 1950'ler–1970'lerde Kuzey Amerika'da
-# büyüyenler için "o zamanlar herkesin yaptığı 25 şey" türünde uzun, sakin, numaralı anlatımlar.
+# büyüyenler için "o zamanlar herkesin yaptığı 15 şey" türünde 8–12 dakikalık geri sayımlar (+ 2 Shorts).
 # Videolar İngilizce üretilir. Bu dosyayı GitHub'da kalem simgesiyle düzenleyebilirsiniz.
 # ----------------------------------------------------------------------------
 
@@ -36,27 +36,37 @@ suggest_patterns:
   - "{seed} memories"
 
 video:
-  target_minutes: 30            # örnek kanalın videoları 30–36 dakika
-  min_minutes: 22
-  words_per_minute: 140         # yaşlı izleyici için sakin anlatım hızı
+  target_minutes: 11            # 8–12 dakika "tatlı nokta"; içerik ne kadarsa o kadar, dolgu yok
+  min_minutes: 8
+  words_per_minute: 140         # Gacrux + "steady" stil ölçülen hız ~142 kelime/dk (sahne arası nefesler hariç)
   fps: 25
   width: 1920
   height: 1080
   formats: [listicle]
 
 listicle:
-  items: 25                     # madde sayısı (25 / 30 / 40 başlıkta kullanılır)
-  images_per_item: 3            # madde başına görsel (maliyet: madde × görsel × görsel fiyatı)
-  intro_images: 3
+  items: 15                     # geri sayım: #15 → #1 (en güçlüsü sonda)
+  images_per_item: 4            # her görselden geniş/yakın kadrajlar alınır → ~5 sn'de bir görüntü değişimi
+  intro_images: 4               # kanca "fragmanı": en çarpıcı maddelerden ~2 sn'lik kesitler
   outro_images: 2
+
+# Kurgu (stratejiler: J-cut, düz kesme, punch-in, sık görüntü değişimi, altyazı, abone anı, bitiş ekranı)
+edit:
+  jcut_seconds: 0.6             # sonraki maddenin sesi görüntü geçmeden bu kadar önce başlar (J-cut)
+  gap_seconds: 0.5              # iki madde anlatımı arasındaki nefes
+  shot_seconds: 5               # görüntü değişim aralığı (kancada 2 sn)
+  punch_zoom: 1.18              # vurgu cümlesinde ani yakınlaşma (%18)
+  captions: true                # anahtar kelimeleri vurgulu altyazı (ekrana yakılır + ayrıca .srt)
+  end_screen_seconds: 20        # son 20 sn: YouTube bitiş ekranı öğeleri için alan
+  shorts: 2                     # her videodan dikey Shorts (15–45 sn)
 
 # Görsel üretimi (Google Gemini API — Nano Banana)
 images:
   provider: google              # google | placeholder (placeholder: anahtarsız deneme)
   model: gemini-nano-banana-2.1
-  size: 1K                      # 1K (~0,034 $) | 2K (~0,050 $)
+  size: 2K                      # 2K: yakın kadrajlar ve dikey Shorts kırpması için yeterli çözünürlük (~0,050 $)
   aspect_ratio: "16:9"
-  price_per_image: 0.0336       # maliyet takibi için (1K)
+  price_per_image: 0.0504       # maliyet takibi için (2K)
   concurrency: 4
   # Her görsel isteğinin sonuna eklenen ortak stil: kanalın "görsel kimliği"
   style: >
@@ -83,7 +93,13 @@ brand:
   font: "Montserrat"
 
 voice:
-  provider: elevenlabs
+  provider: google              # google (Gemini, ~0,5 $/video) | elevenlabs | openai | silent
+  google:
+    model: gemini-3.8-flash-tts
+    voice: Gacrux               # Google hazır sesleri: Gacrux, Charon, Algenib, Sadaltager…
+    style: >-
+      Warm older American man telling stories from his childhood at a steady, natural conversational pace;
+      gentle, nostalgic and friendly, with a soft smile in his voice. Keep pauses short.
   elevenlabs:
     voice_id: "nPczCjzI2devNBz1zQrb"   # "Brian": derin, sıcak Amerikalı erkek anlatıcı (alternatif: Bill pqHfZKP75CvOlQylNhV4)
     model_id: "eleven_multilingual_v2"

@@ -87,7 +87,9 @@ jobs:
         run: |
           TAG="yt-$KANAL-$EP"
           gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "$TAG" "$OUT/video.mp4" "$OUT/thumbnail.jpg" "$OUT/captions.srt" "$OUT/upload.txt" \
+          shopt -s nullglob
+          SHORTS=("$OUT"/short-*.mp4)
+          gh release create "$TAG" "$OUT/video.mp4" "$OUT/thumbnail.jpg" "$OUT/captions.srt" "$OUT/upload.txt" "${SHORTS[@]}" \
             --target "${{ github.ref_name }}" --title "🎬 $TITLE" --notes-file "$OUT/upload.txt" --latest=false
           echo "### 📥 İndir: $(gh release view "$TAG" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"
           W="youtube-kanal/kanallar/$KANAL/work"
