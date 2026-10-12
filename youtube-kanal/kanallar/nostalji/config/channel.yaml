@@ -38,7 +38,7 @@ suggest_patterns:
 video:
   target_minutes: 11            # 8–12 dakika "tatlı nokta"; içerik ne kadarsa o kadar, dolgu yok
   min_minutes: 8
-  words_per_minute: 150         # Gemini anlatıcısının ölçülen hızı ~155 kelime/dk
+  words_per_minute: 140         # Gacrux + "steady" stil ölçülen hız ~142 kelime/dk (sahne arası nefesler hariç)
   fps: 25
   width: 1920
   height: 1080
@@ -98,8 +98,8 @@ voice:
     model: gemini-3.8-flash-tts
     voice: Gacrux               # Google hazır sesleri: Gacrux, Charon, Algenib, Sadaltager…
     style: >-
-      Warm, unhurried older American man telling stories from his childhood; gentle, nostalgic and
-      friendly, with a soft smile in his voice.
+      Warm older American man telling stories from his childhood at a steady, natural conversational pace;
+      gentle, nostalgic and friendly, with a soft smile in his voice. Keep pauses short.
   elevenlabs:
     voice_id: "nPczCjzI2devNBz1zQrb"   # "Brian": derin, sıcak Amerikalı erkek anlatıcı (alternatif: Bill pqHfZKP75CvOlQylNhV4)
     model_id: "eleven_multilingual_v2"
