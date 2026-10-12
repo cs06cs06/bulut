@@ -20,7 +20,7 @@ research:
 script:
   model: claude-opus-5-5
   effort: high
-  max_tokens: 64000         # ~30 dakikalık anlatım + görsel tarifleri
+  max_tokens: 64000         # ~11 dakikalık anlatım + görsel tarifleri + Shorts
 
 metadata:
   model: claude-opus-5-5
