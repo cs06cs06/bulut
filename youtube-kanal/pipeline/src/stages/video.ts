@@ -10,6 +10,7 @@ import { ROOT } from '../lib/config.ts';
 import type { Episode } from '../lib/episode.ts';
 import type { Script } from '../lib/script.ts';
 import { captureAll, type SceneCapture } from '../media/capture.ts';
+import { generateSceneImages, styledPrompt, type ImageProvider } from '../media/images.ts';
 import { probeDuration } from '../media/ffmpeg.ts';
 import { buildAudio, muxFinal, renderSegments, renderThumbnail, sceneSpecs } from '../media/render.ts';
 import { buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration } from '../media/timeline.ts';
@@ -25,6 +26,8 @@ export interface VideoOutputs {
   uploadTxt: string;
   duration: number;
   ttsChars: number;
+  /** bu çalıştırmada üretilen görsel sayısı (maliyet için) */
+  imagesGenerated: number;
 }
 
 const sha = (s: string) => createHash('sha1').update(s).digest('hex').slice(0, 16);
@@ -65,6 +68,7 @@ export async function buildVideo(args: {
   meta: Metadata;
   links: AffiliateLink[];
   tts: TtsProvider;
+  images?: ImageProvider;
   log?: (msg: string) => void;
 }): Promise<VideoOutputs> {
   const { ep, browser, channel, script, meta, links, tts } = args;
@@ -81,6 +85,19 @@ export async function buildVideo(args: {
   });
   log(`   ${script.scenes.length} sahne, toplam ${formatTimestamp(totalDuration(tl))}`);
 
+  // Yapay zekâ görselleri (listicle kanalları)
+  let imageFiles: Record<string, string[]> = {};
+  let imagesGenerated = 0;
+  const needsImages = script.scenes.some((s) => s.visual.type === 'photos');
+  if (needsImages) {
+    if (!args.images || !channel.images) throw new Error('Bu kanal görsel üretimi gerektiriyor (config/channel.yaml → images)');
+    log('🎨 Görseller üretiliyor');
+    const res = await generateSceneImages(script, args.images, channel.images, ep.workPath('images'), log);
+    imageFiles = res.files;
+    imagesGenerated += res.generated;
+    ep.finish('images');
+  }
+
   log('🌐 Web sayfalarının ekran görüntüleri');
   const capPath = ep.workPath('captures.json');
   const previous: SceneCapture[] = existsSync(capPath) ? JSON.parse(readFileSync(capPath, 'utf8')) : [];
@@ -92,7 +109,7 @@ export async function buildVideo(args: {
   ep.finish('capture');
 
   log('🎬 Video oluşturuluyor');
-  const specs = sceneSpecs(channel, script.scenes, tl, captures);
+  const specs = sceneSpecs(channel, script.scenes, tl, captures, imageFiles, meta.titles[0] ?? script.title);
   let lastPct = -1;
   const segments = await renderSegments(browser, specs, tl, fps, ep.workPath('segments'), (d, n) => {
     const pct = Math.floor((d / n) * 10) * 10;
@@ -111,10 +128,33 @@ export async function buildVideo(args: {
 
   log('🖼️  Kapak');
   const firstShot = captures.find((c) => c.ok)?.shots.find((s) => s.kind === 'show' || s.kind === 'after') ?? captures.find((c) => c.ok)?.shots[0];
+  let thumbImage = firstShot?.file;
+  if (needsImages) {
+    thumbImage = Object.values(imageFiles)[1]?.[0] ?? Object.values(imageFiles)[0]?.[0];
+    if (meta.thumbnail_prompt && args.images && channel.images) {
+      const f = ep.workPath('images', `thumbnail-${sha(meta.thumbnail_prompt + args.images.name)}.jpg`);
+      try {
+        if (!existsSync(f)) {
+          await args.images.generate(styledPrompt(meta.thumbnail_prompt, channel.images.style), f);
+          imagesGenerated++;
+        }
+        thumbImage = f;
+      } catch (e) {
+        log(`   ⚠️ Kapak görseli üretilemedi, videodan bir görsel kullanılıyor: ${(e as Error).message.slice(0, 160)}`);
+      }
+    }
+  }
   const thumbnail = join(outDir, 'thumbnail.jpg');
   await renderThumbnail(
     browser,
-    { brand: channel.brand, text: meta.thumbnail_text, badge: meta.thumbnail_badge, tool: script.tools[0] ?? '', image: firstShot?.file },
+    {
+      brand: channel.brand,
+      text: meta.thumbnail_text,
+      badge: meta.thumbnail_badge,
+      tool: script.tools[0] ?? '',
+      image: thumbImage,
+      style: channel.thumbnail?.style ?? 'browser',
+    },
     thumbnail,
   );
   ep.finish('thumbnail');
@@ -144,5 +184,5 @@ export async function buildVideo(args: {
   copyFileSync(uploadTxt, ep.path('upload.txt'));
   copyFileSync(thumbnail, ep.path('thumbnail.jpg'));
   ep.writeJson('timeline.json', tl.map((t, i) => ({ ...t, chapter: script.scenes[i].chapter, visual: specs[i].visual.type })));
-  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars };
+  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars, imagesGenerated };
 }

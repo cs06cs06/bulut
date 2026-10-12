@@ -3,13 +3,18 @@ name: "YouTube Kanalı · Video üret"
 
 on:
   schedule:
-    # Saat UTC'dir (Türkiye = UTC+3). Her gün çalışır; yalnızca config/channel.yaml → schedule.days
-    # günlerinde video üretir, diğer günler bir dakikada biter.
+    # Saat UTC'dir (Türkiye = UTC+3). Her gün çalışır; yalnızca kanalın config/channel.yaml → schedule.days
+    # günlerinde video üretir, diğer günler bir dakikada biter. Zamanlanmış çalıştırma nostalji kanalını üretir.
     - cron: "23 5 * * *" # 08:23
   workflow_dispatch:
     inputs:
+      kanal:
+        description: "Kanal"
+        type: choice
+        options: [nostalji, ai-egitim]
+        default: nostalji
       topic_id:
-        description: "İsteğe bağlı: data/backlog.yaml'daki konunun id değeri (boş: sıradaki konu)"
+        description: "İsteğe bağlı: kanalın data/backlog.yaml dosyasındaki konu id değeri (boş: sıradaki konu)"
         required: false
         default: ""
 
@@ -26,8 +31,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
+      KANAL: ${{ inputs.kanal || 'nostalji' }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
       YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
       YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
@@ -52,9 +59,9 @@ jobs:
       - name: Yarım kalan çalışmayı geri yükle
         uses: actions/cache/restore@v4
         with:
-          path: youtube-kanal/work
-          key: yt-work-${{ github.run_id }}
-          restore-keys: yt-work-
+          path: youtube-kanal/kanallar/${{ env.KANAL }}/work
+          key: yt-work-${{ env.KANAL }}-${{ github.run_id }}
+          restore-keys: yt-work-${{ env.KANAL }}-
       - name: Video üret
         id: produce
         run: npm run produce
@@ -64,9 +71,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add youtube-kanal/data youtube-kanal/episodes
+          git add youtube-kanal/kanallar/$KANAL/data youtube-kanal/kanallar/$KANAL/episodes
           if git diff --cached --quiet; then echo "Kaydedilecek değişiklik yok."; exit 0; fi
-          git commit -q -m "YouTube kanalı: ${{ steps.produce.outputs.episode || 'konu listesi' }}"
+          git commit -q -m "YouTube kanalı ($KANAL): ${{ steps.produce.outputs.episode || 'konu listesi' }}"
           for i in 1 2 3; do git pull -q --rebase && git push -q && exit 0; sleep $((i * 5)); done
           echo "::error::Değişiklikler depoya gönderilemedi"; exit 1
       - name: Videoyu "Releases"a ekle
@@ -78,18 +85,20 @@ jobs:
           OUT: ${{ steps.produce.outputs.out_dir }}
           TITLE: ${{ steps.produce.outputs.title }}
         run: |
-          gh release delete "yt-$EP" --yes --cleanup-tag 2>/dev/null || true
-          gh release create "yt-$EP" "$OUT/video.mp4" "$OUT/thumbnail.jpg" "$OUT/captions.srt" "$OUT/upload.txt" \
+          TAG="yt-$KANAL-$EP"
+          gh release delete "$TAG" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "$TAG" "$OUT/video.mp4" "$OUT/thumbnail.jpg" "$OUT/captions.srt" "$OUT/upload.txt" \
             --target "${{ github.ref_name }}" --title "🎬 $TITLE" --notes-file "$OUT/upload.txt" --latest=false
-          echo "### 📥 İndir: $(gh release view "yt-$EP" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"
-          rm -rf "youtube-kanal/work/$EP" && mkdir -p youtube-kanal/work && touch youtube-kanal/work/.keep
+          echo "### 📥 İndir: $(gh release view "$TAG" --json url -q .url)" >> "$GITHUB_STEP_SUMMARY"
+          W="youtube-kanal/kanallar/$KANAL/work"
+          rm -rf "$W/${EP:?}" && mkdir -p "$W" && touch "$W/.keep"
       - name: Yarım kalan çalışmayı sakla
-        # Başarısız çalıştırmada ses ve ekran görüntüleri bir sonraki denemede yeniden kullanılır.
+        # Başarısız çalıştırmada ses, görseller ve ekran görüntüleri bir sonraki denemede yeniden kullanılır.
         if: ${{ !cancelled() }}
         uses: actions/cache/save@v4
         with:
-          path: youtube-kanal/work
-          key: yt-work-${{ github.run_id }}
+          path: youtube-kanal/kanallar/${{ env.KANAL }}/work
+          key: yt-work-${{ env.KANAL }}-${{ github.run_id }}
       - name: Zamanlamayı canlı tut
         # GitHub, uzun süre etkinlik olmayan depolarda zamanlanmış işleri kapatır; yeniden etkinleştirmek süreyi sıfırlar.
         if: ${{ !cancelled() && github.event_name == 'schedule' }}

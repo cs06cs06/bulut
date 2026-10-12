@@ -1,11 +1,23 @@
 // config/*.yaml dosyalarını ve prompts/*.md istemlerini okur.
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 
-export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+/** youtube-kanal/ klasörü */
+export const PROJECT_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
+/**
+ * Her kanal kendi klasöründe yaşar: kanallar/<ad>/{config,prompts,data,episodes}.
+ * Hangi kanalın çalışacağını KANAL ortam değişkeni belirler (varsayılan: nostalji).
+ */
+export const DEFAULT_KANAL = 'nostalji';
+export const KANAL = process.env.KANAL || DEFAULT_KANAL;
+export const ROOT = join(PROJECT_ROOT, 'kanallar', KANAL);
+if (!existsSync(join(ROOT, 'config', 'channel.yaml'))) {
+  throw new Error(`Kanal bulunamadı: kanallar/${KANAL}/config/channel.yaml (KANAL ortam değişkenini kontrol edin)`);
+}
 const CONFIG_DIR = join(ROOT, 'config');
 
 function load<T>(name: string): T {
@@ -20,9 +32,25 @@ export interface ChannelConfig {
   name: string;
   tagline: string;
   language: string;
+  /** tutorial: araç eğitimi (ekran görüntüleri); listicle: numaralı liste (yapay zekâ görselleri) */
+  format?: 'tutorial' | 'listicle';
   niche: string;
   audience: string;
   seeds: string[];
+  suggest_patterns?: string[];
+  listicle?: { items: number; images_per_item: number; intro_images: number; outro_images: number };
+  images?: {
+    provider: 'google' | 'placeholder';
+    model: string;
+    size: '1K' | '2K';
+    aspect_ratio: string;
+    price_per_image: number;
+    concurrency: number;
+    style: string;
+  };
+  /** Film görünümü: video kodlanırken ffmpeg ile uygulanır (tarayıcıda her karede hesaplamaktan çok daha hızlı). */
+  look?: { grade: string; grain: number; vignette: number };
+  thumbnail?: { style: 'browser' | 'bar' };
   video: {
     target_minutes: number;
     min_minutes: number;
@@ -107,6 +135,8 @@ export function loadPrompt(name: string, vars: Record<string, string | number> =
 }
 
 /** İstemlere eklenen kanal özeti. */
+export const channelFormat = (ch: ChannelConfig) => ch.format ?? 'tutorial';
+
 export function channelBrief(ch: ChannelConfig): string {
   return [
     `Name: ${ch.name} — ${ch.tagline}`,

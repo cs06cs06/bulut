@@ -11,6 +11,7 @@ import type { ChannelConfig } from '../lib/config.ts';
 import type { Scene, Visual } from '../lib/script.ts';
 import type { SceneCapture } from './capture.ts';
 import { ffmpeg, frameEncoder, probeDuration } from './ffmpeg.ts';
+import { renderPhotoScene, type PhotoSceneSpec } from './photoscene.ts';
 import { revealTimes, type TimedScene } from './timeline.ts';
 
 const RENDER_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'render');
@@ -45,6 +46,13 @@ function revealCount(v: Visual): number {
 
 export interface SceneSpec {
   brand: ChannelConfig['brand'];
+  look?: ChannelConfig['look'];
+  images: string[];
+  seed: number;
+  first: boolean;
+  last: boolean;
+  total: number;
+  videoTitle: string;
   channel: string;
   chapter: string;
   visual: Visual;
@@ -60,8 +68,11 @@ export function sceneSpecs(
   scenes: Scene[],
   tl: TimedScene[],
   captures: SceneCapture[],
+  images: Record<string, string[]> = {},
+  videoTitle = '',
 ): SceneSpec[] {
   const byId = new Map(captures.map((c) => [c.sceneId, c]));
+  const total = scenes.filter((s) => s.visual.type === 'photos' && s.visual.number > 0).length;
   let chapter = '';
   return scenes.map((s, i) => {
     if (s.chapter) chapter = s.chapter;
@@ -70,6 +81,13 @@ export function sceneSpecs(
     const t = tl[i];
     return {
       brand: channel.brand,
+      look: channel.look,
+      images: (images[s.id] ?? []).map((f) => pathToFileURL(f).href),
+      seed: i + 1,
+      first: i === 0,
+      last: i === scenes.length - 1,
+      total,
+      videoTitle,
       channel: channel.name,
       chapter,
       visual,
@@ -98,7 +116,7 @@ async function renderScene(browser: Browser, spec: SceneSpec, frames: number, fp
     for (let f = 0; f < frames; f++) {
       const key = await page.evaluate((t) => (window as unknown as { seek: (t: number) => string }).seek(t), f / fps);
       if (key !== lastKey || !lastFrame) {
-        lastFrame = await page.screenshot({ type: 'jpeg', quality: 90 });
+        lastFrame = await page.screenshot({ type: 'jpeg', quality: 90, animations: 'disabled', caret: 'initial', scale: 'css' });
         lastKey = key;
       }
       await enc.write(lastFrame);
@@ -110,7 +128,10 @@ async function renderScene(browser: Browser, spec: SceneSpec, frames: number, fp
 }
 
 function specHash(spec: SceneSpec, frames: number): string {
-  const stage = readFileSync(join(RENDER_DIR, 'stage.js'), 'utf8') + readFileSync(join(RENDER_DIR, 'stage.html'), 'utf8');
+  const stage =
+    readFileSync(join(RENDER_DIR, 'stage.js'), 'utf8') +
+    readFileSync(join(RENDER_DIR, 'stage.html'), 'utf8') +
+    readFileSync(new URL('./photoscene.ts', import.meta.url), 'utf8');
   return createHash('sha1').update(JSON.stringify({ spec, frames, stage })).digest('hex').slice(0, 16);
 }
 
@@ -134,7 +155,11 @@ export async function renderSegments(
         const hash = specHash(specs[i], tl[i].frames);
         const marker = files[i] + '.hash';
         if (!(existsSync(files[i]) && existsSync(marker) && readFileSync(marker, 'utf8') === hash)) {
-          await renderScene(browser, specs[i], tl[i].frames, fps, files[i]);
+          if (specs[i].visual.type === 'photos') {
+            await renderPhotoScene(browser, specs[i] as unknown as PhotoSceneSpec, tl[i].frames, fps, files[i], dir);
+          } else {
+            await renderScene(browser, specs[i], tl[i].frames, fps, files[i]);
+          }
           writeFileSync(marker, hash);
         }
         onProgress(++done, specs.length);
@@ -202,7 +227,7 @@ export async function muxFinal(segments: string[], audio: string, dir: string, o
 /** 1280×720 kapak görseli (JPEG: YouTube kapak sınırı 2 MB). */
 export async function renderThumbnail(
   browser: Browser,
-  opts: { brand: ChannelConfig['brand']; text: string; badge: string; tool: string; image?: string },
+  opts: { brand: ChannelConfig['brand']; text: string; badge: string; tool: string; image?: string; style?: 'browser' | 'bar' },
   out: string,
 ): Promise<void> {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, deviceScaleFactor: 1 });

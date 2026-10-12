@@ -3,7 +3,7 @@
 
 import { AnthropicAiClient } from '../ai/client.ts';
 import { loadBacklog, pickTopic, saveBacklog } from '../lib/backlog.ts';
-import { loadAffiliates, loadAiConfig, loadChannel, type Weekday } from '../lib/config.ts';
+import { channelFormat, KANAL, loadAffiliates, loadAiConfig, loadChannel, type Weekday } from '../lib/config.ts';
 import { Episode } from '../lib/episode.ts';
 import { fail, log, setOutput, summary, warn } from '../lib/log.ts';
 import { scriptWords, type Script } from '../lib/script.ts';
@@ -11,6 +11,7 @@ import { UsageLedger } from '../lib/usage.ts';
 import { launchBrowser } from '../media/browser.ts';
 import { formatTimestamp } from '../media/timeline.ts';
 import { ttsFromConfig } from '../media/tts.ts';
+import { imagesFromConfig, type ImageProvider } from '../media/images.ts';
 import { credsFromEnv, uploadVideo } from '../media/youtube.ts';
 import { generateIdeas } from '../stages/ideas.ts';
 import { buildVideo } from '../stages/video.ts';
@@ -46,18 +47,21 @@ async function main(): Promise<void> {
     return;
   }
   let tts;
+  let images: ImageProvider | undefined;
   try {
     tts = ttsFromConfig(channel);
+    if (channelFormat(channel) === 'listicle') images = imagesFromConfig(channel);
   } catch (e) {
     warn(`${(e as Error).message}; üretim atlandı`);
     return;
   }
+  log(`Kanal: ${channel.name} (kanallar/${KANAL})`);
 
   let backlog = loadBacklog();
   let topic = pickTopic(backlog, channel.topics.auto_approve, process.env.TOPIC_ID || undefined);
   if (!topic && !process.env.TOPIC_ID && channel.topics.auto_approve) {
     log('Sırada konu yok; önce yeni fikirler üretiliyor…');
-    const ideas = await generateIdeas({ ai, channel, aiCfg, existing: backlog, suggestions: await collectSuggestions(channel.seeds) });
+    const ideas = await generateIdeas({ ai, channel, aiCfg, existing: backlog, suggestions: await collectSuggestions(channel.seeds, undefined, channel.suggest_patterns) });
     ledger.add(ideas.cost);
     backlog = [...backlog, ...ideas.topics];
     saveBacklog(backlog);
@@ -126,11 +130,12 @@ async function main(): Promise<void> {
     const browser = await launchBrowser();
     let out;
     try {
-      out = await buildVideo({ ep, browser, channel, script, meta, links, tts, log });
+      out = await buildVideo({ ep, browser, channel, script, meta, links, tts, images, log });
     } finally {
       await browser.close();
     }
     ledger.add(0, { ttsChars: out.ttsChars });
+    if (out.imagesGenerated) charge(out.imagesGenerated * (channel.images?.price_per_image ?? 0));
 
     // 8) İsteğe bağlı YouTube yüklemesi
     if (channel.youtube.upload && !ep.meta.youtube_id) {

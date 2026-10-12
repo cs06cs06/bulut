@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <title>stage</title>
 <style>
+  @font-face { font-family: 'Montserrat'; font-weight: 700; src: url('fonts/montserrat-latin-700-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Montserrat'; font-weight: 800; src: url('fonts/montserrat-latin-800-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Montserrat'; font-weight: 900; src: url('fonts/montserrat-latin-900-normal.woff2') format('woff2'); }
   :root {
     --accent: #FFD60A; --accent2: #3A86FF; --bg: #0B0F19; --text: #F5F7FA;
     --font: 'Inter', 'DejaVu Sans', sans-serif;
@@ -100,6 +103,28 @@
     background: rgba(11,15,25,.92); color: var(--text); font-size: 40px; font-weight: 700; white-space: nowrap;
     border: 2px solid rgba(255,255,255,.12); box-shadow: 0 20px 60px rgba(0,0,0,.4); }
   .cap b { color: var(--accent); }
+
+  /* photos: yapay zekâ görselleriyle anlatım (nostalji listesi) */
+  .photos { position: absolute; inset: 0; overflow: hidden; background: #000; }
+  .photos .ph { position: absolute; inset: 0; overflow: hidden; }
+  .photos .ph img { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; object-fit: cover; transform-origin: 0 0; }
+  .lt { position: absolute; left: 0; right: 0; bottom: 70px; display: flex; justify-content: center; z-index: 5; }
+  .lt .bar { display: flex; align-items: center; gap: 28px; padding: 18px 40px 18px 22px; background: #0b0b0b;
+    box-shadow: 0 18px 50px rgba(0,0,0,.45); max-width: 1700px; }
+  .lt .num { flex: none; min-width: 110px; height: 100px; padding: 0 18px; display: grid; place-items: center;
+    background: var(--accent); color: #0b0b0b; font: 900 64px/1 'Montserrat', var(--font); letter-spacing: -0.02em; }
+  .lt .ttl { font: 900 58px/1.08 'Montserrat', var(--font); text-transform: uppercase; color: #fff; letter-spacing: -0.01em; }
+  .lt .ttl b { color: var(--accent); font-weight: 900; }
+  .numchip { position: absolute; top: 44px; left: 52px; z-index: 5; padding: 8px 18px; background: rgba(11,11,11,.82);
+    color: #fff; font: 800 30px/1 'Montserrat', var(--font); letter-spacing: .02em; }
+  .numchip b { color: var(--accent); }
+  .ovl-title { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: #0b0b0b; z-index: 5;
+    display: flex; align-items: center; justify-content: center; padding: 0 80px; text-align: center;
+    font: 900 76px/1.05 'Montserrat', var(--font); text-transform: uppercase; color: #fff; letter-spacing: -0.02em; }
+  .ovl-title b { color: var(--accent); }
+  .subpill { position: absolute; left: 50%; bottom: 120px; transform: translateX(-50%); z-index: 6; padding: 24px 60px;
+    border-radius: 999px; background: #ff0033; color: #fff; font: 900 50px/1 'Montserrat', var(--font); letter-spacing: .02em;
+    box-shadow: 0 20px 60px rgba(0,0,0,.5); }
 </style>
 </head>
 <body>
