@@ -5,13 +5,21 @@ import { parseJson } from '../ai/client.ts';
 import type { Topic } from '../lib/backlog.ts';
 import {
   channelBrief,
+  channelFormat,
   loadPrompt,
   targetWords,
   type AffiliateLink,
   type AiConfig,
   type ChannelConfig,
 } from '../lib/config.ts';
-import { normalizeScript, SCRIPT_SCHEMA, scriptWords, type Script } from '../lib/script.ts';
+import {
+  LISTICLE_SCHEMA,
+  normalizeListicle,
+  normalizeScript,
+  SCRIPT_SCHEMA,
+  scriptWords,
+  type Script,
+} from '../lib/script.ts';
 import { costUsd } from '../lib/usage.ts';
 
 export interface StageResult<T> {
@@ -57,12 +65,20 @@ export async function writeScript(
   affiliates: AffiliateLink[],
 ): Promise<StageResult<Script>> {
   const words = targetWords(channel);
+  const listicle = channelFormat(channel) === 'listicle';
+  const shape = channel.listicle ?? { items: 25, images_per_item: 3, intro_images: 3, outro_images: 2 };
   const system = loadPrompt('script', {
     CHANNEL: channelBrief(channel),
     TARGET_WORDS: words.target,
     TARGET_MINUTES: channel.video.target_minutes,
     MIN_WORDS: words.min,
+    ITEMS: shape.items,
+    IMAGES_PER_ITEM: shape.images_per_item,
+    INTRO_IMAGES: shape.intro_images,
+    OUTRO_IMAGES: shape.outro_images,
   });
+  const schema = listicle ? LISTICLE_SCHEMA : SCRIPT_SCHEMA;
+  const normalize = (raw: unknown) => (listicle ? normalizeListicle(raw as never, shape) : normalizeScript(raw as never));
   const partners = affiliates.filter((a) => a.affiliate).map((a) => a.name);
   const baseUser = [
     topicBrief(topic),
@@ -75,9 +91,9 @@ export async function writeScript(
   let last: Script | undefined;
   // Çok kısa senaryoda bir kez geri bildirimle yeniden yazdırırız.
   for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await ai.ask({ stage: aiCfg.script, system, schema: SCRIPT_SCHEMA, user: baseUser + feedback });
+    const res = await ai.ask({ stage: aiCfg.script, system, schema, user: baseUser + feedback });
     cost += costUsd(aiCfg.prices, res.model, res.usage);
-    last = normalizeScript(parseJson(res.text));
+    last = normalize(parseJson(res.text));
     const n = scriptWords(last);
     if (n >= words.min) return { value: last, cost };
     feedback =
@@ -94,19 +110,22 @@ export interface Metadata {
   tags: string[];
   thumbnail_text: string;
   thumbnail_badge: string;
+  /** Kapak fotoğrafı için görsel tarifi (yalnızca listicle kanallarında kullanılır) */
+  thumbnail_prompt?: string;
   hashtags: string[];
 }
 
 const METADATA_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['titles', 'description_intro', 'tags', 'thumbnail_text', 'thumbnail_badge', 'hashtags'],
+  required: ['titles', 'description_intro', 'tags', 'thumbnail_text', 'thumbnail_badge', 'thumbnail_prompt', 'hashtags'],
   properties: {
     titles: { type: 'array', items: { type: 'string' } },
     description_intro: { type: 'string' },
     tags: { type: 'array', items: { type: 'string' } },
     thumbnail_text: { type: 'string' },
     thumbnail_badge: { type: 'string' },
+    thumbnail_prompt: { type: 'string' },
     hashtags: { type: 'array', items: { type: 'string' } },
   },
 };
@@ -123,7 +142,7 @@ export async function writeMetadata(
     stage: aiCfg.metadata,
     system: loadPrompt('metadata', { CHANNEL: channelBrief(channel) }),
     schema: METADATA_SCHEMA,
-    user: `${topicBrief(topic)}\n\n## Script title\n${script.title}\n\n## Narration\n${narration}`,
+    user: `${topicBrief(topic)}\n\n## Script title\n${script.title}\n${itemList(script)}\n## Narration\n${narration}`,
   });
   const m = parseJson<Metadata>(res.text);
   const titles = (m.titles ?? []).map((t) => t.trim()).filter(Boolean).map((t) => t.slice(0, 100));
@@ -135,10 +154,17 @@ export async function writeMetadata(
       tags: limitTags([...(m.tags ?? []), ...channel.youtube.default_tags]),
       thumbnail_text: (m.thumbnail_text ?? '').trim() || script.tools[0] || topic.title,
       thumbnail_badge: (m.thumbnail_badge ?? '').trim(),
+      thumbnail_prompt: (m.thumbnail_prompt ?? '').trim(),
       hashtags: (m.hashtags ?? []).map((h) => h.trim()).filter((h) => /^#\w+$/.test(h)).slice(0, 3),
     },
     cost: costUsd(aiCfg.prices, res.model, res.usage),
   };
+}
+
+/** Listicle senaryosunda madde sayısı ve başlıkları (başlıktaki sayı bununla aynı olmalı). */
+function itemList(script: Script): string {
+  const items = script.scenes.flatMap((s) => (s.visual.type === 'photos' && s.visual.number > 0 ? [s.visual.heading] : []));
+  return items.length ? `\n## Items (${items.length})\n${items.map((t, i) => `${i + 1}. ${t}`).join('\n')}\n` : '';
 }
 
 /** YouTube etiket sınırı: toplam ~500 karakter; güvenli tarafta 450. */

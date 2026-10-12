@@ -21,11 +21,15 @@ export function parseSuggestions(body: string): string[] {
 
 export const PATTERNS = ['{seed}', 'how to use {seed}', '{seed} tutorial', '{seed} vs', '{seed} new feature'];
 
-export async function collectSuggestions(seeds: string[], fetcher: Fetcher = defaultFetcher): Promise<string[]> {
+export async function collectSuggestions(
+  seeds: string[],
+  fetcher: Fetcher = defaultFetcher,
+  patterns: string[] = PATTERNS,
+): Promise<string[]> {
   const out = new Set<string>();
   let failures = 0;
   for (const seed of seeds) {
-    for (const p of PATTERNS) {
+    for (const p of patterns) {
       const q = p.replace('{seed}', seed);
       const url = `https://suggestqueries.google.com/complete/search?client=firefox&ds=yt&hl=en&gl=us&q=${encodeURIComponent(q)}`;
       try {

@@ -9,7 +9,7 @@
     "ideas": "tsx src/jobs/ideas.ts",
     "produce": "tsx src/jobs/produce.ts",
     "demo": "tsx src/jobs/demo.ts",
-    "test": "tsx --test test/*.test.ts",
+    "test": "KANAL=ai-egitim tsx --test test/core.test.ts test/stages.test.ts && KANAL=nostalji tsx --test test/nostalji.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

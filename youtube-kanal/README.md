@@ -1,22 +1,31 @@
-# YouTube Kanalı · Yapay zekâ araçları eğitimleri (İngilizce, yüzsüz)
+# YouTube Kanalları · Otomatik video üretim hattı
 
-Yapay zekâ ve verimlilik araçları hakkında İngilizce, adım adım eğitim videolarını **baştan sona otomatik**
-üreten hat. Konuyu bulur, güncel bilgiyi web'den araştırır, senaryoyu yazar, seslendirir, aracın gerçek web
-sayfalarını açıp ekran görüntüsü alır, yakınlaştırma/vurgu/imleç animasyonlarıyla 1080p video oluşturur,
-kapak görselini, başlığı, açıklamayı (bölüm zaman damgaları ve affiliate bağlantılarıyla) ve altyazıyı hazırlar.
+Yüzsüz (faceless), İngilizce YouTube kanalları için baştan sona otomatik video üretimi: konuyu bulur, web'den
+araştırır, senaryoyu yazar, seslendirir, görselleri hazırlar, videoyu ve kapağı oluşturur, başlık/açıklama/altyazıyı
+hazırlar. Size kalan iş: videoyu **izleyip** YouTube'a yüklemek (ya da otomatik yüklemeyi açmak).
 
-Size kalan iş: videoyu **5–10 dakika izleyip** YouTube'a yüklemek (ya da otomatik yüklemeyi açmak).
+## Kanallar
+
+Her kanal kendi klasöründe yaşar; **aşağıda geçen `config/`, `prompts/`, `data/`, `episodes/` yolları kanal klasörüne göredir.**
+
+| Klasör | Kanal | Biçim | Zamanlama |
+|---|---|---|---|
+| `kanallar/nostalji/` | **Back In Our Day** (geçici ad): ABD ve Kanada'da 60 yaş üstü izleyiciye 1950'ler–70'ler nostaljisi | ~30 dakikalık numaralı liste ("25 Things Every Kid Did in the 1960s – Unthinkable Today"); fotogerçekçi yapay zekâ görselleri, sıcak 70'ler film tonu, siyah şeritli sarı vurgulu kapak | Pzt / Çar / Cum otomatik |
+| `kanallar/ai-egitim/` | **Tool Tutor**: yapay zekâ araçları eğitimleri | 8–9 dakikalık adım adım anlatım; gerçek web sayfalarının ekran görüntüleri | Yalnızca elle (Run workflow → kanal: ai-egitim) |
+
+Nostalji kanalının biçimi, Almanya'daki "Deutschland, wie es einmal war" kanalından uyarlanmıştır (2,5 ayda 24 video,
+~1,2 milyon izlenme; en iyi video 277 bin).
 
 ```
 Pazar sabahı         Konu fikirleri  ─►  data/backlog.yaml (puanlı konu listesi)
 Pzt / Çar / Cum      Video üret:
   08:23                 1. Konu seç (onaylı ya da en yüksek puanlı)
                         2. Araştır (Claude + web araması)          → episodes/<id>/research.md
-                        3. Senaryo (sahne sahne, görsel tarifli)  → episodes/<id>/script.md
+                        3. Senaryo                                → episodes/<id>/script.md
                         4. Başlık, açıklama, etiket, kapak metni  → episodes/<id>/metadata.json
-                        5. Seslendirme (ElevenLabs / OpenAI)
-                        6. Gerçek sayfaların ekran görüntüleri (Playwright)
-                        7. Video (1920×1080, 30 fps) + kapak + altyazı
+                        5. Seslendirme (ElevenLabs)
+                        6. Görseller: nostalji → Google Gemini (Nano Banana) · ai-egitim → web sayfası ekran görüntüleri
+                        7. Video (1920×1080) + kapak + altyazı
                         8. GitHub → Releases: video.mp4, thumbnail.jpg, captions.srt, upload.txt
                            (isteğe bağlı: YouTube'a "özel" olarak yükleme)
 ```
@@ -35,7 +44,8 @@ GitHub'da depo → **Settings → Secrets and variables → Actions → New repo
 | Ad | Nereden | Zorunlu mu |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | https://console.anthropic.com → API Keys | Evet |
-| `ELEVENLABS_API_KEY` | https://elevenlabs.io → Profile → API Keys | Seslendirme ElevenLabs ise |
+| `ELEVENLABS_API_KEY` | https://elevenlabs.io → Developers → API Keys (`sk_` ile başlar; "text to speech" izni yeterli) | Seslendirme ElevenLabs ise |
+| `GEMINI_API_KEY` | https://aistudio.google.com → Get API key (faturalandırma açık olmalı; görsel modellerinin ücretsiz katmanı yok) | Nostalji kanalı (görseller) |
 | `OPENAI_API_KEY` | https://platform.openai.com → API keys | `voice.provider: openai` seçerseniz |
 
 > Ses seçimi: ElevenLabs'te **Voices → Voice Library**'den beğendiğiniz İngilizce sesi ekleyin, ses kimliğini
@@ -57,9 +67,9 @@ aracın bağlantısı açıklamaya otomatik eklenir, affiliate olanlar için yas
 gerekirken affiliate geliri **ilk videodan** başlayabilir.
 
 ### 1.5 İlk çalıştırma
-1. **Actions → "YouTube Kanalı · Konu fikirleri" → Run workflow**. Birkaç dakikada `data/backlog.yaml` dolar.
+1. **Actions → "YouTube Kanalı · Konu fikirleri" → Run workflow** (kanal seçin). Birkaç dakikada `data/backlog.yaml` dolar.
 2. Listeye göz atın; istemediğiniz konuları `reddedildi`, öne almak istediklerinizi `onaylı` yapın (isteğe bağlı).
-3. **Actions → "YouTube Kanalı · Video üret" → Run workflow**. ~20–30 dakika sürer.
+3. **Actions → "YouTube Kanalı · Video üret" → Run workflow** (kanal seçin). Nostalji: ~25–40 dakika; ai-egitim: ~20–30 dakika.
 4. Bitince çalıştırma sayfasındaki özet bölümünde **📥 İndir** bağlantısı çıkar (depo → **Releases**).
 
 ---
@@ -131,13 +141,24 @@ Kendi konunuzu eklemek için listenin sonuna şunu yazmanız yeter:
 
 ## 5. Maliyet
 
-| Kalem | Video başına (8–9 dk) | Not |
-|---|---|---|
-| Claude (araştırma + senaryo + başlık) | ~1–2 $ | `config/ai.yaml` → `budget.monthly_usd` tavanı (varsayılan 40 $) |
-| Seslendirme | ~0,5–1 $ | ~7.500 karakter; ElevenLabs aylık paketiyle daha ucuz. Güncel fiyat: https://elevenlabs.io/pricing/api |
-| GitHub Actions | 0 $ | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (video başına ~25 dk) |
+**Nostalji kanalı** (~30 dakikalık video, 25 madde × 3 görsel + giriş/kapanış ≈ 81 görsel):
 
-Aylık harcama `data/usage.json` dosyasında tutulur. Tavan aşılırsa yeni video başlatılmaz.
+| Kalem | Video başına | Not |
+|---|---|---|
+| Claude (araştırma + senaryo + başlık) | ~1,5–2,5 $ | |
+| Görseller (Gemini Nano Banana 2.1, 1K) | ~2,8 $ | `images.size: 2K` ile ~4,1 $; `listicle.images_per_item` ile görsel sayısı |
+| Seslendirme (~4.200 kelime ≈ 25.000 karakter) | ElevenLabs paketine göre | API kullandıkça öde fiyatıyla ~1,3–2,5 $; aylık paketle daha ucuz |
+
+`config/ai.yaml` → `budget.monthly_usd` (nostalji: 80 $) Claude ve görsel harcamasını sınırlar. Haftada 3 video ≈ ayda
+13 video ≈ 55–70 $ (seslendirme hariç).
+
+**ai-egitim kanalı:** Claude ~1–2 $, seslendirme ~0,5–1 $ / video.
+
+| Ortak | |
+|---|---|
+| GitHub Actions | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (video başına ~25–40 dk) |
+
+Aylık harcama her kanalın `data/usage.json` dosyasında tutulur. Tavan aşılırsa yeni video başlatılmaz.
 
 > Depo herkese açıksa **Releases** altındaki videolar da herkese açıktır. Bunu istemiyorsanız depoyu özel (private) yapın.
 
@@ -147,7 +168,7 @@ Aylık harcama `data/usage.json` dosyasında tutulur. Tavan aşılırsa yeni vid
 
 | Dosya | Ne ayarlanır |
 |---|---|
-| `config/channel.yaml` | Kanal adı ve konusu, video uzunluğu, renkler, ses, yayın günleri, otomatik onay, YouTube yükleme |
+| `config/channel.yaml` | Kanal adı ve konusu, video uzunluğu, renkler, ses, yayın günleri, otomatik onay, YouTube yükleme; nostalji kanalında ayrıca madde/görsel sayısı (`listicle`), görsel stili (`images.style`), film görünümü (`look`) |
 | `config/ai.yaml` | Modeller, düşünme düzeyi (effort), web araması sayısı, **aylık bütçe** |
 | `config/affiliates.yaml` | Araç adı → sizin bağlantınız |
 | `prompts/*.md` | Yapay zekâya verilen talimatlar (düz Türkçe): `ideas` konu fikirleri, `research` araştırma, `script` senaryo ve görsel kuralları, `metadata` başlık/açıklama/kapak |
@@ -182,19 +203,27 @@ API anahtarı gerektirmeden bütün görsel türlerini içeren 1 dakikalık sess
 cd youtube-kanal/pipeline
 npm install
 npx playwright install chromium   # bir kez
-npm run demo                      # → youtube-kanal/work/demo-root/work/demo/out/video.mp4
+npm run demo                      # nostalji: yer tutucu görsellerle → kanallar/nostalji/work/demo-root/work/demo/out/video.mp4
+KANAL=ai-egitim npm run demo      # eğitim kanalı: örnek siteyle
+DEMO_IMAGES=1 npm run demo        # nostalji, gerçek görsellerle (GEMINI_API_KEY gerekir, ücretli)
 npm test                          # birim testleri
 npm run typecheck
 ```
 
 Sistemde `ffmpeg` kurulu olmalı. Görsel tasarım `pipeline/src/render/stage.html` (CSS) ve `stage.js`
-(animasyonlar), kapak `pipeline/src/render/thumbnail.html` dosyasındadır.
+(animasyonlar ve yazı katmanları), nostalji sahneleri `pipeline/src/media/photoscene.ts` (ffmpeg: yavaş yakınlaştırma,
+geçişler, film görünümü), kapak `pipeline/src/render/thumbnail.html` dosyasındadır. Yazı tipi: Montserrat (SIL OFL).
+
+Yeni kanal eklemek: `kanallar/` altına mevcut bir kanal klasörünü kopyalayın, `config/` ve `prompts/` dosyalarını
+düzenleyin, `data/backlog.yaml`'ı boşaltın (`[]`) ve iş akışlarındaki `kanal` seçeneklerine klasör adını ekleyin.
 
 ## 9. Sorun olursa
 
 - **Actions** sekmesinde kırmızı çarpılı çalıştırmaya tıklayın; hata mesajı Türkçedir.
 - *"… tanımlı değil"*: ilgili gizli değer (secret) eksik.
 - *"Aylık bütçe tavanına ulaşıldı"*: `config/ai.yaml` → `budget.monthly_usd`.
-- *"… sayfa yakalanamadı"* uyarısı: bazı siteler otomatik tarayıcıları engeller; o sahneler otomatik olarak metin
+- *"… görsel üretilemedi"* uyarısı (nostalji): güvenlik filtresine takılan birkaç görselin yerine aynı sahnenin başka
+  bir görseli kullanılır; video yine üretilir. *"Hiç görsel üretilemedi"*: `GEMINI_API_KEY` ya da faturalandırma sorunu.
+- *"… sayfa yakalanamadı"* uyarısı (ai-egitim): bazı siteler otomatik tarayıcıları engeller; o sahneler otomatik olarak metin
   kartına çevrilir, video yine üretilir. Hangi sayfaların yakalandığı `episodes/<id>/captures.json` dosyasındadır.
 - Yarıda kalan üretim bir sonraki çalıştırmada kaldığı yerden devam eder (araştırma ve senaryo yeniden ücretlendirilmez).

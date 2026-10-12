@@ -1,0 +1,13 @@
+# Konu listesi
+# ----------------------------------------------------------------------------
+# Haftalık fikir işi buraya yeni konular ekler. Siz de elle konu ekleyebilirsiniz:
+# yalnızca "title" ve "status: onaylı" yazmanız yeter.
+#
+# status değerleri:
+#   bekliyor    — önerildi, henüz karar verilmedi
+#   onaylı      — sıradaki üretimde öncelikli (en üstteki önce)
+#   reddedildi  — üretilmeyecek
+#   üretiliyor  — şu an üretimde (yarıda kaldıysa bir sonraki çalıştırma devam eder)
+#   üretildi    — video hazır (episodes/ klasörüne bakın)
+# ----------------------------------------------------------------------------
+[]

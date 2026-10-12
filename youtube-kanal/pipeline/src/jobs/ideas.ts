@@ -23,7 +23,7 @@ export async function runIdeas(ai: AiClient = new AnthropicAiClient()): Promise<
   const backlog = loadBacklog();
 
   log('🔎 YouTube arama önerileri toplanıyor…');
-  const suggestions = await collectSuggestions(channel.seeds);
+  const suggestions = await collectSuggestions(channel.seeds, undefined, channel.suggest_patterns);
   if (!suggestions.length) warn('Arama önerileri alınamadı; fikirler yalnızca web araştırmasına dayanacak');
   else log(`   ${suggestions.length} arama ifadesi`);
 

@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <title>thumbnail</title>
 <style>
+  @font-face { font-family: 'Montserrat'; font-weight: 800; src: url('fonts/montserrat-latin-800-normal.woff2') format('woff2'); }
+  @font-face { font-family: 'Montserrat'; font-weight: 900; src: url('fonts/montserrat-latin-900-normal.woff2') format('woff2'); }
   :root { --accent: #FFD60A; --accent2: #3A86FF; --bg: #0B0F19; --text: #F5F7FA; --font: 'Inter', 'DejaVu Sans', sans-serif; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { width: 1280px; height: 720px; overflow: hidden; }
@@ -28,6 +30,13 @@
   .badge { position: absolute; left: 60px; top: 52px; padding: 12px 26px; border-radius: 14px; background: var(--accent); color: var(--bg);
     font-size: 40px; font-weight: 900; letter-spacing: .02em; transform: rotate(-3deg); box-shadow: 0 10px 30px rgba(0,0,0,.4); }
   .arrow { position: absolute; left: 560px; bottom: 70px; width: 170px; height: 120px; color: var(--accent); filter: drop-shadow(0 6px 12px rgba(0,0,0,.5)); }
+  /* bar: tam ekran fotoğraf + altta siyah şerit (nostalji kanalı) */
+  .bar-img { position: absolute; inset: 0; width: 1280px; height: 720px; object-fit: cover; }
+  .bar-strip { position: absolute; left: 0; right: 0; bottom: 0; height: 168px; background: #0b0b0b;
+    display: flex; align-items: center; justify-content: center; padding: 0 30px; }
+  .bar-text { font: 900 104px/1 'Montserrat', var(--font); text-transform: uppercase; color: #fff; letter-spacing: -0.03em; white-space: nowrap; }
+  .bar-text b { color: var(--accent); font-weight: 900; }
+  .bar-arrow { position: absolute; width: 120px; height: 120px; color: #e63946; filter: drop-shadow(0 4px 10px rgba(0,0,0,.6)); }
 </style>
 </head>
 <body>
@@ -41,6 +50,16 @@
     css.setProperty('--text', spec.brand.text);
     css.setProperty('--font', `'${spec.brand.font}', 'Inter', 'DejaVu Sans', sans-serif`);
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+    if (spec.style === 'bar') {
+      const root = document.getElementById('root');
+      const w = spec.text.trim().split(/\s+/);
+      const last = w.length > 1 ? w.pop() : '';
+      root.innerHTML = `${spec.image ? `<img class="bar-img" src="${spec.image}">` : ''}<div class="bar-strip"><div class="bar-text">${esc(w.join(' '))}${last ? ` <b>${esc(last)}</b>` : ''}</div></div>`;
+      const t = root.querySelector('.bar-text');
+      let size = 104;
+      while (t.scrollWidth > 1220 && size > 50) { size -= 3; t.style.fontSize = size + 'px'; }
+      return Promise.all([...document.images].map((img) => img.complete ? null : new Promise((r) => { img.onload = img.onerror = r; })));
+    }
     const words = spec.text.split(/\s+/).filter(Boolean);
     const last = words.pop() || '';
     const root = document.getElementById('root');

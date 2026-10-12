@@ -17,7 +17,9 @@ export type Visual =
   | { type: 'steps'; heading: string; steps: { text: string; detail: string }[] }
   | { type: 'code'; heading: string; language: string; code: string }
   | { type: 'callout'; kind: 'tip' | 'warning' | 'stat'; text: string }
-  | { type: 'outro'; heading: string; cta: string };
+  | { type: 'outro'; heading: string; cta: string }
+  /** Yapay zekâ görselleriyle anlatılan sahne (liste maddesi, giriş ya da kapanış). number 0 ise numara gösterilmez. */
+  | { type: 'photos'; number: number; heading: string; prompts: string[] };
 
 export type VisualType = Visual['type'];
 
@@ -239,4 +241,86 @@ export function wordCount(text: string): number {
 
 export function scriptWords(script: Script): number {
   return script.scenes.reduce((n, sc) => n + wordCount(sc.narration), 0);
+}
+
+// ---------------------------------------------------------------------------
+// Numaralı liste (listicle) senaryosu: giriş + N madde + kapanış; her bölümde görsel tarifleri
+
+export const LISTICLE_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['title', 'intro', 'items', 'outro'],
+  properties: {
+    title: str,
+    intro: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['narration', 'image_prompts'],
+      properties: { narration: str, image_prompts: strArr },
+    },
+    items: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'narration', 'image_prompts'],
+        properties: { title: str, narration: str, image_prompts: strArr },
+      },
+    },
+    outro: {
+      type: 'object',
+      additionalProperties: false,
+      required: ['narration', 'image_prompts'],
+      properties: { narration: str, image_prompts: strArr },
+    },
+  },
+} as const;
+
+type RawPart = { title?: string; narration?: string; image_prompts?: string[] };
+type RawListicle = { title?: string; intro?: RawPart; items?: RawPart[]; outro?: RawPart };
+
+export interface ListicleShape {
+  items: number;
+  images_per_item: number;
+  intro_images: number;
+  outro_images: number;
+}
+
+/** Görsel tarifi sayısını hedefe getirir: fazlası atılır, eksikse var olanlar sırayla tekrar kullanılır. */
+export function fitPrompts(prompts: string[], want: number, fallback: string): string[] {
+  const p = prompts.length ? prompts : [fallback];
+  return Array.from({ length: Math.max(1, want) }, (_, i) => p[i % p.length]);
+}
+
+export function normalizeListicle(raw: RawListicle, shape: ListicleShape): Script {
+  const title = s(raw.title);
+  const scenes: Scene[] = [];
+  const push = (chapter: string, narration: string, visual: Visual) =>
+    scenes.push({ id: `s${String(scenes.length + 1).padStart(2, '0')}`, chapter, narration, visual });
+
+  const intro = s(raw.intro?.narration);
+  if (intro) {
+    push('Intro', intro, {
+      type: 'photos',
+      number: 0,
+      heading: '',
+      prompts: fitPrompts(arr(raw.intro?.image_prompts), shape.intro_images, title),
+    });
+  }
+  const items = (raw.items ?? []).filter((it) => s(it.narration) && s(it.title));
+  items.forEach((it, i) => {
+    const heading = s(it.title).replace(/^#?\d+[.):\s-]+/, '');
+    push(`${i + 1}. ${heading}`, s(it.narration), {
+      type: 'photos',
+      number: i + 1,
+      heading,
+      prompts: fitPrompts(arr(it.image_prompts), shape.images_per_item, heading),
+    });
+  });
+  const outro = s(raw.outro?.narration);
+  if (outro) {
+    push('', outro, { type: 'photos', number: 0, heading: '', prompts: fitPrompts(arr(raw.outro?.image_prompts), shape.outro_images, title) });
+  }
+  if (items.length < 5) throw new Error(`Senaryo çok kısa: ${items.length} madde`);
+  return { title, format: 'listicle', tools: [], scenes };
 }

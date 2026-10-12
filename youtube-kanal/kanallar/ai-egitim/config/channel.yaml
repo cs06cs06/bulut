@@ -75,8 +75,8 @@ voice:
   music: ""                       # isteğe bağlı fon müziği dosyası (ör. assets/music.mp3); telifsiz olmalı
   music_volume: 0.08
 
-# Yayın takvimi: zamanlanmış iş her gün çalışır, yalnızca bu günlerde video üretir.
-# Elle "Run workflow" ile her zaman üretilebilir.
+# Yayın takvimi: zamanlanmış iş şu an yalnızca nostalji kanalını üretir; bu kanal elle
+# (Actions → "Video üret" → Run workflow → kanal: ai-egitim) üretilir.
 schedule:
   days: [mon, wed, fri]
 

@@ -1,0 +1,123 @@
+# Kanal ayarları — Nostalji (ABD ve Kanada, 60 yaş üstü)
+# ----------------------------------------------------------------------------
+# Örnek alınan biçim: "Deutschland, wie es einmal war" (Almanya). 1950'ler–1970'lerde Kuzey Amerika'da
+# büyüyenler için "o zamanlar herkesin yaptığı 25 şey" türünde uzun, sakin, numaralı anlatımlar.
+# Videolar İngilizce üretilir. Bu dosyayı GitHub'da kalem simgesiyle düzenleyebilirsiniz.
+# ----------------------------------------------------------------------------
+
+name: "Back In Our Day"            # kanal adı (geçici; istediğiniz adla değiştirin)
+tagline: "Life in North America, the way we remember it"
+language: en
+format: listicle                   # numaralı nostalji listesi (görseller yapay zekâyla üretilir)
+
+niche: >
+  Warm, slow-paced nostalgia about everyday life in the United States and Canada from the 1950s to the
+  1970s: childhood, school, home and kitchen, family rituals, cars and road trips, shopping, work, holidays,
+  rules and habits that were completely normal back then and are unthinkable or forgotten today.
+
+audience: >
+  Men and women aged 60 and over living in the United States and Canada (born roughly 1945–1965) who grew up
+  in that era and enjoy remembering it, sharing it with grandchildren and talking about it in the comments.
+
+# Arama önerisi tohumları (fikir üretimi). Kalıplar aşağıda.
+seeds:
+  - 1950s
+  - 1960s
+  - 1970s
+  - growing up in the 60s
+  - things from the 70s
+  - boomer childhood
+  - 1960s Canada
+suggest_patterns:
+  - "{seed}"
+  - "{seed} things"
+  - "{seed} nostalgia"
+  - "things we did in the {seed}"
+  - "{seed} memories"
+
+video:
+  target_minutes: 30            # örnek kanalın videoları 30–36 dakika
+  min_minutes: 22
+  words_per_minute: 140         # yaşlı izleyici için sakin anlatım hızı
+  fps: 25
+  width: 1920
+  height: 1080
+  formats: [listicle]
+
+listicle:
+  items: 25                     # madde sayısı (25 / 30 / 40 başlıkta kullanılır)
+  images_per_item: 3            # madde başına görsel (maliyet: madde × görsel × görsel fiyatı)
+  intro_images: 3
+  outro_images: 2
+
+# Görsel üretimi (Google Gemini API — Nano Banana)
+images:
+  provider: google              # google | placeholder (placeholder: anahtarsız deneme)
+  model: gemini-nano-banana-2.1
+  size: 1K                      # 1K (~0,034 $) | 2K (~0,050 $)
+  aspect_ratio: "16:9"
+  price_per_image: 0.0336       # maliyet takibi için (1K)
+  concurrency: 4
+  # Her görsel isteğinin sonuna eklenen ortak stil: kanalın "görsel kimliği"
+  style: >
+    Authentic candid color photograph from the era, shot on Kodak film with a 35mm camera, warm amber and
+    golden tones, soft natural light, gentle film grain, shallow depth of field, realistic everyday
+    North American setting and period-correct details. No text, no captions, no watermark, no readable
+    brand logos, no modern objects.
+
+# Videodaki film görünümü (ffmpeg filtreleri; görsel sahnelerine uygulanır)
+look:
+  grade: "eq=contrast=1.06:saturation=1.05:brightness=-0.01,colorbalance=rs=0.05:gs=0.01:bs=-0.06:rm=0.03:bm=-0.04"   # sıcak 70'ler tonu
+  grain: 0.10                   # film greni yoğunluğu (0–0,3)
+  vignette: 0.45                # kenar kararması (0–1)
+
+# Kapak: tam ekran görsel + altta siyah şerit, beyaz yazı ve sarı-kehribar vurgu
+thumbnail:
+  style: bar
+
+brand:
+  accent: "#FFB703"             # kehribar sarısı (kapak ve madde numaraları)
+  accent2: "#E85D04"            # turuncu
+  background: "#0B0B0B"
+  text: "#FFFFFF"
+  font: "Montserrat"
+
+voice:
+  provider: elevenlabs
+  elevenlabs:
+    voice_id: "pqHfZKP75CvOlQylNhV4"   # "Bill": yaşlı, sıcak Amerikalı erkek anlatıcı (alternatif: Brian nPczCjzI2devNBz1zQrb)
+    model_id: "eleven_multilingual_v2"
+    stability: 0.55
+    similarity_boost: 0.8
+  openai:
+    model: "gpt-4o-mini-tts"
+    voice: "ash"
+    instructions: "Warm, unhurried older male storyteller. Gentle, nostalgic, friendly."
+  lead_in_seconds: 0.4
+  tail_seconds: 0.8
+  music: ""                     # isteğe bağlı telifsiz fon müziği (ör. assets/music.mp3)
+  music_volume: 0.06
+
+schedule:
+  days: [mon, wed, fri]
+
+topics:
+  auto_approve: true
+  ideas_per_run: 12
+
+youtube:
+  upload: false
+  privacy: private
+  category_id: "22"             # People & Blogs
+  made_for_kids: false
+  # Fotogerçekçi yapay zekâ görselleri gerçek arşiv fotoğrafı sanılabileceği için beyan açık.
+  contains_synthetic_media: true
+  default_tags: ["nostalgia", "1960s", "1970s", "baby boomers", "memories", "growing up"]
+
+description:
+  affiliate_disclosure: ""
+  ai_disclosure: >
+    The narration and images in this video are AI-generated illustrations of everyday life in the
+    1950s–1970s, not archival photographs. Memories differ from town to town, so tell us in the comments
+    how it was where you grew up.
+  footer: ""

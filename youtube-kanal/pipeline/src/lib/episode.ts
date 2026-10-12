@@ -19,7 +19,7 @@ export interface EpisodeMeta {
   release_url?: string;
 }
 
-export type StageName = 'research' | 'script' | 'voice' | 'capture' | 'render' | 'thumbnail' | 'metadata' | 'upload';
+export type StageName = 'research' | 'script' | 'voice' | 'images' | 'capture' | 'render' | 'thumbnail' | 'metadata' | 'upload';
 
 export class Episode {
   readonly dir: string;

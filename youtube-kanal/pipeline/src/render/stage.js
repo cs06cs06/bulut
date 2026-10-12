@@ -230,6 +230,36 @@
   }
 
   // ---------------------------------------------------------------------------
+  // Görsel sahneleri (listicle) ffmpeg ile oluşturulur; buradan yalnızca yazı katmanları saydam PNG olarak alınır.
+
+  /** Son kelimeyi vurgular: "UNTHINKABLE TODAY" → "UNTHINKABLE <b>TODAY</b>" */
+  function accentLast(text) {
+    const w = String(text).trim().split(/\s+/);
+    if (w.length < 2) return `<b>${esc(text)}</b>`;
+    const last = w.pop();
+    return `${esc(w.join(' '))} <b>${esc(last)}</b>`;
+  }
+
+  /** Tek bir katmanı son (tam görünür) hâliyle saydam arka plan üzerinde çizer. */
+  window.mountOverlay = (kind, spec) => {
+    const b = spec.brand;
+    const css = document.documentElement.style;
+    css.setProperty('--accent', b.accent);
+    css.setProperty('--font', `'${b.font}', 'Montserrat', 'DejaVu Sans', sans-serif`);
+    document.documentElement.style.background = 'transparent';
+    document.body.style.background = 'transparent';
+    document.getElementById('bg').style.display = 'none';
+    const root = document.getElementById('root');
+    root.innerHTML = '';
+    const v = spec.visual;
+    if (kind === 'lt') root.appendChild(el('div', 'lt', `<div class="bar"><div class="num">#${v.number}</div><div class="ttl">${accentLast(v.heading)}</div></div>`));
+    if (kind === 'chip') root.appendChild(el('div', 'numchip', `<b>#${v.number}</b>${spec.total ? ` / ${spec.total}` : ''}`));
+    if (kind === 'title') root.appendChild(el('div', 'ovl-title', `<span>${accentLast(spec.videoTitle)}</span>`));
+    if (kind === 'sub') root.appendChild(el('div', 'subpill', 'SUBSCRIBE'));
+    return document.fonts.ready.then(() => true);
+  };
+
+  // ---------------------------------------------------------------------------
   // Tarayıcı sahnesi: ekran görüntüleri üzerinde kamera hareketi, vurgu, imleç ve tıklama.
 
   const WEIGHT = { show: 1, scroll: 1, highlight: 1.25, click: 0.9, after: 1 };
