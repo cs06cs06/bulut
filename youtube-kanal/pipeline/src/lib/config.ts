@@ -51,6 +51,16 @@ export interface ChannelConfig {
   /** Film görünümü: video kodlanırken ffmpeg ile uygulanır (tarayıcıda her karede hesaplamaktan çok daha hızlı). */
   look?: { grade: string; grain: number; vignette: number };
   thumbnail?: { style: 'browser' | 'bar' };
+  /** listicle kurgu ayarları */
+  edit?: {
+    jcut_seconds: number;
+    gap_seconds: number;
+    shot_seconds: number;
+    punch_zoom: number;
+    captions: boolean;
+    end_screen_seconds: number;
+    shorts: number;
+  };
   video: {
     target_minutes: number;
     min_minutes: number;

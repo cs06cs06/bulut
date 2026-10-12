@@ -12,8 +12,22 @@ import type { Script } from '../lib/script.ts';
 import { captureAll, type SceneCapture } from '../media/capture.ts';
 import { generateSceneImages, styledPrompt, type ImageProvider } from '../media/images.ts';
 import { probeDuration } from '../media/ffmpeg.ts';
-import { buildAudio, muxFinal, renderSegments, renderThumbnail, sceneSpecs } from '../media/render.ts';
-import { buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration } from '../media/timeline.ts';
+import { buildAudio, buildPlacedAudio, makePop, muxFinal, renderSegments, renderThumbnail, sceneSpecs } from '../media/render.ts';
+import { buildJcutTimeline, buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration, type TimedScene } from '../media/timeline.ts';
+import {
+  alignSentences,
+  assColor,
+  buildAss,
+  captionEvents,
+  detectSilences,
+  highlight,
+  phraseTime,
+  splitSentences,
+  windowEvents,
+  writeAss,
+  type CaptionEvent,
+} from '../media/align.ts';
+import { renderShorts } from '../media/shorts.ts';
 import { speakable, type TtsProvider } from '../media/tts.ts';
 import { buildDescription } from './describe.ts';
 import type { Metadata } from './write.ts';
@@ -28,6 +42,7 @@ export interface VideoOutputs {
   ttsChars: number;
   /** bu çalıştırmada üretilen görsel sayısı (maliyet için) */
   imagesGenerated: number;
+  shorts: string[];
 }
 
 const sha = (s: string) => createHash('sha1').update(s).digest('hex').slice(0, 16);
@@ -78,11 +93,20 @@ export async function buildVideo(args: {
   log('🎙️  Seslendirme');
   const voice = await voiceScenes(ep, script, tts, channel.voice[tts.name as 'elevenlabs' | 'openai' | 'google'] ?? null);
   ep.finish('voice');
-  const tl = buildTimeline(script.scenes, voice.durations, {
-    fps,
-    lead: channel.voice.lead_in_seconds,
-    tail: channel.voice.tail_seconds,
-  });
+  const edit = channel.edit;
+  const tl = edit
+    ? buildJcutTimeline(script.scenes, voice.durations, {
+        fps,
+        lead: channel.voice.lead_in_seconds,
+        gap: edit.gap_seconds,
+        jcut: edit.jcut_seconds,
+        tail: channel.voice.tail_seconds,
+      })
+    : buildTimeline(script.scenes, voice.durations, {
+        fps,
+        lead: channel.voice.lead_in_seconds,
+        tail: channel.voice.tail_seconds,
+      });
   log(`   ${script.scenes.length} sahne, toplam ${formatTimestamp(totalDuration(tl))}`);
 
   // Yapay zekâ görselleri (listicle kanalları)
@@ -108,8 +132,46 @@ export async function buildVideo(args: {
   ep.writeJson('captures.json', captures.map((c) => ({ scene: c.sceneId, url: c.url, ok: c.ok, error: c.error, shots: c.shots.length })));
   ep.finish('capture');
 
+  // Kurgu zamanlamaları: cümle sınırları → altyazılar, vurgu (punch-in) ve abone çağrısı anları
+  let captions: CaptionEvent[] = [];
+  const extras: Record<string, { punchAt?: number | null; subscribeAt?: number | null; assFile?: string }> = {};
+  const sfx: { file: string; start: number; volume?: number }[] = [];
+  if (edit) {
+    const timing = await sceneTiming(script, tl, voice.files);
+    captions = timing.captions;
+    const pop = await makePop(ep.workPath('audio', 'pop.wav'));
+    script.scenes.forEach((sc, i) => {
+      const t = tl[i];
+      const rel = (abs: number | null) => (abs == null ? null : abs - t.start);
+      const punch = rel(timing.punch[sc.id] ?? null);
+      const sub = rel(timing.subscribe[sc.id] ?? null);
+      extras[sc.id] = {
+        punchAt: punch != null && punch > 0.6 && punch < t.duration - 0.8 ? punch : null,
+        subscribeAt: sub != null && sub >= 0 && sub < t.duration ? sub : null,
+      };
+      if (extras[sc.id].subscribeAt != null) {
+        const abs = t.start + extras[sc.id].subscribeAt!;
+        sfx.push({ file: pop, start: abs, volume: 0.35 }, { file: pop, start: abs + 1.4, volume: 0.5 });
+      }
+    });
+    if (edit.captions) {
+      const accent = assColor(channel.brand.accent);
+      const styled = captions.map((c) => ({ ...c, text: highlight(c.text, c.keywords ?? [], accent) }));
+      mkdirSync(ep.workPath('captions'), { recursive: true });
+      tl.forEach((t) => {
+        const ev = windowEvents(styled, t.start, t.start + t.duration);
+        if (ev.length) {
+          extras[t.id].assFile = writeAss(
+            ep.workPath('captions', `${t.id}.ass`),
+            buildAss(ev, { width: channel.video.width, height: channel.video.height, fontSize: 66, marginV: 60, alignment: 2 }),
+          );
+        }
+      });
+    }
+  }
+
   log('🎬 Video oluşturuluyor');
-  const specs = sceneSpecs(channel, script.scenes, tl, captures, imageFiles, meta.titles[0] ?? script.title);
+  const specs = sceneSpecs(channel, script.scenes, tl, captures, imageFiles, meta.titles[0] ?? script.title, extras);
   let lastPct = -1;
   const segments = await renderSegments(browser, specs, tl, fps, ep.workPath('segments'), (d, n) => {
     const pct = Math.floor((d / n) * 10) * 10;
@@ -120,7 +182,11 @@ export async function buildVideo(args: {
   mkdirSync(outDir, { recursive: true });
   const audio = ep.workPath('audio', 'final.m4a');
   const music = channel.voice.music ? { file: join(ROOT, channel.voice.music), volume: channel.voice.music_volume } : undefined;
-  await buildAudio(voice.files, tl, ep.workPath('audio', 'parts'), audio, music);
+  if (edit) {
+    await buildPlacedAudio(voice.files.map((file, i) => ({ file, start: tl[i].audioStart })), totalDuration(tl), audio, sfx);
+  } else {
+    await buildAudio(voice.files, tl, ep.workPath('audio', 'parts'), audio, music);
+  }
   const video = join(outDir, 'video.mp4');
   const duration = await muxFinal(segments, audio, ep.workPath('segments'), video);
   ep.meta.duration_seconds = Math.round(duration);
@@ -163,7 +229,15 @@ export async function buildVideo(args: {
   const chaps = chapters(script.scenes, tl);
   const description = buildDescription({ channel, meta, script, links, chapters: chaps });
   const srt = join(outDir, 'captions.srt');
-  writeFileSync(srt, buildSrt(script.scenes, tl));
+  writeFileSync(srt, captions.length ? srtFromEvents(captions) : buildSrt(script.scenes, tl));
+
+  // Shorts (dikey, 15–45 sn): aynı görsellerden
+  const shortFiles: string[] = [];
+  if (edit?.shorts && script.shorts?.length) {
+    log('📱 Shorts');
+    const res = await renderShorts({ ep, browser, channel, script, tts, images: imageFiles, count: edit.shorts, log });
+    shortFiles.push(...res);
+  }
   const uploadTxt = join(outDir, 'upload.txt');
   writeFileSync(
     uploadTxt,
@@ -178,11 +252,58 @@ export async function buildVideo(args: {
       meta.tags.join(', '),
       '',
       `Duration: ${formatTimestamp(duration)}`,
+      ...(edit ? studioChecklist(meta, script, shortFiles) : []),
     ].join('\n'),
   );
   ep.write('description.txt', description + '\n');
   copyFileSync(uploadTxt, ep.path('upload.txt'));
   copyFileSync(thumbnail, ep.path('thumbnail.jpg'));
   ep.writeJson('timeline.json', tl.map((t, i) => ({ ...t, chapter: script.scenes[i].chapter, visual: specs[i].visual.type })));
-  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars, imagesGenerated };
+  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars, imagesGenerated, shorts: shortFiles };
+}
+
+/** Sahne sesleri için cümle sınırları; altyazı olayları, vurgu ve abone anlarının mutlak zamanları. */
+async function sceneTiming(script: Script, tl: TimedScene[], audioFiles: string[]) {
+  const captions: CaptionEvent[] = [];
+  const punch: Record<string, number> = {};
+  const subscribe: Record<string, number> = {};
+  for (let i = 0; i < script.scenes.length; i++) {
+    const sc = script.scenes[i];
+    const t = tl[i];
+    const sentences = splitSentences(sc.narration);
+    const silences = await detectSilences(audioFiles[i]);
+    const starts = alignSentences(sentences, silences, t.audioDuration);
+    for (const ev of captionEvents(sc.narration, t.audioStart, t.audioDuration, starts)) captions.push({ ...ev, keywords: sc.keywords ?? [] });
+    if (sc.punch) {
+      const p = phraseTime(sc.narration, sc.punch, starts, t.audioDuration);
+      if (p != null) punch[sc.id] = t.audioStart + p;
+    }
+    if (sc.subscribe) subscribe[sc.id] = t.audioStart + starts[starts.length - 1];
+  }
+  return { captions, punch, subscribe };
+}
+
+function srtTime(t: number): string {
+  const ms = Math.max(0, Math.round(t * 1000));
+  const p = (n: number, w = 2) => String(n).padStart(w, '0');
+  return `${p(Math.floor(ms / 3600000))}:${p(Math.floor((ms % 3600000) / 60000))}:${p(Math.floor((ms % 60000) / 1000))},${p(ms % 1000, 3)}`;
+}
+
+export function srtFromEvents(events: { start: number; end: number; text: string }[]): string {
+  return events.map((e, i) => `${i + 1}\n${srtTime(e.start)} --> ${srtTime(e.end)}\n${e.text}\n`).join('\n');
+}
+
+/** YouTube Studio'da yapılacaklar: bitiş ekranı, oynatma listesi, altyazı çevirisi, Shorts, Topluluk gönderisi. */
+function studioChecklist(meta: Metadata, script: Script, shorts: string[]): string[] {
+  return [
+    '',
+    'YOUTUBE STUDIO CHECKLIST',
+    '- End screen (last 20 s): add "Best for viewer" video + Subscribe element.' +
+      (script.next_video ? ` The narration points to: "${script.next_video}".` : ''),
+    meta.playlist ? `- Add to playlist: "${meta.playlist}" (create it if needed; series = binge-watching).` : '',
+    '- Subtitles: upload captions.srt (English). YouTube auto-translates them into other languages automatically.',
+    '- Chapters are in the description (each item is a chapter).',
+    ...shorts.map((f, i) => `- Short ${i + 1}: ${f.split('/').pop()} — "${script.shorts?.[i]?.title ?? ''}" (link it to this video with "Related video").`),
+    meta.community_post ? `\nCOMMUNITY POST (share 2–3 days after the video)\n${meta.community_post}` : '',
+  ].filter(Boolean);
 }

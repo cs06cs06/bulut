@@ -115,10 +115,28 @@
     background: var(--accent); color: #0b0b0b; font: 900 64px/1 'Montserrat', var(--font); letter-spacing: -0.02em; }
   .lt .ttl { font: 900 58px/1.08 'Montserrat', var(--font); text-transform: uppercase; color: #fff; letter-spacing: -0.01em; }
   .lt .ttl b { color: var(--accent); font-weight: 900; }
-  .numchip { position: absolute; top: 44px; left: 52px; z-index: 5; padding: 8px 18px; background: rgba(11,11,11,.82);
-    color: #fff; font: 800 30px/1 'Montserrat', var(--font); letter-spacing: .02em; }
+  .numchip { position: absolute; top: 44px; left: 52px; z-index: 5; padding: 10px 18px; background: rgba(11,11,11,.82);
+    color: #fff; font: 900 38px/1 'Montserrat', var(--font); letter-spacing: .01em; }
+  .badge { position: absolute; top: 44px; left: 52px; display: flex; align-items: stretch; max-width: 1300px;
+    box-shadow: 0 14px 40px rgba(0,0,0,.45); }
+  .badge .num { flex: none; display: grid; place-items: center; padding: 0 22px; background: var(--accent); color: #0b0b0b;
+    font: 900 62px/1 'Montserrat', var(--font); letter-spacing: -0.02em; }
+  .badge .ttl { display: flex; align-items: center; padding: 16px 30px; background: #0b0b0b; color: #fff;
+    font: 900 46px/1.1 'Montserrat', var(--font); text-transform: uppercase; letter-spacing: -0.01em; }
+  .badge .ttl b { color: var(--accent); }
+  .subcard { position: absolute; top: 46px; right: 56px; display: flex; align-items: center; gap: 14px; }
+  .subcard .pill { display: flex; align-items: center; gap: 14px; padding: 18px 34px; border-radius: 999px;
+    font: 900 40px/1 'Montserrat', var(--font); letter-spacing: .03em; color: #fff; box-shadow: 0 14px 40px rgba(0,0,0,.45); }
+  .subcard .pill svg { width: 40px; height: 40px; }
+  .subcard .red { background: #e00020; }
+  .subcard .grey { background: #3a3a3a; }
+  .subcard .check { font-style: normal; color: var(--accent); }
+  .subcard .hand { width: 70px; height: 70px; margin-left: -48px; margin-top: 60px; filter: drop-shadow(0 4px 8px rgba(0,0,0,.5)); }
+  .endscr { position: absolute; inset: 0; background: rgba(0,0,0,.58); display: flex; justify-content: center; }
+  .endscr .endttl { margin-top: 90px; font: 900 72px/1 'Montserrat', var(--font); color: #fff; letter-spacing: -0.01em; }
+  .endscr .endttl b { color: var(--accent); }
   .numchip b { color: var(--accent); }
-  .ovl-title { position: absolute; left: 0; right: 0; bottom: 0; height: 250px; background: #0b0b0b; z-index: 5;
+  .ovl-title { position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%); height: 250px; background: #0b0b0b; z-index: 5;
     display: flex; align-items: center; justify-content: center; padding: 0 80px; text-align: center;
     font: 900 76px/1.05 'Montserrat', var(--font); text-transform: uppercase; color: #fff; letter-spacing: -0.02em; }
   .ovl-title b { color: var(--accent); }

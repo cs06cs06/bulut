@@ -28,6 +28,23 @@ export interface Scene {
   chapter: string;
   narration: string;
   visual: Visual;
+  /** Altyazıda vurgulanacak anahtar kelimeler (listicle) */
+  keywords?: string[];
+  /** Görüntünün %15–20 yakınlaşacağı (punch-in) vurgu ifadesi; anlatımdan birebir alıntı */
+  punch?: string;
+  /** Bu sahnenin son cümlesi abone çağrısıdır (animasyon + "pop" sesi) */
+  subscribe?: boolean;
+  /** Sahnede görüntü değişim aralığı (saniye); kancada kısa */
+  cadence?: number;
+}
+
+export interface ShortSpec {
+  title: string;
+  /** Shorts'un ilk 3 saniyesinde ekranın üstünde duran büyük soru/kanca metni */
+  hook_text: string;
+  narration: string;
+  /** Görsellerinin alınacağı madde numarası */
+  number: number;
 }
 
 export interface Script {
@@ -35,6 +52,9 @@ export interface Script {
   format: string;
   tools: string[];
   scenes: Scene[];
+  shorts?: ShortSpec[];
+  /** Kapanışta yönlendirilen sonraki video konusu (bitiş ekranı) */
+  next_video?: string;
 }
 
 const VISUAL_TYPES = ['title', 'bullets', 'browser', 'compare', 'steps', 'code', 'callout', 'outro'] as const;
@@ -244,40 +264,62 @@ export function scriptWords(script: Script): number {
 }
 
 // ---------------------------------------------------------------------------
-// Numaralı liste (listicle) senaryosu: giriş + N madde + kapanış; her bölümde görsel tarifleri
+// Numaralı liste (listicle) senaryosu — v2
+// Kanca (ilk 5 saniye: en çarpıcı anlardan kısa kesitler + açık döngü) → geri sayımlı maddeler
+// (en güçlüsü #1, en sonda) → maddeler arasına yerleştirilmiş fayda odaklı abone çağrısı →
+// sonraki videoya yönlendiren kapanış. Ayrıca aynı görsellerden 15–45 saniyelik Shorts senaryoları.
+
+const part = (extra: Record<string, unknown> = {}) => ({
+  type: 'object',
+  additionalProperties: false,
+  required: ['narration', 'image_prompts', ...Object.keys(extra)],
+  properties: { narration: str, image_prompts: strArr, ...extra },
+});
 
 export const LISTICLE_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['title', 'intro', 'items', 'outro'],
+  required: ['title', 'hook', 'items', 'subscribe', 'outro', 'shorts'],
   properties: {
     title: str,
-    intro: {
-      type: 'object',
-      additionalProperties: false,
-      required: ['narration', 'image_prompts'],
-      properties: { narration: str, image_prompts: strArr },
-    },
+    hook: part(),
     items: {
       type: 'array',
       items: {
         type: 'object',
         additionalProperties: false,
-        required: ['title', 'narration', 'image_prompts'],
-        properties: { title: str, narration: str, image_prompts: strArr },
+        required: ['title', 'narration', 'image_prompts', 'keywords', 'punch'],
+        properties: { title: str, narration: str, image_prompts: strArr, keywords: strArr, punch: str },
       },
     },
-    outro: {
+    subscribe: {
       type: 'object',
       additionalProperties: false,
-      required: ['narration', 'image_prompts'],
-      properties: { narration: str, image_prompts: strArr },
+      required: ['after_number', 'line'],
+      properties: { after_number: { type: 'integer' }, line: str },
+    },
+    outro: part({ next_video: str }),
+    shorts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['title', 'hook_text', 'narration', 'number'],
+        properties: { title: str, hook_text: str, narration: str, number: { type: 'integer' } },
+      },
     },
   },
 } as const;
 
-type RawPart = { title?: string; narration?: string; image_prompts?: string[] };
-type RawListicle = { title?: string; intro?: RawPart; items?: RawPart[]; outro?: RawPart };
+type RawPart = { title?: string; narration?: string; image_prompts?: string[]; keywords?: string[]; punch?: string; next_video?: string };
+type RawListicle = {
+  title?: string;
+  hook?: RawPart;
+  items?: RawPart[];
+  subscribe?: { after_number?: number; line?: string };
+  outro?: RawPart;
+  shorts?: { title?: string; hook_text?: string; narration?: string; number?: number }[];
+};
 
 export interface ListicleShape {
   items: number;
@@ -292,35 +334,64 @@ export function fitPrompts(prompts: string[], want: number, fallback: string): s
   return Array.from({ length: Math.max(1, want) }, (_, i) => p[i % p.length]);
 }
 
+/** Vurgu ifadesi anlatımda birebir geçmiyorsa kullanılamaz (zamanlaması bulunamaz). */
+function punchIn(narration: string, punch: string): string | undefined {
+  const p = punch.trim().replace(/[.!?]+$/, '');
+  return p && narration.toLowerCase().includes(p.toLowerCase()) ? p : undefined;
+}
+
 export function normalizeListicle(raw: RawListicle, shape: ListicleShape): Script {
   const title = s(raw.title);
   const scenes: Scene[] = [];
-  const push = (chapter: string, narration: string, visual: Visual) =>
-    scenes.push({ id: `s${String(scenes.length + 1).padStart(2, '0')}`, chapter, narration, visual });
+  const push = (sc: Omit<Scene, 'id'>) => scenes.push({ id: `s${String(scenes.length + 1).padStart(2, '0')}`, ...sc });
 
-  const intro = s(raw.intro?.narration);
-  if (intro) {
-    push('Intro', intro, {
-      type: 'photos',
-      number: 0,
-      heading: '',
-      prompts: fitPrompts(arr(raw.intro?.image_prompts), shape.intro_images, title),
+  const hook = s(raw.hook?.narration);
+  if (hook) {
+    push({
+      chapter: 'Intro',
+      narration: hook,
+      cadence: 2,
+      visual: { type: 'photos', number: 0, heading: '', prompts: fitPrompts(arr(raw.hook?.image_prompts), shape.intro_images, title) },
     });
   }
   const items = (raw.items ?? []).filter((it) => s(it.narration) && s(it.title));
+  const n = items.length;
+  if (n < 5) throw new Error(`Senaryo çok kısa: ${n} madde`);
+  const subNumber = Math.round(Number(raw.subscribe?.after_number ?? 0));
+  const subLine = s(raw.subscribe?.line);
+  // Abone çağrısı en erken 3. maddeden sonra, en geç sondan bir önceki maddeden önce
+  const subAt = subLine ? Math.min(n - 1, Math.max(3, subNumber >= 1 && subNumber <= n ? n - subNumber + 1 : Math.ceil(n * 0.45))) : 0;
   items.forEach((it, i) => {
+    const number = n - i; // geri sayım: ilk madde en büyük numara, son madde #1
     const heading = s(it.title).replace(/^#?\d+[.):\s-]+/, '');
-    push(`${i + 1}. ${heading}`, s(it.narration), {
-      type: 'photos',
-      number: i + 1,
-      heading,
-      prompts: fitPrompts(arr(it.image_prompts), shape.images_per_item, heading),
+    let narration = s(it.narration);
+    const subscribe = subAt === i + 1;
+    if (subscribe) narration = `${narration} ${subLine}`;
+    push({
+      chapter: `#${number} ${heading}`,
+      narration,
+      keywords: arr(it.keywords).slice(0, 5),
+      punch: punchIn(s(it.narration), s(it.punch)),
+      subscribe: subscribe || undefined,
+      visual: { type: 'photos', number, heading, prompts: fitPrompts(arr(it.image_prompts), shape.images_per_item, heading) },
     });
   });
   const outro = s(raw.outro?.narration);
   if (outro) {
-    push('', outro, { type: 'photos', number: 0, heading: '', prompts: fitPrompts(arr(raw.outro?.image_prompts), shape.outro_images, title) });
+    push({
+      chapter: 'Up next',
+      narration: outro,
+      visual: { type: 'photos', number: 0, heading: '', prompts: fitPrompts(arr(raw.outro?.image_prompts), shape.outro_images, title) },
+    });
   }
-  if (items.length < 5) throw new Error(`Senaryo çok kısa: ${items.length} madde`);
-  return { title, format: 'listicle', tools: [], scenes };
+  const shorts: ShortSpec[] = (raw.shorts ?? [])
+    .map((sh) => ({
+      title: s(sh.title),
+      hook_text: s(sh.hook_text),
+      narration: s(sh.narration),
+      number: Math.round(Number(sh.number ?? 0)),
+    }))
+    .filter((sh) => sh.narration && sh.number >= 1 && sh.number <= n)
+    .slice(0, 3);
+  return { title, format: 'listicle', tools: [], scenes, shorts, next_video: s(raw.outro?.next_video) || undefined };
 }
