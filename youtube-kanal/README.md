@@ -23,7 +23,7 @@ Pzt / Çar / Cum      Video üret:
                         2. Araştır (Claude + web araması)          → episodes/<id>/research.md
                         3. Senaryo                                → episodes/<id>/script.md
                         4. Başlık, açıklama, etiket, kapak metni  → episodes/<id>/metadata.json
-                        5. Seslendirme (ElevenLabs)
+                        5. Seslendirme (nostalji: Google Gemini · ai-egitim: ElevenLabs)
                         6. Görseller: nostalji → Google Gemini (Nano Banana) · ai-egitim → web sayfası ekran görüntüleri
                         7. Video (1920×1080) + kapak + altyazı
                         8. GitHub → Releases: video.mp4, thumbnail.jpg, captions.srt, upload.txt
@@ -69,12 +69,12 @@ gerekirken affiliate geliri **ilk videodan** başlayabilir.
 ### 1.5 İlk çalıştırma
 1. **Actions → "YouTube Kanalı · Konu fikirleri" → Run workflow** (kanal seçin). Birkaç dakikada `data/backlog.yaml` dolar.
 2. Listeye göz atın; istemediğiniz konuları `reddedildi`, öne almak istediklerinizi `onaylı` yapın (isteğe bağlı).
-3. **Actions → "YouTube Kanalı · Video üret" → Run workflow** (kanal seçin). Nostalji: ~25–40 dakika; ai-egitim: ~20–30 dakika.
+3. **Actions → "YouTube Kanalı · Video üret" → Run workflow** (kanal seçin). Nostalji: ~60–75 dakika (35 dakikalık videonun oluşturulması 4 çekirdekte gerçek zamana yakın sürer); ai-egitim: ~20–30 dakika.
 4. Bitince çalıştırma sayfasındaki özet bölümünde **📥 İndir** bağlantısı çıkar (depo → **Releases**).
 
 ---
 
-## 2. Her video için yapacaklarınız (~10 dakika)
+## 2. Her video için yapacaklarınız (~10–20 dakika; uzun nostalji videolarını 1,5–2 kat hızda izleyebilirsiniz)
 
 1. Depo → **Releases** → en yeni "🎬 …" kaydı. `video.mp4`, `thumbnail.jpg`, `captions.srt` ve `upload.txt` indirin
    (telefondan da olur).
@@ -147,16 +147,16 @@ Kendi konunuzu eklemek için listenin sonuna şunu yazmanız yeter:
 |---|---|---|
 | Claude (araştırma + senaryo + başlık) | ~1,5–2,5 $ | |
 | Görseller (Gemini Nano Banana 2.1, 1K) | ~2,8 $ | `images.size: 2K` ile ~4,1 $; `listicle.images_per_item` ile görsel sayısı |
-| Seslendirme (~4.200 kelime ≈ 25.000 karakter) | ElevenLabs paketine göre | API kullandıkça öde fiyatıyla ~1,3–2,5 $; aylık paketle daha ucuz |
+| Seslendirme (Google Gemini TTS, ~35 dakika) | ~0,5 $ | Aynı `GEMINI_API_KEY`; ses `voice.google.voice` (Gacrux). ElevenLabs'e geçilirse ticari lisans için ücretli plan gerekir (ayda 13 video ≈ Pro plan, 99 $) |
 
 `config/ai.yaml` → `budget.monthly_usd` (nostalji: 80 $) Claude ve görsel harcamasını sınırlar. Haftada 3 video ≈ ayda
-13 video ≈ 55–70 $ (seslendirme hariç).
+13 video ≈ 60–75 $ (seslendirme dahil).
 
 **ai-egitim kanalı:** Claude ~1–2 $, seslendirme ~0,5–1 $ / video.
 
 | Ortak | |
 |---|---|
-| GitHub Actions | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (video başına ~25–40 dk) |
+| GitHub Actions | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (nostalji videosu başına ~60–75 dk → ayda 13 video ≈ 900 dk) |
 
 Aylık harcama her kanalın `data/usage.json` dosyasında tutulur. Tavan aşılırsa yeni video başlatılmaz.
 
