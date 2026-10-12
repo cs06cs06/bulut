@@ -10,7 +10,7 @@ Her kanal kendi klasöründe yaşar; **aşağıda geçen `config/`, `prompts/`, 
 
 | Klasör | Kanal | Biçim | Zamanlama |
 |---|---|---|---|
-| `kanallar/nostalji/` | **Back In Our Day** (geçici ad): ABD ve Kanada'da 60 yaş üstü izleyiciye 1950'ler–70'ler nostaljisi | ~30 dakikalık numaralı liste ("25 Things Every Kid Did in the 1960s – Unthinkable Today"); fotogerçekçi yapay zekâ görselleri, sıcak 70'ler film tonu, siyah şeritli sarı vurgulu kapak | Pzt / Çar / Cum otomatik |
+| `kanallar/nostalji/` | **Back In Our Day** (geçici ad): ABD ve Kanada'da 60 yaş üstü izleyiciye 1950'ler–70'ler nostaljisi | 8–12 dakikalık geri sayım listesi (15 madde, en güçlüsü #1 sonda) + her videodan 2 dikey Shorts; fotogerçekçi yapay zekâ görselleri, sıcak 60'lar film tonu, siyah şeritli sarı vurgulu kapak | Pzt / Çar / Cum otomatik |
 | `kanallar/ai-egitim/` | **Tool Tutor**: yapay zekâ araçları eğitimleri | 8–9 dakikalık adım adım anlatım; gerçek web sayfalarının ekran görüntüleri | Yalnızca elle (Run workflow → kanal: ai-egitim) |
 
 Nostalji kanalının biçimi, Almanya'daki "Deutschland, wie es einmal war" kanalından uyarlanmıştır (2,5 ayda 24 video,
@@ -21,12 +21,13 @@ Pazar sabahı         Konu fikirleri  ─►  data/backlog.yaml (puanlı konu li
 Pzt / Çar / Cum      Video üret:
   08:23                 1. Konu seç (onaylı ya da en yüksek puanlı)
                         2. Araştır (Claude + web araması)          → episodes/<id>/research.md
+                        2b. Önce paketleme (nostalji): başlık + kapak + merak boşluğu → packaging.json
                         3. Senaryo                                → episodes/<id>/script.md
                         4. Başlık, açıklama, etiket, kapak metni  → episodes/<id>/metadata.json
                         5. Seslendirme (nostalji: Google Gemini · ai-egitim: ElevenLabs)
                         6. Görseller: nostalji → Google Gemini (Nano Banana) · ai-egitim → web sayfası ekran görüntüleri
-                        7. Video (1920×1080) + kapak + altyazı
-                        8. GitHub → Releases: video.mp4, thumbnail.jpg, captions.srt, upload.txt
+                        7. Video (1920×1080) + kapak + altyazı (+ nostalji: 2 dikey Shorts)
+                        8. GitHub → Releases: video.mp4, thumbnail.jpg, captions.srt, upload.txt, short-*.mp4
                            (isteğe bağlı: YouTube'a "özel" olarak yükleme)
 ```
 
@@ -69,12 +70,12 @@ gerekirken affiliate geliri **ilk videodan** başlayabilir.
 ### 1.5 İlk çalıştırma
 1. **Actions → "YouTube Kanalı · Konu fikirleri" → Run workflow** (kanal seçin). Birkaç dakikada `data/backlog.yaml` dolar.
 2. Listeye göz atın; istemediğiniz konuları `reddedildi`, öne almak istediklerinizi `onaylı` yapın (isteğe bağlı).
-3. **Actions → "YouTube Kanalı · Video üret" → Run workflow** (kanal seçin). Nostalji: ~60–75 dakika (35 dakikalık videonun oluşturulması 4 çekirdekte gerçek zamana yakın sürer); ai-egitim: ~20–30 dakika.
+3. **Actions → "YouTube Kanalı · Video üret" → Run workflow** (kanal seçin). Nostalji: ~30–40 dakika (11 dakikalık video + 2 Shorts; oluşturma 4 çekirdekte gerçek zamana yakın sürer); ai-egitim: ~20–30 dakika.
 4. Bitince çalıştırma sayfasındaki özet bölümünde **📥 İndir** bağlantısı çıkar (depo → **Releases**).
 
 ---
 
-## 2. Her video için yapacaklarınız (~10–20 dakika; uzun nostalji videolarını 1,5–2 kat hızda izleyebilirsiniz)
+## 2. Her video için yapacaklarınız (~15–20 dakika)
 
 1. Depo → **Releases** → en yeni "🎬 …" kaydı. `video.mp4`, `thumbnail.jpg`, `captions.srt` ve `upload.txt` indirin
    (telefondan da olur).
@@ -85,9 +86,17 @@ gerekirken affiliate geliri **ilk videodan** başlayabilir.
    - Açıklama ve etiketler: `upload.txt`'den kopyalayın,
    - Kapak: `thumbnail.jpg` (kapak yüklemek için kanalın telefonla doğrulanmış olması gerekir),
    - Altyazı: **Subtitles → Upload file → With timing** → `captions.srt`,
-   - "Altered or synthetic content" sorusu: ekran görüntüsü ve anlatıcı sesi için genelde **No**.
-     Gerçek bir kişinin sesini/görüntüsünü taklit eden içerik yoksa beyan gerekmez.
+   - "Altered or synthetic content" sorusu: ai-egitim (ekran görüntüsü) için genelde **No**; nostalji kanalının
+     fotogerçekçi yapay zekâ görselleri gerçek bir sahne gibi göründüğü için **Yes**.
+   - **End screen** (nostalji): son 20 saniyede videoda "WATCH THIS NEXT" alanı ayrılmıştır; oraya
+     `upload.txt`'de önerilen sonraki videoyu (ya da "Best for viewer") ve abone düğmesini koyun.
+   - **Playlist**: `upload.txt`'deki seri oynatma listesine ekleyin (izleyici bir sonrakine geçsin).
+   - Altyazı dili İngilizce olunca YouTube diğer dillere otomatik çeviri sunar.
 4. Yayınlayın ya da zamanlayın.
+5. Nostalji: `short-1.mp4` ve `short-2.mp4` dosyalarını birkaç gün arayla Shorts olarak yükleyin (başlıklar
+   `upload.txt`'de) ve Shorts'u ana videoya bağlayın ("Related video"). Topluluk sekmesine `upload.txt`'deki anketi paylaşın.
+6. Bir hafta sonra Studio → Analytics → **Audience retention** grafiğine bakın: izleyicinin düştüğü maddeyi ve
+   kancanın ilk 30 saniyede tuttuğu oranı not edin; zayıf kalıpları `prompts/script.md` / `prompts/ideas.md`'ye yazın.
 
 ### Bir videoyu düzeltmek
 Her bölümün metinleri `episodes/<tarih>-<konu>/` klasöründedir. `script.json` dosyasında bir anlatım cümlesini
@@ -141,22 +150,22 @@ Kendi konunuzu eklemek için listenin sonuna şunu yazmanız yeter:
 
 ## 5. Maliyet
 
-**Nostalji kanalı** (~30 dakikalık video, 25 madde × 3 görsel + giriş/kapanış ≈ 81 görsel):
+**Nostalji kanalı** (~11 dakikalık video, 15 madde × 3 görsel + giriş/kapanış ≈ 51 görsel):
 
 | Kalem | Video başına | Not |
 |---|---|---|
 | Claude (araştırma + senaryo + başlık) | ~1,5–2,5 $ | |
-| Görseller (Gemini Nano Banana 2.1, 1K) | ~2,8 $ | `images.size: 2K` ile ~4,1 $; `listicle.images_per_item` ile görsel sayısı |
-| Seslendirme (Google Gemini TTS, ~35 dakika) | ~0,5 $ | Aynı `GEMINI_API_KEY`; ses `voice.google.voice` (Gacrux). ElevenLabs'e geçilirse ticari lisans için ücretli plan gerekir (ayda 13 video ≈ Pro plan, 99 $) |
+| Görseller (Gemini Nano Banana 2.1, 2K) | ~2,6 $ | `images.size: 1K` ile ~1,8 $; `listicle.images_per_item` ile görsel sayısı |
+| Seslendirme (Google Gemini TTS, ~12 dakika + Shorts) | ~0,2 $ | Aynı `GEMINI_API_KEY`; ses `voice.google.voice` (Gacrux). ElevenLabs'e geçilirse ticari lisans için ücretli plan gerekir (ayda 13 video ≈ Pro plan, 99 $) |
 
 `config/ai.yaml` → `budget.monthly_usd` (nostalji: 80 $) Claude ve görsel harcamasını sınırlar. Haftada 3 video ≈ ayda
-13 video ≈ 60–75 $ (seslendirme dahil).
+13 video ≈ 50–65 $ (seslendirme dahil).
 
 **ai-egitim kanalı:** Claude ~1–2 $, seslendirme ~0,5–1 $ / video.
 
 | Ortak | |
 |---|---|
-| GitHub Actions | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (nostalji videosu başına ~60–75 dk → ayda 13 video ≈ 900 dk) |
+| GitHub Actions | Herkese açık depolarda ücretsiz; özel depolarda ayda 2.000 dakika ücretsiz (nostalji videosu başına ~30–40 dk → ayda 13 video ≈ 500 dk) |
 
 Aylık harcama her kanalın `data/usage.json` dosyasında tutulur. Tavan aşılırsa yeni video başlatılmaz.
 
