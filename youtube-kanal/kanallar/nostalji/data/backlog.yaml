@@ -23,8 +23,6 @@
   status: üretiliyor
   added: 2026-10-12
   episode: 2026-10-12-25-things-about-halloween-in-the-1960s-that-would-never
-  failures: 1
-  error: 'ElevenLabs seslendirme hatası (HTTP 401): {"detail":{"type":"invalid_request","code":"quota_exceeded","message":"This request exceeds your quota of 10000. You have 251 credits remaining, while 1041 credits are required for this request. Add credits or upgrade your plan to continue using the API: htt'
 - id: 25-things-kids-did-alone-in-the-1960s-unthinkable-today
   title: 25 Things Kids Did Alone in the 1960s — Unthinkable Today
   query: growing up in the 60s

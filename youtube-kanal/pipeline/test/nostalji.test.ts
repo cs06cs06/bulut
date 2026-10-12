@@ -10,6 +10,7 @@ import { fitPrompts, normalizeListicle, type Script } from '../src/lib/script.ts
 import { findImageData, generateSceneImages, ImageRefusedError, styledPrompt, type ImageProvider } from '../src/media/images.ts';
 import { clipFrames, overlayTimings } from '../src/media/photoscene.ts';
 import { chapters, buildTimeline } from '../src/media/timeline.ts';
+import { findAudioData, ttsFromConfig } from '../src/media/tts.ts';
 import { writeScript } from '../src/stages/write.ts';
 
 const shape = { items: 25, images_per_item: 3, intro_images: 3, outro_images: 2 };
@@ -166,4 +167,14 @@ test('overlayTimings: madde şeridi, köşe numarası, açılış başlığı, a
   const outro = overlayTimings({ ...base, visual: { type: 'photos', number: 0, heading: '' }, first: false, last: true });
   assert.deepEqual(outro.map((o) => o.kind), ['sub']);
   assert.equal(outro[0].in, 53);
+});
+
+test('Google seslendirme: ayar ve yanıttan ses verisini okuma', () => {
+  const ch = loadChannel();
+  assert.equal(ch.voice.provider, 'google');
+  assert.throws(() => ttsFromConfig(ch, {}), /GEMINI_API_KEY/);
+  assert.equal(ttsFromConfig(ch, { GEMINI_API_KEY: 'x' }).name, 'google');
+  const b64 = 'U'.repeat(300);
+  assert.equal(findAudioData({ steps: [{ type: 'thought', signature: 'z'.repeat(500) }, { type: 'model_output', content: [{ type: 'audio', mime_type: 'audio/wav', data: b64 }] }] }), b64);
+  assert.equal(findAudioData({ steps: [{ content: [{ type: 'text', text: 'no' }] }] }), null);
 });

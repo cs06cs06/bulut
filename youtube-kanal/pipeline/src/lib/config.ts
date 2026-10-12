@@ -62,9 +62,10 @@ export interface ChannelConfig {
   };
   brand: { accent: string; accent2: string; background: string; text: string; font: string };
   voice: {
-    provider: 'elevenlabs' | 'openai' | 'silent';
+    provider: 'elevenlabs' | 'openai' | 'google' | 'silent';
     elevenlabs: { voice_id: string; model_id: string; stability: number; similarity_boost: number };
     openai: { model: string; voice: string; instructions: string };
+    google?: { model: string; voice: string; style: string };
     lead_in_seconds: number;
     tail_seconds: number;
     music: string;

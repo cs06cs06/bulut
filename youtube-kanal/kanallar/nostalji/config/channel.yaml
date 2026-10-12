@@ -83,7 +83,13 @@ brand:
   font: "Montserrat"
 
 voice:
-  provider: elevenlabs
+  provider: google              # google (Gemini, ~0,5 $/video) | elevenlabs | openai | silent
+  google:
+    model: gemini-3.8-flash-tts
+    voice: Gacrux               # Google hazır sesleri: Gacrux, Charon, Algenib, Sadaltager…
+    style: >-
+      Warm, unhurried older American man telling stories from his childhood; gentle, nostalgic and
+      friendly, with a soft smile in his voice.
   elevenlabs:
     voice_id: "nPczCjzI2devNBz1zQrb"   # "Brian": derin, sıcak Amerikalı erkek anlatıcı (alternatif: Bill pqHfZKP75CvOlQylNhV4)
     model_id: "eleven_multilingual_v2"

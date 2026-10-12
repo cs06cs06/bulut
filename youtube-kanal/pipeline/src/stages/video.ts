@@ -76,7 +76,7 @@ export async function buildVideo(args: {
   const fps = channel.video.fps;
 
   log('🎙️  Seslendirme');
-  const voice = await voiceScenes(ep, script, tts, channel.voice[tts.name as 'elevenlabs' | 'openai'] ?? null);
+  const voice = await voiceScenes(ep, script, tts, channel.voice[tts.name as 'elevenlabs' | 'openai' | 'google'] ?? null);
   ep.finish('voice');
   const tl = buildTimeline(script.scenes, voice.durations, {
     fps,
