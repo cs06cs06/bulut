@@ -1,0 +1,272 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 72.8,
+    "frames": 1820,
+    "audioOffset": 0.4,
+    "audioDuration": 71.568,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 72.8,
+    "duration": 82.32,
+    "frames": 2058,
+    "audioOffset": 0.4,
+    "audioDuration": 81.096,
+    "chapter": "1. Costumes Made From the Hall Closet",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 155.12,
+    "duration": 80.32,
+    "frames": 2008,
+    "audioOffset": 0.4,
+    "audioDuration": 79.104,
+    "chapter": "2. Dragging Home a Heavy Pillowcase",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 235.44,
+    "duration": 76.76,
+    "frames": 1919,
+    "audioOffset": 0.4,
+    "audioDuration": 75.528,
+    "chapter": "3. Out With the Big Kids, No Parents",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 312.2,
+    "duration": 77.96,
+    "frames": 1949,
+    "audioOffset": 0.4,
+    "audioDuration": 76.728,
+    "chapter": "4. The Boxed Costume From the Five-and-Dime",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 390.16,
+    "duration": 76.76,
+    "frames": 1919,
+    "audioOffset": 0.4,
+    "audioDuration": 75.528,
+    "chapter": "5. The Sweaty Plastic Mask",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 466.92,
+    "duration": 83.32,
+    "frames": 2083,
+    "audioOffset": 0.4,
+    "audioDuration": 82.104,
+    "chapter": "6. When Television Picked Our Costumes",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 550.24,
+    "duration": 78.44,
+    "frames": 1961,
+    "audioOffset": 0.4,
+    "audioDuration": 77.208,
+    "chapter": "7. Halloween Belonged to the Kids",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 628.68,
+    "duration": 69.72,
+    "frames": 1743,
+    "audioOffset": 0.4,
+    "audioDuration": 68.496,
+    "chapter": "8. Every House on the Street, on Foot",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 698.4,
+    "duration": 86.4,
+    "frames": 2160,
+    "audioOffset": 0.4,
+    "audioDuration": 85.176,
+    "chapter": "9. Trick-or-Treating in Real Darkness",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 784.8,
+    "duration": 81.24,
+    "frames": 2031,
+    "audioOffset": 0.4,
+    "audioDuration": 80.016,
+    "chapter": "10. Popcorn Balls From the Neighbor Lady",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 866.04,
+    "duration": 80.76,
+    "frames": 2019,
+    "audioOffset": 0.4,
+    "audioDuration": 79.536,
+    "chapter": "11. Cookies, Pennies and Little Trinkets",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 946.8,
+    "duration": 79.36,
+    "frames": 1984,
+    "audioOffset": 0.4,
+    "audioDuration": 78.144,
+    "chapter": "12. Being Invited Inside for Cider",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 1026.16,
+    "duration": 73.2,
+    "frames": 1830,
+    "audioOffset": 0.4,
+    "audioDuration": 71.976,
+    "chapter": "13. Caramel Apples and Candy Apples",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 1099.36,
+    "duration": 73.52,
+    "frames": 1838,
+    "audioOffset": 0.4,
+    "audioDuration": 72.288,
+    "chapter": "14. The Treats Nobody Wanted",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 1172.88,
+    "duration": 72.12,
+    "frames": 1803,
+    "audioOffset": 0.4,
+    "audioDuration": 70.896,
+    "chapter": "15. Halloween Apples on the Prairies",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 1245,
+    "duration": 78.8,
+    "frames": 1970,
+    "audioOffset": 0.4,
+    "audioDuration": 77.568,
+    "chapter": "16. Shell Out, Charité and Smelly Feet",
+    "visual": "photos"
+  },
+  {
+    "id": "s18",
+    "start": 1323.8,
+    "duration": 90.24,
+    "frames": 2256,
+    "audioOffset": 0.4,
+    "audioDuration": 89.016,
+    "chapter": "17. The Little Orange UNICEF Box",
+    "visual": "photos"
+  },
+  {
+    "id": "s19",
+    "start": 1414.04,
+    "duration": 73.84,
+    "frames": 1846,
+    "audioOffset": 0.4,
+    "audioDuration": 72.624,
+    "chapter": "18. Bobbing for Apples in a Washtub",
+    "visual": "photos"
+  },
+  {
+    "id": "s20",
+    "start": 1487.88,
+    "duration": 79.56,
+    "frames": 1989,
+    "audioOffset": 0.4,
+    "audioDuration": 78.336,
+    "chapter": "19. Mischief Night and Soaped Windows",
+    "visual": "photos"
+  },
+  {
+    "id": "s21",
+    "start": 1567.44,
+    "duration": 80.72,
+    "frames": 2018,
+    "audioOffset": 0.4,
+    "audioDuration": 79.488,
+    "chapter": "20. Toilet Paper Trees and Tipped Outhouses",
+    "visual": "photos"
+  },
+  {
+    "id": "s22",
+    "start": 1648.16,
+    "duration": 86.28,
+    "frames": 2157,
+    "audioOffset": 0.4,
+    "audioDuration": 85.056,
+    "chapter": "21. Crepe Paper Capes and Candlelit Pumpkins",
+    "visual": "photos"
+  },
+  {
+    "id": "s23",
+    "start": 1734.44,
+    "duration": 73.72,
+    "frames": 1843,
+    "audioOffset": 0.4,
+    "audioDuration": 72.504,
+    "chapter": "22. A Parka Over the Costume",
+    "visual": "photos"
+  },
+  {
+    "id": "s24",
+    "start": 1808.16,
+    "duration": 72.4,
+    "frames": 1810,
+    "audioOffset": 0.4,
+    "audioDuration": 71.184,
+    "chapter": "23. Carving the Pumpkin on Newspaper",
+    "visual": "photos"
+  },
+  {
+    "id": "s25",
+    "start": 1880.56,
+    "duration": 84.68,
+    "frames": 2117,
+    "audioOffset": 0.4,
+    "audioDuration": 83.448,
+    "chapter": "24. Eating Candy on the Walk Home",
+    "visual": "photos"
+  },
+  {
+    "id": "s26",
+    "start": 1965.24,
+    "duration": 76.52,
+    "frames": 1913,
+    "audioOffset": 0.4,
+    "audioDuration": 75.288,
+    "chapter": "25. Little Ghosts Still Knock on Doors",
+    "visual": "photos"
+  },
+  {
+    "id": "s27",
+    "start": 2041.76,
+    "duration": 64.32,
+    "frames": 1608,
+    "audioOffset": 0.4,
+    "audioDuration": 63.096,
+    "chapter": "",
+    "visual": "photos"
+  }
+]
