@@ -10,4 +10,153 @@
 #   üretiliyor  — şu an üretimde (yarıda kaldıysa bir sonraki çalıştırma devam eder)
 #   üretildi    — video hazır (episodes/ klasörüne bakın)
 # ----------------------------------------------------------------------------
-[]
+- id: 25-things-about-halloween-in-the-1960s-that-would-never
+  title: 25 Things About Halloween in the 1960s That Would Never Happen Today
+  query: halloween in the 1960s
+  tools:
+    - 1960s
+    - halloween
+  format: listicle
+  angle: "Homemade costumes, pillowcase candy hauls, unsupervised trick-or-treating and popcorn balls from neighbors: the Halloween we remember."
+  why: 31 Ekim'e üç hafta kaldı, mevsimsel arama zirvesi yakın. Her madde görsel ve yorumlarda kostüm anılarını tetikler.
+  score: 10
+  status: üretiliyor
+  added: 2026-10-12
+  episode: 2026-10-12-25-things-about-halloween-in-the-1960s-that-would-never
+- id: 25-things-kids-did-alone-in-the-1960s-unthinkable-today
+  title: 25 Things Kids Did Alone in the 1960s — Unthinkable Today
+  query: growing up in the 60s
+  tools:
+    - 1960s
+    - childhood
+    - freedom
+  format: listicle
+  angle: "Riding bikes across town, walking to school at six, staying out until the streetlights came on: the freedom we took for granted."
+  why: "'growing up in the 60s' en güçlü öneri kümesi. 3 Eylül'deki psikoloji haberiyle 'özerklik' konusu yeniden gündemde, gurur duygusu da yüksek."
+  score: 10
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-things-every-canadian-kid-did-in-the-1960s
+  title: 25 Things Every Canadian Kid Did in the 1960s
+  query: 1960s canada
+  tools:
+    - 1960s
+    - canada
+    - childhood
+  format: listicle
+  angle: "Outdoor rinks, Hockey Night in Canada on Saturdays, snowsuits, the corner store and Expo 67 souvenirs: a Canadian childhood remembered."
+  why: Kanada slotu. '1960s canada', 'toronto' ve 'montreal' aramaları var, theChive'ın 7 Ekim galerisi de talebi gösteriyor.
+  score: 9
+  status: bekliyor
+  added: 2026-10-12
+- id: 30-things-from-the-70s-you-don-t-see-anymore
+  title: 30 Things From the 70s You Don't See Anymore
+  query: things from the 70s you don't see anymore
+  tools:
+    - 1970s
+    - objects
+  format: listicle
+  angle: "Shag carpet, phone booths, TV antennas, ashtrays everywhere, 8-track players: everyday objects that quietly vanished."
+  why: Arama önerisiyle birebir eşleşiyor ('25 things from the 70s', 'no longer exist'). Nesne odaklı olduğu için görselleştirmesi çok kolay.
+  score: 9
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-things-that-were-completely-normal-in-the-1970s-no-longer
+  title: 25 Things That Were Completely Normal in the 1970s — No Longer Allowed Today
+  query: 1970s things that are no longer allowed
+  tools:
+    - 1970s
+    - rules
+  format: listicle
+  angle: "Smoking on airplanes, kids riding in the back of pickups, no seatbelts, lawn darts: the 'how did we survive' list."
+  why: Gerçek arama önerisi ve kanıtlanmış 'Unthinkable Today' kalıbı. Hafif mizah taşıyor, yorum yazdırma potansiyeli yüksek.
+  score: 9
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-christmas-memories-from-the-1960s-only-people-over-60
+  title: 25 Christmas Memories From the 1960s Only People Over 60 Remember
+  query: christmas 1960s memories
+  tools:
+    - 1960s
+    - christmas
+  format: listicle
+  angle: "Aluminum trees with color wheels, the Sears Wish Book, bubble lights, tinsel strand by strand: Christmas the way it used to be."
+  why: "'christmas nostalgia 1960s' araması var. Ekim sonunda yayınlanırsa Kasım–Aralık boyunca izlenme toplar."
+  score: 9
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-unwritten-rules-of-every-1960s-neighborhood
+  title: 25 Unwritten Rules of Every 1960s Neighborhood
+  query: 1960s neighborhood memories
+  tools:
+    - 1960s
+    - neighborhood
+  format: listicle
+  angle: "Every mom could scold you, doors stayed unlocked, the nosy neighbor saw everything: how the whole street raised the kids."
+  why: Garden City News köşe yazısıyla aynı tonda. 'Unwritten rules' kalıbı kanıtlanmış ve ABD ile Kanada'da ortak bir hafızaya dayanıyor.
+  score: 8
+  status: bekliyor
+  added: 2026-10-12
+- id: 30-things-we-found-cleaning-out-mom-and-dad-s-house
+  title: 30 Things We Found Cleaning Out Mom and Dad's House
+  query: baby boomer memories
+  tools:
+    - parents
+    - home
+    - keepsakes
+  format: listicle
+  angle: "Button tins, Green Stamp books, recipe cards, slide projectors, the good china: treasures in the attic that tell our story."
+  why: Boomer Magazine'de sürekli işlenen bir tema ve 60+ kitlenin bugün yaşadığı bir deneyim. Duygusal paylaşımı çok güçlü.
+  score: 8
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-things-every-boomer-kid-remembers-from-school-in-the
+  title: 25 Things Every Boomer Kid Remembers From School in the 1950s and 60s
+  query: growing up in the 50s and 60s
+  tools:
+    - 1950s
+    - 1960s
+    - school
+  format: listicle
+  angle: "Duck-and-cover drills aside: chalkboards, inkwells, milk cartons, cloakrooms and filmstrip days."
+  why: "'growing up in the 50s and 60s' ve 'boomer childhood' aramalarıyla örtüşüyor. Okul, ABD ve Kanada'nın ortak hafızası."
+  score: 8
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-things-from-the-1950s-every-family-had-at-home
+  title: 25 Things From the 1950s Every Family Had at Home
+  query: things from the 1950s
+  tools:
+    - 1950s
+    - home
+    - kitchen
+  format: listicle
+  angle: "Pyrex bowls, the console radio, the milkman's box by the door, the percolator: a walk through a 1950s home."
+  why: "'things from the 50s' ve '1950s stuff' aramalarına doğrudan cevap veriyor. Nesne listesi olduğu için görseli çok güçlü."
+  score: 8
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-childhood-memories-from-the-1970s-only-people-over-60
+  title: 25 Childhood Memories From the 1970s Only People Over 60 Still Understand
+  query: 1970 childhood memories
+  tools:
+    - 1970s
+    - childhood
+  format: listicle
+  angle: "Saturday morning cartoons, Pong, banana-seat bikes, waiting all week for one TV show: the last analog childhood."
+  why: "'1970 childhood memories' ve '70s memories' aramaları güçlü. Kitlenin genç kesimine (1960–65 doğumlular) hitap ediyor."
+  score: 7
+  status: bekliyor
+  added: 2026-10-12
+- id: 25-things-every-canadian-remembers-from-the-1970s-almost
+  title: 25 Things Every Canadian Remembers From the 1970s — Almost Forgotten
+  query: canadian nostalgia
+  tools:
+    - 1970s
+    - canada
+  format: listicle
+  angle: "Paper dollar bills, the Eaton's catalogue, the switch to metric, Tim Hortons when it was just donuts: a Canada that's slipping away."
+  why: İkinci Kanada konusu, theChive galerisinin trendinden yararlanıyor. Eaton's ve metrik sisteme geçiş, Kanadalılara özgü güçlü anılar.
+  score: 7
+  status: bekliyor
+  added: 2026-10-12
