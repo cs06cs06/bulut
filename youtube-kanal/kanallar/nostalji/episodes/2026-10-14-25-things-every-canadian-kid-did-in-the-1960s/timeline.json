@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 20.4,
+    "frames": 510,
+    "audioOffset": 0.4,
+    "audioDuration": 18.888,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 20.4,
+    "duration": 40.68,
+    "frames": 1017,
+    "audioOffset": -0.6119999999999983,
+    "audioDuration": 40.176,
+    "audioStart": 19.788,
+    "chapter": "#15 Snowsuits, Toques and Mitts on a String",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 61.08,
+    "duration": 42.76,
+    "frames": 1069,
+    "audioOffset": -0.6159999999999997,
+    "audioDuration": 42.288,
+    "audioStart": 60.464,
+    "chapter": "#14 Dominion Day Picnics on July First",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 103.84,
+    "duration": 39.2,
+    "frames": 980,
+    "audioOffset": -0.5880000000000081,
+    "audioDuration": 38.688,
+    "audioStart": 103.252,
+    "chapter": "#13 Milk Bottles Clinking on the Porch",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 143.04,
+    "duration": 40,
+    "frames": 1000,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 39.504,
+    "audioStart": 142.44,
+    "chapter": "#12 Canadian Tire Money in the Drawer",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 183.04,
+    "duration": 42.64,
+    "frames": 1066,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 42.144,
+    "audioStart": 182.444,
+    "chapter": "#11 The Corner Store Candy Counter",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 225.68,
+    "duration": 40.36,
+    "frames": 1009,
+    "audioOffset": -0.592000000000013,
+    "audioDuration": 39.864,
+    "audioStart": 225.088,
+    "chapter": "#10 Miles, Pounds and Fahrenheit",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 266.04,
+    "duration": 51.96,
+    "frames": 1299,
+    "audioOffset": -0.5880000000000223,
+    "audioDuration": 51.456,
+    "audioStart": 265.452,
+    "chapter": "#9 The Orange UNICEF Box at Halloween",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 318,
+    "duration": 43.96,
+    "frames": 1099,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 43.464,
+    "audioStart": 317.408,
+    "chapter": "#8 Polio Vaccine on a Sugar Cube",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 361.96,
+    "duration": 45.36,
+    "frames": 1134,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 44.856,
+    "audioStart": 361.372,
+    "chapter": "#7 The Strap Down the Hall",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 407.32,
+    "duration": 43.28,
+    "frames": 1082,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 42.768,
+    "audioStart": 406.728,
+    "chapter": "#6 Hunting for the Centennial Animal Coins",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 450.6,
+    "duration": 38.76,
+    "frames": 969,
+    "audioOffset": -0.6040000000000418,
+    "audioDuration": 38.256,
+    "audioStart": 449.996,
+    "chapter": "#5 Circling Toys in the Wish Book",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 489.36,
+    "duration": 43.52,
+    "frames": 1088,
+    "audioOffset": -0.6080000000000609,
+    "audioDuration": 43.008,
+    "audioStart": 488.75199999999995,
+    "chapter": "#4 The Big Bus Trip to Expo 67",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 532.88,
+    "duration": 44.68,
+    "frames": 1117,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 44.208,
+    "audioStart": 532.26,
+    "chapter": "#3 Getting Your Expo Passport Stamped",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 577.56,
+    "duration": 45.44,
+    "frames": 1136,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 44.928,
+    "audioStart": 576.968,
+    "chapter": "#2 Hockey Night in Canada on Saturdays",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 623,
+    "duration": 46.88,
+    "frames": 1172,
+    "audioOffset": -0.6040000000000418,
+    "audioDuration": 46.368,
+    "audioStart": 622.396,
+    "chapter": "#1 Dad Flooding the Backyard Rink",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 669.88,
+    "duration": 26.64,
+    "frames": 666,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 26.424,
+    "audioStart": 669.264,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
