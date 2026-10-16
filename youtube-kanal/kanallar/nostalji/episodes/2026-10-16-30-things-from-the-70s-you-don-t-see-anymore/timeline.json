@@ -1,0 +1,178 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 22.84,
+    "frames": 571,
+    "audioOffset": 0.4,
+    "audioDuration": 21.336,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 22.84,
+    "duration": 45.64,
+    "frames": 1141,
+    "audioOffset": -0.6040000000000028,
+    "audioDuration": 45.144,
+    "audioStart": 22.235999999999997,
+    "chapter": "#14 The Phone Booth on the Corner",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 68.48,
+    "duration": 45.56,
+    "frames": 1139,
+    "audioOffset": -0.6000000000000085,
+    "audioDuration": 45.048,
+    "audioStart": 67.88,
+    "chapter": "#13 Avocado Green and Harvest Gold Kitchens",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 114.04,
+    "duration": 46.72,
+    "frames": 1168,
+    "audioOffset": -0.612000000000009,
+    "audioDuration": 46.248,
+    "audioStart": 113.428,
+    "chapter": "#12 Flashcubes on Christmas Morning",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 160.76,
+    "duration": 42.72,
+    "frames": 1068,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 42.216,
+    "audioStart": 160.176,
+    "chapter": "#11 The Giant Wooden Console Stereo",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 203.48,
+    "duration": 41.28,
+    "frames": 1032,
+    "audioOffset": -0.5879999999999939,
+    "audioDuration": 40.776,
+    "audioStart": 202.892,
+    "chapter": "#10 The Kitchen Wall Intercom",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 244.76,
+    "duration": 52.12,
+    "frames": 1303,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 51.624,
+    "audioStart": 244.168,
+    "chapter": "#9 Wall-to-Wall Shag Carpet",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 296.88,
+    "duration": 42.2,
+    "frames": 1055,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 41.688,
+    "audioStart": 296.29200000000003,
+    "chapter": "#8 The Milkman at Dawn",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 339.08,
+    "duration": 41.48,
+    "frames": 1037,
+    "audioOffset": -0.5999999999999659,
+    "audioDuration": 40.968,
+    "audioStart": 338.48,
+    "chapter": "#7 Sharing a Party Line",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 380.56,
+    "duration": 45.24,
+    "frames": 1131,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 44.736,
+    "audioStart": 379.94800000000004,
+    "chapter": "#6 The Neighbors' Vacation Slide Show",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 425.8,
+    "duration": 44.44,
+    "frames": 1111,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 43.944,
+    "audioStart": 425.184,
+    "chapter": "#5 The TV Signed Off at Night",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 470.24,
+    "duration": 44.92,
+    "frames": 1123,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 44.448,
+    "audioStart": 469.62800000000004,
+    "chapter": "#4 The Wood-Paneled Basement Rec Room",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 515.16,
+    "duration": 45.24,
+    "frames": 1131,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 44.736,
+    "audioStart": 514.576,
+    "chapter": "#3 Dad on the Roof With the Antenna",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 560.4,
+    "duration": 45.84,
+    "frames": 1146,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 45.336,
+    "audioStart": 559.812,
+    "chapter": "#2 The Eight-Track in the Dashboard",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 606.24,
+    "duration": 46.32,
+    "frames": 1158,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 45.816,
+    "audioStart": 605.648,
+    "chapter": "#1 The Ashtray Was Everywhere",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 652.56,
+    "duration": 27.88,
+    "frames": 697,
+    "audioOffset": -0.59599999999989,
+    "audioDuration": 27.648,
+    "audioStart": 651.964,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
