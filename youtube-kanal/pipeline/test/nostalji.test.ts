@@ -8,7 +8,8 @@ import type { AiClient, AskOptions } from '../src/ai/client.ts';
 import { channelFormat, loadAiConfig, loadChannel } from '../src/lib/config.ts';
 import { fitPrompts, normalizeListicle, type Script } from '../src/lib/script.ts';
 import { findImageData, generateSceneImages, ImageRefusedError, styledPrompt, type ImageProvider } from '../src/media/images.ts';
-import { overlayTimings, planShots, splitEven } from '../src/media/photoscene.ts';
+import { lookFilters, mergeClipShots, overlayTimings, planShots, splitEven, type Shot } from '../src/media/photoscene.ts';
+import { generateMotionClips, motionPrompt, pickMotionTargets, type MotionProvider } from '../src/media/motion.ts';
 import { buildJcutTimeline, chapters } from '../src/media/timeline.ts';
 import { alignSentences, assColor, buildAss, captionEvents, chunkSentence, highlight, parseSilences, phraseTime, windowEvents } from '../src/media/align.ts';
 import { findAudioData, ttsFromConfig } from '../src/media/tts.ts';
@@ -276,4 +277,71 @@ test('Google seslendirme: ayar ve yanıttan ses verisini okuma', () => {
   const b64 = 'U'.repeat(300);
   assert.equal(findAudioData({ steps: [{ type: 'thought', signature: 'z'.repeat(500) }, { type: 'model_output', content: [{ type: 'audio', mime_type: 'audio/wav', data: b64 }] }] }), b64);
   assert.equal(findAudioData({ steps: [{ content: [{ type: 'text', text: 'no' }] }] }), null);
+});
+
+test('hareketli sahneler: kancanın ilk 2 görseli + #6…#1 maddelerinin ilk görseli', () => {
+  const ch = loadChannel();
+  const cfg = ch.motion!;
+  assert.equal(cfg.hook_clips, 2);
+  assert.equal(cfg.top_items, 6);
+  assert.ok(cfg.use_seconds <= cfg.duration_seconds);
+  const s = normalizeListicle(rawListicle(15, 90), shape);
+  const images: Record<string, string[]> = {};
+  for (const sc of s.scenes) images[sc.id] = ['a.jpg', 'b.jpg', 'c.jpg'].map((f) => `${sc.id}-${f}`);
+  const targets = pickMotionTargets(s, images, cfg);
+  assert.equal(targets.length, 2 + 6);
+  assert.deepEqual(targets.slice(0, 2).map((t) => [t.sceneId, t.index]), [[s.scenes[0].id, 0], [s.scenes[0].id, 1]]);
+  const nums = targets.slice(2).map((t) => (s.scenes.find((x) => x.id === t.sceneId)!.visual as { number: number }).number);
+  assert.deepEqual(nums, [6, 5, 4, 3, 2, 1]);
+  assert.ok(targets.slice(2).every((t) => t.index === 0));
+  assert.ok(targets.every((t) => t.prompt.startsWith(cfg.prompt.trim().slice(0, 30))));
+  // görseli olmayan sahne atlanır
+  delete images[s.scenes[1].id];
+  assert.equal(pickMotionTargets(s, images, cfg).length, 8);
+  assert.ok(motionPrompt(cfg, 'x '.repeat(400)).length < cfg.prompt.length + 360);
+});
+
+test('klip çekimleri: görselin ilk çekimleri en çok 6 sn\'lik tek klibe dönüşür, toplam kare korunur', () => {
+  const shots: Shot[] = [
+    { image: 0, frames: 125, framing: { z0: 1, z1: 1.1, cx: 0.5, cy: 0.5 } },
+    { image: 0, frames: 125, framing: { z0: 1.3, z1: 1.4, cx: 0.5, cy: 0.5 }, punch: true },
+    { image: 1, frames: 125, framing: { z0: 1, z1: 1.1, cx: 0.5, cy: 0.5 } },
+    { image: 2, frames: 50, framing: { z0: 1, z1: 1.1, cx: 0.5, cy: 0.5 } },
+  ];
+  const total = shots.reduce((a, b) => a + b.frames, 0);
+  const m = mergeClipShots(shots, new Set([0, 2]), 150);
+  assert.equal(m.reduce((a, b) => a + b.frames, 0), total);
+  assert.deepEqual(m.map((x) => [x.image, x.frames, !!x.clip]), [[0, 150, true], [0, 100, false], [1, 125, false], [2, 50, true]]);
+  assert.equal(m[0].punch, false);
+  // klipsiz: değişmez
+  assert.deepEqual(mergeClipShots(shots, new Set(), 150), shots);
+  // artan çok kısa parça klibe eklenir
+  const m2 = mergeClipShots([{ ...shots[0], frames: 155 }, shots[2]], new Set([0]), 150);
+  assert.deepEqual(m2.map((x) => [x.image, x.frames, !!x.clip]), [[0, 155, true], [1, 125, false]]);
+  // videoda gren her karede değişir
+  assert.match(lookFilters(loadChannel().look, true).join(','), /allf=t/);
+});
+
+test('klip üretimi: önbellek, başarısız klip atlanır (sabit görsel kalır)', async () => {
+  const dir = mkdtempSync(join(tmpdir(), 'clips-'));
+  const cfg = { ...loadChannel().motion!, concurrency: 2 };
+  let calls = 0;
+  const provider: MotionProvider = {
+    name: 'fake',
+    async generate(t, out) {
+      calls++;
+      if (t.sceneId === 's2') throw new Error('filtered');
+      writeFileSync(out, 'mp4');
+    },
+  };
+  const targets = ['s1', 's2', 's3'].map((sceneId) => ({ sceneId, index: 0, image: `${sceneId}.jpg`, prompt: 'p' }));
+  const logs: string[] = [];
+  const r = await generateMotionClips(targets, provider, cfg, dir, (m) => logs.push(m));
+  assert.equal(r.generated, 2);
+  assert.deepEqual(Object.keys(r.files).sort(), ['s1', 's3']);
+  assert.ok(logs.some((l) => l.includes('s2') && l.includes('⚠️')));
+  const r2 = await generateMotionClips(targets, provider, cfg, dir);
+  assert.equal(r2.generated, 0);
+  assert.equal(calls, 4); // yalnızca başarısız olan yeniden denendi
+  assert.equal(readFileSync(r2.files.s1['0'], 'utf8'), 'mp4');
 });

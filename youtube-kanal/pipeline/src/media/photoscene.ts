@@ -2,7 +2,8 @@
 // Her ~5 saniyede yeni bir çekim (B-roll temposu): her görselden geniş / orta / yakın kadrajlar alınır, çekimler
 // arasında düz kesme yapılır. Vurgu cümlesinde aynı kadraj %15–20 ani yakınlaşır (punch-in). Yazı katmanları
 // (madde rozeti, abone animasyonu, bitiş ekranı) tarayıcıda bir kez saydam PNG olarak çizilir; altyazılar libass ile
-// yakılır. Film görünümü (ton, kenar kararması, gren) her görsele bir kez işlenir.
+// yakılır. Film görünümü (ton, kenar kararması, gren) her görsele bir kez işlenir. Hareketli klibi olan görselin
+// (Veo) ilk çekimleri, klibin ilk birkaç saniyesiyle değiştirilir; aynı film görünümü klibe de uygulanır.
 
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync } from 'node:fs';
@@ -38,15 +39,25 @@ export interface PhotoSceneSpec {
   /** çıktı boyutu (varsayılan 1920×1080; Shorts 1080×1920) */
   outW?: number;
   outH?: number;
+  /** görsel sırası → hareketli klip dosyası (Veo) */
+  clips?: Record<string, string>;
+  /** klipten kullanılacak en fazla saniye */
+  clipSeconds?: number;
+}
+
+/** Film görünümü filtreleri (ton, kenar kararması, gren). Videoda gren her karede değişir. */
+export function lookFilters(look: ChannelConfig['look'] | undefined, temporal = false): string[] {
+  const f: string[] = [];
+  if (look?.grade?.trim()) f.push(look.grade.trim());
+  if (look && look.vignette > 0) f.push(`vignette=angle=${((Math.min(1, look.vignette) * Math.PI) / 3).toFixed(3)}`);
+  if (look && look.grain > 0) f.push(`noise=alls=${Math.round(Math.min(0.3, look.grain) * (temporal ? 70 : 100))}:allf=${temporal ? 't' : '0'}`);
+  return f;
 }
 
 /** Görselin film görünümüyle pişirilmiş 4K kopyası (önbellekli). */
 export async function bakeImage(src: string, look: ChannelConfig['look'], dir: string): Promise<string> {
   mkdirSync(dir, { recursive: true });
-  const filters = [`scale=${W0}:${H0}:force_original_aspect_ratio=increase:flags=lanczos`, `crop=${W0}:${H0}`];
-  if (look?.grade?.trim()) filters.push(look.grade.trim());
-  if (look && look.vignette > 0) filters.push(`vignette=angle=${((Math.min(1, look.vignette) * Math.PI) / 3).toFixed(3)}`);
-  if (look && look.grain > 0) filters.push(`noise=alls=${Math.round(Math.min(0.3, look.grain) * 100)}:allf=0`);
+  const filters = [`scale=${W0}:${H0}:force_original_aspect_ratio=increase:flags=lanczos`, `crop=${W0}:${H0}`, ...lookFilters(look)];
   const vf = filters.join(',');
   const out = join(dir, `${createHash('sha1').update(src + vf).digest('hex').slice(0, 16)}.jpg`);
   if (!existsSync(out)) await ffmpeg(['-i', src, '-vf', vf, '-q:v', '3', out]);
@@ -141,6 +152,41 @@ export function planShots(opts: {
   return shots;
 }
 
+/**
+ * Klibi olan görselin ardışık çekimlerinin başını tek bir klip çekimine çevirir (en çok `maxFrames` kare).
+ * Klipten artan süre, o görselin kalan sabit çekimleriyle (kısaltılarak) devam eder.
+ */
+export function mergeClipShots(shots: Shot[], clipImages: Set<number>, maxFrames: number): (Shot & { clip?: boolean })[] {
+  const out: (Shot & { clip?: boolean })[] = [];
+  let i = 0;
+  while (i < shots.length) {
+    const img = shots[i].image;
+    if (!clipImages.has(img) || maxFrames <= 0) {
+      out.push(shots[i++]);
+      continue;
+    }
+    let j = i;
+    let total = 0;
+    while (j < shots.length && shots[j].image === img) total += shots[j++].frames;
+    const clipFrames = Math.min(total, maxFrames);
+    out.push({ ...shots[i], frames: clipFrames, punch: false, clip: true });
+    let skip = clipFrames;
+    for (let k = i; k < j; k++) {
+      const sh = shots[k];
+      if (skip >= sh.frames) {
+        skip -= sh.frames;
+        continue;
+      }
+      const rest = sh.frames - skip;
+      skip = 0;
+      if (rest >= 12) out.push({ ...sh, frames: rest });
+      else if (out.length) out[out.length - 1] = { ...out[out.length - 1], frames: out[out.length - 1].frames + rest };
+    }
+    i = j;
+  }
+  return out;
+}
+
 export type OverlayKind = 'badge' | 'chip' | 'title' | 'sub1' | 'sub2' | 'end';
 
 export interface OverlayTiming {
@@ -207,7 +253,7 @@ export async function renderPhotoScene(
   const baked: string[] = [];
   for (const s of sources) baked.push(await bakeImage(s, spec.look, join(workDir, 'baked')));
 
-  const shots = planShots({
+  const planned = planShots({
     frames,
     fps,
     images: baked.length,
@@ -216,12 +262,28 @@ export async function renderPhotoScene(
     punchAt: spec.punchAt,
     punchZoom: spec.edit?.punch_zoom,
   });
+  const clips = spec.clips ?? {};
+  const shots = mergeClipShots(
+    planned,
+    new Set(Object.keys(clips).map(Number).filter((n) => n < baked.length && existsSync(clips[n]))),
+    Math.round((spec.clipSeconds ?? 6) * fps),
+  );
 
   const args: string[] = [];
   const filters: string[] = [];
   // Kırpma: çıktı en-boy oranında, kaynak içinde kalan en büyük alan / yakınlaşma
   const baseH = Math.min(H0, (W0 * OH) / OW);
   shots.forEach((sh, k) => {
+    if (sh.clip) {
+      // Hareketli klip: çıktıyı dolduracak şekilde kırp, film görünümünü uygula; kısa kalırsa son kareyi tut
+      args.push('-i', clips[sh.image]);
+      filters.push(
+        `[${k}:v]fps=${fps},scale=${OW}:${OH}:force_original_aspect_ratio=increase:flags=bicubic,crop=${OW}:${OH},` +
+          [...lookFilters(spec.look, true), `tpad=stop_mode=clone:stop_duration=30`].join(',') +
+          `,setsar=1,format=yuv420p,trim=end_frame=${sh.frames},setpts=PTS-STARTPTS[s${k}]`,
+      );
+      return;
+    }
     args.push('-i', baked[sh.image]);
     const F = Math.max(2, sh.frames);
     const { z0, z1, cx, cy } = sh.framing;

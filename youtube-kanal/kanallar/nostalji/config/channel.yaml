@@ -75,6 +75,26 @@ images:
     North American setting and period-correct details. No text, no captions, no watermark, no readable
     brand logos, no modern objects.
 
+# Hareketli sahneler (Google Veo, aynı GEMINI_API_KEY): kancanın ilk 2 görseli ve en güçlü 6 maddenin (#6–#1)
+# ilk görseli kısa kliplere çevrilir; diğer görseller kayan/yakınlaşan fotoğraf olarak kalır. Kapatmak için bu
+# bölümü silin. Maliyet: 8 klip × 8 sn × 0,08 $ ≈ 5,1 $ / video.
+motion:
+  provider: google
+  model: veo-3.1-lite-generate-preview
+  resolution: 1080p             # 1080p yalnızca 8 sn'lik kliplerle çalışır
+  duration_seconds: 8           # üretilen klip süresi (ücret buna göre)
+  use_seconds: 6                # videoda klibin yalnızca ilk 6 sn'si kullanılır (Veo hataları genelde sonda olur)
+  price_per_second: 0.08        # maliyet takibi için (Veo 3.1 Lite, 1080p)
+  hook_clips: 2                 # kancanın ilk kaç görseli hareketli olsun
+  top_items: 6                  # #6 … #1 maddelerinin ilk görseli hareketli olsun
+  concurrency: 4
+  # Ortak hareket talimatı: sakin, genel hareketler (Veo bunlarda güvenilir); ellerle ince iş yok
+  prompt: >-
+    Bring this photograph to life with subtle, natural, realistic motion: people move gently with small gestures,
+    a slow walk, a smile or a glance; light flickers softly; leaves, curtains or steam drift in a light breeze.
+    Very slow, gentle camera push in. Keep every person, face and object exactly as in the photo. No new objects,
+    no close-up hand work, no morphing, no text, 1960s home-movie feel.
+
 # Videodaki film görünümü (ffmpeg filtreleri; görsel sahnelerine uygulanır)
 look:
   grade: "eq=contrast=1.06:saturation=1.05:brightness=-0.01,colorbalance=rs=0.05:gs=0.01:bs=-0.06:rm=0.03:bm=-0.04"   # sıcak 70'ler tonu

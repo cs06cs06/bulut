@@ -48,6 +48,19 @@ export interface ChannelConfig {
     concurrency: number;
     style: string;
   };
+  /** Hareketli sahneler: seçili görseller Google Veo ile kısa kliplere çevrilir (yoksa yalnızca sabit görseller). */
+  motion?: {
+    provider: 'google';
+    model: string;
+    resolution: '720p' | '1080p';
+    duration_seconds: number;
+    use_seconds: number;
+    price_per_second: number;
+    hook_clips: number;
+    top_items: number;
+    concurrency: number;
+    prompt: string;
+  };
   /** Film görünümü: video kodlanırken ffmpeg ile uygulanır (tarayıcıda her karede hesaplamaktan çok daha hızlı). */
   look?: { grade: string; grain: number; vignette: number };
   thumbnail?: { style: 'browser' | 'bar' };
