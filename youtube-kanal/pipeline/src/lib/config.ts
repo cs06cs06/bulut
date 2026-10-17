@@ -60,6 +60,10 @@ export interface ChannelConfig {
     top_items: number;
     concurrency: number;
     prompt: string;
+    /** klip kalite kontrolü (Gemini görsel modeli): bozulmanın başladığı saniyeden sonrası kullanılmaz */
+    qa_model?: string;
+    /** temiz kısmı bundan kısa klip atılır (sabit görsel kalır) */
+    min_seconds?: number;
   };
   /** Film görünümü: video kodlanırken ffmpeg ile uygulanır (tarayıcıda her karede hesaplamaktan çok daha hızlı). */
   look?: { grade: string; grain: number; vignette: number };

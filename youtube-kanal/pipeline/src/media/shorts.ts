@@ -27,6 +27,7 @@ export async function renderShorts(args: {
   tts: TtsProvider;
   images: Record<string, string[]>;
   clips?: Record<string, Record<string, string>>;
+  clipSeconds?: Record<string, Record<string, number>>;
   count: number;
   log?: (m: string) => void;
 }): Promise<string[]> {
@@ -93,7 +94,7 @@ export async function renderShorts(args: {
           cadence: 2.2,
           assFile: ass,
           clips: scene ? args.clips?.[scene.id] : undefined,
-          clipSeconds: channel.motion?.use_seconds,
+          clipSeconds: scene ? args.clipSeconds?.[scene.id] : undefined,
           outW: 1080,
           outH: 1920,
         },

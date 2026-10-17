@@ -83,11 +83,13 @@ motion:
   model: veo-3.1-lite-generate-preview
   resolution: 1080p             # 1080p yalnızca 8 sn'lik kliplerle çalışır
   duration_seconds: 8           # üretilen klip süresi (ücret buna göre)
-  use_seconds: 6                # videoda klibin yalnızca ilk 6 sn'si kullanılır (Veo hataları genelde sonda olur)
+  use_seconds: 6                # videoda klibin en çok ilk 6 sn'si kullanılır (Veo hataları genelde sonda olur)
   price_per_second: 0.08        # maliyet takibi için (Veo 3.1 Lite, 1080p)
   hook_clips: 2                 # kancanın ilk kaç görseli hareketli olsun
   top_items: 6                  # #6 … #1 maddelerinin ilk görseli hareketli olsun
   concurrency: 4
+  qa_model: gemini-3.8-flash    # her klip saniyede bir kareyle denetlenir; bozulma başladığı saniyeden sonrası kullanılmaz
+  min_seconds: 2                # temiz kısmı 2 sn'den kısa klip atılır (o görsel sabit fotoğraf kalır)
   # Ortak hareket talimatı: sakin, genel hareketler (Veo bunlarda güvenilir); ellerle ince iş yok
   prompt: >-
     Bring this photograph to life with subtle, natural, realistic motion: people move gently with small gestures,

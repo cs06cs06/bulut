@@ -59,7 +59,7 @@ export interface SceneSpec {
   subscribeAt?: number | null;
   assFile?: string;
   clips?: Record<string, string>;
-  clipSeconds?: number;
+  clipSeconds?: Record<string, number>;
   channel: string;
   chapter: string;
   visual: Visual;
@@ -70,7 +70,7 @@ export interface SceneSpec {
   shots: { src: string; kind: string; box: unknown; caption: string }[];
 }
 
-export type SceneExtras = { punchAt?: number | null; subscribeAt?: number | null; assFile?: string; clips?: Record<string, string>; clipSeconds?: number };
+export type SceneExtras = { punchAt?: number | null; subscribeAt?: number | null; assFile?: string; clips?: Record<string, string>; clipSeconds?: Record<string, number> };
 
 export function sceneSpecs(
   channel: ChannelConfig,

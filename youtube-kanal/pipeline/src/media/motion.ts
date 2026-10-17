@@ -1,10 +1,14 @@
 // Hareketli sahneler: seçili yapay zekâ görselleri Google Veo ile kısa kliplere çevrilir (görselden videoya).
 // Klip, görselin kendisinden başladığı için renk ve tarz videonun geri kalanıyla aynı kalır. Veo sakin ve genel
 // hareketlerde (yürüme, rüzgâr, ışık, gülümseme) güvenilir; klibin sonuna doğru hata yapabildiği için videoda
-// yalnızca ilk birkaç saniye kullanılır (config: motion.use_seconds).
+// yalnızca ilk birkaç saniye kullanılır (config: motion.use_seconds). Ayrıca her klip, Gemini'nin görsel modeline
+// saniyede bir kare olarak gösterilir; bozulma (yüz/beden bozulması, beliren ya da kaybolan kişi/nesne) başladıysa
+// klibin yalnızca öncesi kullanılır, temiz kısım çok kısaysa klip atılır.
 
+import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { ChannelConfig } from '../lib/config.ts';
 import type { Script } from '../lib/script.ts';
@@ -18,9 +22,22 @@ export interface MotionTarget {
   prompt: string;
 }
 
+export interface ClipCheck {
+  goodUntil: number; // bu saniyeye kadar bütün kareler temiz
+  issue: string;
+}
+
 export interface MotionProvider {
   name: string;
   generate(target: MotionTarget, out: string): Promise<void>;
+  /** klip kalite kontrolü (isteğe bağlı) */
+  check?(file: string): Promise<ClipCheck>;
+}
+
+/** Kontrol sonucuna göre klipten kullanılacak saniye; 0 = klip kullanılmaz. */
+export function usableSeconds(cfg: MotionConfig, check: ClipCheck | null): number {
+  const s = Math.min(cfg.use_seconds, check ? check.goodUntil : cfg.use_seconds);
+  return s >= (cfg.min_seconds ?? 2) ? s : 0;
 }
 
 /** Klip seçimi: kancanın ilk N görseli + en güçlü maddelerin (#top_items … #1) ilk görseli. */
@@ -63,10 +80,12 @@ export async function generateMotionClips(
   cfg: MotionConfig,
   dir: string,
   log: (m: string) => void = () => {},
-): Promise<{ files: Record<string, Record<string, string>>; generated: number }> {
+): Promise<{ files: Record<string, Record<string, string>>; seconds: Record<string, Record<string, number>>; generated: number; dropped: number }> {
   mkdirSync(dir, { recursive: true });
   const files: Record<string, Record<string, string>> = {};
+  const seconds: Record<string, Record<string, number>> = {};
   let generated = 0;
+  let dropped = 0;
   let done = 0;
   const queue = [...targets];
   const worker = async () => {
@@ -77,7 +96,25 @@ export async function generateMotionClips(
           await provider.generate(t, out);
           generated++;
         }
-        (files[t.sceneId] ??= {})[String(t.index)] = out;
+        let check: ClipCheck | null = null;
+        if (provider.check) {
+          const cache = `${out}.check.json`;
+          try {
+            check = existsSync(cache) ? JSON.parse(readFileSync(cache, 'utf8')) : await provider.check(out);
+            writeFileSync(cache, JSON.stringify(check));
+          } catch (e) {
+            log(`   ⚠️ ${t.sceneId} klibi denetlenemedi, ilk ${cfg.min_seconds ?? 2} sn kullanılacak: ${(e as Error).message.slice(0, 120)}`);
+            check = { goodUntil: cfg.min_seconds ?? 2, issue: 'denetlenemedi' };
+          }
+        }
+        const s = usableSeconds(cfg, check);
+        if (!s) {
+          dropped++;
+          log(`   ⚠️ ${t.sceneId} klibi atlandı (sabit görsel kalacak): ${check?.issue ?? ''}`.slice(0, 220));
+        } else {
+          (files[t.sceneId] ??= {})[String(t.index)] = out;
+          (seconds[t.sceneId] ??= {})[String(t.index)] = s;
+        }
       } catch (e) {
         log(`   ⚠️ ${t.sceneId} için klip üretilemedi (sabit görsel kalacak): ${(e as Error).message.split('\n')[0].slice(0, 160)}`);
       }
@@ -85,7 +122,52 @@ export async function generateMotionClips(
     }
   };
   await Promise.all(Array.from({ length: Math.max(1, Math.min(cfg.concurrency, targets.length)) }, worker));
-  return { files, generated };
+  return { files, seconds, generated, dropped };
+}
+
+/** Klipten saniyede bir kare (en çok 8), 640 px genişlik. */
+async function sampleFrames(file: string): Promise<{ dir: string; frames: string[] }> {
+  const dir = mkdtempSync(join(tmpdir(), 'clipqa-'));
+  await new Promise<void>((resolve, reject) => {
+    const p = spawn('ffmpeg', ['-v', 'error', '-i', file, '-vf', 'fps=1,scale=640:-1', '-frames:v', '8', join(dir, 'f%02d.jpg')]);
+    p.on('error', reject);
+    p.on('close', (c) => (c === 0 ? resolve() : reject(new Error(`ffmpeg kare çıkarma hata verdi (${c})`))));
+  });
+  return { dir, frames: readdirSync(dir).filter((f) => f.endsWith('.jpg')).sort().map((f) => join(dir, f)) };
+}
+
+const CHECK_PROMPT =
+  'These are frames taken once per second (t=1s … t=8s) from an AI-generated video clip that animates a still photograph. ' +
+  'Judge only visual coherence, not style. Find the first second where something is clearly wrong: a person or face deforms ' +
+  'or melts, limbs or bodies merge, people or objects appear, disappear or duplicate, an object morphs into another, or ' +
+  'physically impossible motion. Minor motion blur is fine. Return good_until = the last second (integer, 0–8) up to which ' +
+  'every frame is clean (8 if all are clean, 0 if already wrong at t=1), and a short issue description ("none" if clean).';
+
+async function geminiCheck(model: string, apiKey: string, file: string): Promise<ClipCheck> {
+  const { dir, frames } = await sampleFrames(file);
+  try {
+    const parts: unknown[] = [{ text: CHECK_PROMPT }];
+    frames.forEach((f, i) => parts.push({ text: `t=${i + 1}s` }, { inline_data: { mime_type: 'image/jpeg', data: readFileSync(f).toString('base64') } }));
+    const res = await fetch(`${BASE}/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts }],
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: { type: 'OBJECT', properties: { good_until: { type: 'INTEGER' }, issue: { type: 'STRING' } }, required: ['good_until', 'issue'] },
+        },
+      }),
+    });
+    if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const data = (await res.json()) as any;
+    const out = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}');
+    const goodUntil = Number(out.good_until);
+    if (!Number.isFinite(goodUntil)) throw new Error('geçersiz denetim yanıtı');
+    return { goodUntil: Math.max(0, Math.min(frames.length, Math.round(goodUntil))), issue: String(out.issue ?? '') };
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta';
@@ -106,6 +188,7 @@ export function veoProvider(cfg: MotionConfig, apiKey: string): MotionProvider {
   };
   return {
     name: `google:${cfg.model}:${cfg.resolution}`,
+    check: cfg.qa_model ? (file) => geminiCheck(cfg.qa_model!, apiKey, file) : undefined,
     async generate(t, out) {
       const mimeType = /\.png$/i.test(t.image) ? 'image/png' : 'image/jpeg';
       const op = await call(`${BASE}/models/${cfg.model}:predictLongRunning`, {

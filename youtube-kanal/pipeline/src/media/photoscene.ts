@@ -41,8 +41,8 @@ export interface PhotoSceneSpec {
   outH?: number;
   /** görsel sırası → hareketli klip dosyası (Veo) */
   clips?: Record<string, string>;
-  /** klipten kullanılacak en fazla saniye */
-  clipSeconds?: number;
+  /** görsel sırası → klipten kullanılacak en fazla saniye (kalite kontrolünden sonra) */
+  clipSeconds?: Record<string, number>;
 }
 
 /** Film görünümü filtreleri (ton, kenar kararması, gren). Videoda gren her karede değişir. */
@@ -153,24 +153,25 @@ export function planShots(opts: {
 }
 
 /**
- * Klibi olan görselin ardışık çekimlerinin başını tek bir klip çekimine çevirir (en çok `maxFrames` kare).
- * Klipten artan süre, o görselin kalan sabit çekimleriyle (kısaltılarak) devam eder.
+ * Klibi olan görselin ardışık çekimlerinin başını tek bir klip çekimine çevirir (görsel başına en çok `clipFrames`
+ * kare). Klipten artan süre, o görselin kalan sabit çekimleriyle (kısaltılarak) devam eder.
  */
-export function mergeClipShots(shots: Shot[], clipImages: Set<number>, maxFrames: number): (Shot & { clip?: boolean })[] {
+export function mergeClipShots(shots: Shot[], clipFrames: Map<number, number>): (Shot & { clip?: boolean })[] {
   const out: (Shot & { clip?: boolean })[] = [];
   let i = 0;
   while (i < shots.length) {
     const img = shots[i].image;
-    if (!clipImages.has(img) || maxFrames <= 0) {
+    const maxFrames = clipFrames.get(img) ?? 0;
+    if (maxFrames <= 0) {
       out.push(shots[i++]);
       continue;
     }
     let j = i;
     let total = 0;
     while (j < shots.length && shots[j].image === img) total += shots[j++].frames;
-    const clipFrames = Math.min(total, maxFrames);
-    out.push({ ...shots[i], frames: clipFrames, punch: false, clip: true });
-    let skip = clipFrames;
+    const used = Math.min(total, maxFrames);
+    out.push({ ...shots[i], frames: used, punch: false, clip: true });
+    let skip = used;
     for (let k = i; k < j; k++) {
       const sh = shots[k];
       if (skip >= sh.frames) {
@@ -263,11 +264,12 @@ export async function renderPhotoScene(
     punchZoom: spec.edit?.punch_zoom,
   });
   const clips = spec.clips ?? {};
-  const shots = mergeClipShots(
-    planned,
-    new Set(Object.keys(clips).map(Number).filter((n) => n < baked.length && existsSync(clips[n]))),
-    Math.round((spec.clipSeconds ?? 6) * fps),
-  );
+  const clipFrames = new Map<number, number>();
+  for (const [k, file] of Object.entries(clips)) {
+    const n = Number(k);
+    if (n < baked.length && existsSync(file)) clipFrames.set(n, Math.round((spec.clipSeconds?.[k] ?? 4) * fps));
+  }
+  const shots = mergeClipShots(planned, clipFrames);
 
   const args: string[] = [];
   const filters: string[] = [];

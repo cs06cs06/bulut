@@ -128,6 +128,7 @@ export async function buildVideo(args: {
 
   // Hareketli sahneler: kancanın ve en güçlü maddelerin ilk görselleri Veo ile kısa kliplere çevrilir
   let clipFiles: Record<string, Record<string, string>> = {};
+  let clipSeconds: Record<string, Record<string, number>> = {};
   let clipsGenerated = 0;
   if (needsImages && args.motion && channel.motion) {
     const targets = pickMotionTargets(script, imageFiles, channel.motion);
@@ -137,7 +138,9 @@ export async function buildVideo(args: {
         if (m.includes('⚠️') || m.startsWith(`   ${targets.length}/`)) log(m);
       });
       clipFiles = res.files;
+      clipSeconds = res.seconds;
       clipsGenerated = res.generated;
+      log(`   ${targets.length - res.dropped} klip kullanılacak, ${res.dropped} klip kalite kontrolünden geçemedi`);
       ep.finish('clips');
     }
   }
@@ -155,7 +158,7 @@ export async function buildVideo(args: {
   // Kurgu zamanlamaları: cümle sınırları → altyazılar, vurgu (punch-in) ve abone çağrısı anları
   let captions: CaptionEvent[] = [];
   const extras: Record<string, SceneExtras> = {};
-  for (const [id, clips] of Object.entries(clipFiles)) extras[id] = { clips, clipSeconds: channel.motion?.use_seconds };
+  for (const [id, clips] of Object.entries(clipFiles)) extras[id] = { clips, clipSeconds: clipSeconds[id] };
   const sfx: { file: string; start: number; volume?: number }[] = [];
   if (edit) {
     const timing = await sceneTiming(script, tl, voice.files);
@@ -257,7 +260,7 @@ export async function buildVideo(args: {
   const shortFiles: string[] = [];
   if (edit?.shorts && script.shorts?.length) {
     log('📱 Shorts');
-    const res = await renderShorts({ ep, browser, channel, script, tts, images: imageFiles, clips: clipFiles, count: edit.shorts, log });
+    const res = await renderShorts({ ep, browser, channel, script, tts, images: imageFiles, clips: clipFiles, clipSeconds, count: edit.shorts, log });
     shortFiles.push(...res);
   }
   const uploadTxt = join(outDir, 'upload.txt');

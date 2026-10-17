@@ -9,7 +9,7 @@ import { channelFormat, loadAiConfig, loadChannel } from '../src/lib/config.ts';
 import { fitPrompts, normalizeListicle, type Script } from '../src/lib/script.ts';
 import { findImageData, generateSceneImages, ImageRefusedError, styledPrompt, type ImageProvider } from '../src/media/images.ts';
 import { lookFilters, mergeClipShots, overlayTimings, planShots, splitEven, type Shot } from '../src/media/photoscene.ts';
-import { generateMotionClips, motionPrompt, pickMotionTargets, type MotionProvider } from '../src/media/motion.ts';
+import { generateMotionClips, motionPrompt, pickMotionTargets, usableSeconds, type MotionProvider } from '../src/media/motion.ts';
 import { buildJcutTimeline, chapters } from '../src/media/timeline.ts';
 import { alignSentences, assColor, buildAss, captionEvents, chunkSentence, highlight, parseSilences, phraseTime, windowEvents } from '../src/media/align.ts';
 import { findAudioData, ttsFromConfig } from '../src/media/tts.ts';
@@ -309,14 +309,14 @@ test('klip çekimleri: görselin ilk çekimleri en çok 6 sn\'lik tek klibe dön
     { image: 2, frames: 50, framing: { z0: 1, z1: 1.1, cx: 0.5, cy: 0.5 } },
   ];
   const total = shots.reduce((a, b) => a + b.frames, 0);
-  const m = mergeClipShots(shots, new Set([0, 2]), 150);
+  const m = mergeClipShots(shots, new Map([[0, 150], [2, 150]]));
   assert.equal(m.reduce((a, b) => a + b.frames, 0), total);
   assert.deepEqual(m.map((x) => [x.image, x.frames, !!x.clip]), [[0, 150, true], [0, 100, false], [1, 125, false], [2, 50, true]]);
   assert.equal(m[0].punch, false);
   // klipsiz: değişmez
-  assert.deepEqual(mergeClipShots(shots, new Set(), 150), shots);
+  assert.deepEqual(mergeClipShots(shots, new Map()), shots);
   // artan çok kısa parça klibe eklenir
-  const m2 = mergeClipShots([{ ...shots[0], frames: 155 }, shots[2]], new Set([0]), 150);
+  const m2 = mergeClipShots([{ ...shots[0], frames: 155 }, shots[2]], new Map([[0, 150]]));
   assert.deepEqual(m2.map((x) => [x.image, x.frames, !!x.clip]), [[0, 155, true], [1, 125, false]]);
   // videoda gren her karede değişir
   assert.match(lookFilters(loadChannel().look, true).join(','), /allf=t/);
@@ -339,9 +339,40 @@ test('klip üretimi: önbellek, başarısız klip atlanır (sabit görsel kalır
   const r = await generateMotionClips(targets, provider, cfg, dir, (m) => logs.push(m));
   assert.equal(r.generated, 2);
   assert.deepEqual(Object.keys(r.files).sort(), ['s1', 's3']);
+  assert.equal(r.seconds.s1['0'], cfg.use_seconds); // denetim yoksa tam süre
   assert.ok(logs.some((l) => l.includes('s2') && l.includes('⚠️')));
   const r2 = await generateMotionClips(targets, provider, cfg, dir);
   assert.equal(r2.generated, 0);
   assert.equal(calls, 4); // yalnızca başarısız olan yeniden denendi
   assert.equal(readFileSync(r2.files.s1['0'], 'utf8'), 'mp4');
+});
+
+test('klip kalite kontrolü: bozulma öncesi kullanılır, 2 sn\'den kısaysa klip atılır, sonuç önbellekte', async () => {
+  const cfg = loadChannel().motion!;
+  assert.equal(usableSeconds(cfg, null), cfg.use_seconds);
+  assert.equal(usableSeconds(cfg, { goodUntil: 8, issue: 'none' }), cfg.use_seconds);
+  assert.equal(usableSeconds(cfg, { goodUntil: 3, issue: 'x' }), 3);
+  assert.equal(usableSeconds(cfg, { goodUntil: 1, issue: 'x' }), 0);
+  const dir = mkdtempSync(join(tmpdir(), 'clipqa-'));
+  let checks = 0;
+  const verdict: Record<string, number> = { a: 8, b: 3, c: 1 };
+  const provider: MotionProvider = {
+    name: 'fake-qa',
+    async generate(_t, out) {
+      writeFileSync(out, 'mp4');
+    },
+    async check(file) {
+      checks++;
+      const id = file.split('/').pop()!.split('-')[0];
+      return { goodUntil: verdict[id], issue: id === 'c' ? 'face melts' : 'none' };
+    },
+  };
+  const targets = ['a', 'b', 'c'].map((sceneId) => ({ sceneId, index: 0, image: `${sceneId}.jpg`, prompt: 'p' }));
+  const logs: string[] = [];
+  const r = await generateMotionClips(targets, provider, cfg, dir, (m) => logs.push(m));
+  assert.deepEqual(r.seconds, { a: { '0': cfg.use_seconds }, b: { '0': 3 } });
+  assert.equal(r.dropped, 1);
+  assert.ok(logs.some((l) => l.includes('face melts')));
+  await generateMotionClips(targets, provider, cfg, dir);
+  assert.equal(checks, 3); // ikinci çalıştırmada denetim önbellekten
 });
