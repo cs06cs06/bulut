@@ -2,8 +2,8 @@
 // Klip, görselin kendisinden başladığı için renk ve tarz videonun geri kalanıyla aynı kalır. Veo sakin ve genel
 // hareketlerde (yürüme, rüzgâr, ışık, gülümseme) güvenilir; klibin sonuna doğru hata yapabildiği için videoda
 // yalnızca ilk birkaç saniye kullanılır (config: motion.use_seconds). Ayrıca her klip, Gemini'nin görsel modeline
-// saniyede bir kare olarak gösterilir; bozulma (yüz/beden bozulması, beliren ya da kaybolan kişi/nesne) başladıysa
-// klibin yalnızca öncesi kullanılır, temiz kısım çok kısaysa klip atılır.
+// saniyede bir kare olarak (iki kez, bağımsız) gösterilir; bozulma (yüz/beden bozulması, beliren ya da kaybolan
+// kişi/nesne) başladıysa klibin yalnızca öncesi kullanılır, temiz kısım çok kısaysa klip atılır.
 
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -125,11 +125,11 @@ export async function generateMotionClips(
   return { files, seconds, generated, dropped };
 }
 
-/** Klipten saniyede bir kare (en çok 8), 640 px genişlik. */
+/** Klipten saniyede bir kare (t = 0, 1, 2 … sn; en çok 9), 640 px genişlik. */
 async function sampleFrames(file: string): Promise<{ dir: string; frames: string[] }> {
   const dir = mkdtempSync(join(tmpdir(), 'clipqa-'));
   await new Promise<void>((resolve, reject) => {
-    const p = spawn('ffmpeg', ['-v', 'error', '-i', file, '-vf', 'fps=1,scale=640:-1', '-frames:v', '8', join(dir, 'f%02d.jpg')]);
+    const p = spawn('ffmpeg', ['-v', 'error', '-i', file, '-vf', 'fps=1:round=down,scale=640:-1', '-frames:v', '9', join(dir, 'f%02d.jpg')]);
     p.on('error', reject);
     p.on('close', (c) => (c === 0 ? resolve() : reject(new Error(`ffmpeg kare çıkarma hata verdi (${c})`))));
   });
@@ -137,17 +137,19 @@ async function sampleFrames(file: string): Promise<{ dir: string; frames: string
 }
 
 const CHECK_PROMPT =
-  'These are frames taken once per second (t=1s … t=8s) from an AI-generated video clip that animates a still photograph. ' +
-  'Judge only visual coherence, not style. Find the first second where something is clearly wrong: a person or face deforms ' +
-  'or melts, limbs or bodies merge, people or objects appear, disappear or duplicate, an object morphs into another, or ' +
-  'physically impossible motion. Minor motion blur is fine. Return good_until = the last second (integer, 0–8) up to which ' +
-  'every frame is clean (8 if all are clean, 0 if already wrong at t=1), and a short issue description ("none" if clean).';
+  'These are frames taken once per second (labelled t=0s, t=1s, …) from an AI-generated video clip that animates a still ' +
+  'photograph; t=0s is the original photograph. Compare every frame with t=0s. Judge only visual coherence, not style. Find ' +
+  'the first frame where something is clearly wrong: a person or face deforms or melts, limbs or bodies merge, a person or ' +
+  'object appears, disappears, duplicates or changes clothing, an object morphs into another, or physically impossible ' +
+  'motion. Minor motion blur is fine. Return good_until = the label (in seconds) of the LAST frame that is still completely ' +
+  'clean (the last label if every frame is clean), and a short issue description ("none" if clean). Be strict: when in ' +
+  'doubt, treat the frame as wrong.';
 
 async function geminiCheck(model: string, apiKey: string, file: string): Promise<ClipCheck> {
   const { dir, frames } = await sampleFrames(file);
   try {
     const parts: unknown[] = [{ text: CHECK_PROMPT }];
-    frames.forEach((f, i) => parts.push({ text: `t=${i + 1}s` }, { inline_data: { mime_type: 'image/jpeg', data: readFileSync(f).toString('base64') } }));
+    frames.forEach((f, i) => parts.push({ text: `t=${i}s` }, { inline_data: { mime_type: 'image/jpeg', data: readFileSync(f).toString('base64') } }));
     const res = await fetch(`${BASE}/models/${model}:generateContent`, {
       method: 'POST',
       headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
@@ -164,7 +166,7 @@ async function geminiCheck(model: string, apiKey: string, file: string): Promise
     const out = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}');
     const goodUntil = Number(out.good_until);
     if (!Number.isFinite(goodUntil)) throw new Error('geçersiz denetim yanıtı');
-    return { goodUntil: Math.max(0, Math.min(frames.length, Math.round(goodUntil))), issue: String(out.issue ?? '') };
+    return { goodUntil: Math.max(0, Math.min(frames.length - 1, Math.round(goodUntil))), issue: String(out.issue ?? '') };
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -188,7 +190,13 @@ export function veoProvider(cfg: MotionConfig, apiKey: string): MotionProvider {
   };
   return {
     name: `google:${cfg.model}:${cfg.resolution}`,
-    check: cfg.qa_model ? (file) => geminiCheck(cfg.qa_model!, apiKey, file) : undefined,
+    // iki bağımsız denetim; daha temkinli olan (bozulmayı daha erken gören) kullanılır
+    check: cfg.qa_model
+      ? async (file) => {
+          const [a, b] = await Promise.all([geminiCheck(cfg.qa_model!, apiKey, file), geminiCheck(cfg.qa_model!, apiKey, file)]);
+          return a.goodUntil <= b.goodUntil ? a : b;
+        }
+      : undefined,
     async generate(t, out) {
       const mimeType = /\.png$/i.test(t.image) ? 'image/png' : 'image/jpeg';
       const op = await call(`${BASE}/models/${cfg.model}:predictLongRunning`, {
