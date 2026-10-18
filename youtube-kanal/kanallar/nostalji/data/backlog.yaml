@@ -163,3 +163,155 @@
   score: 7
   status: bekliyor
   added: 2026-10-12
+- id: 15-things-in-every-1960s-kitchen-that-have-vanished-forever
+  title: 15 Things in Every 1960s Kitchen That Have Vanished Forever
+  query: 1960s kitchen things
+  tools:
+    - 1960s
+    - kitchen
+    - home
+  format: listicle
+  angle: "A slow walk through Mom's mustard, avocado and harvest-gold kitchen: the wall phone with the long cord, the percolator, the bread box, the Jell-O mold. Each item is something viewers can picture and want to tell a story about."
+  why: "Home & Kitchen serisi (1/4). Homes & Gardens'ın 9 Ekim haberi ('60s mutfak renkleri geri dönüyor) taze bir kanca veriyor. Ortak ABD-Kanada hafızasına dayanıyor ve çok görsel. Kapak: hardal sarısı mutfakta duvar telefonu."
+  score: 9
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-on-every-thanksgiving-table-in-the-1960s-almost
+  title: 15 Things on Every Thanksgiving Table in the 1960s — Almost Forgotten
+  query: thanksgiving 1960s memories
+  tools:
+    - 1960s
+    - Thanksgiving
+    - family
+  format: listicle
+  angle: From the kids' table and the relish tray to the green bean casserole, the good china and Dad carving at the head of the table, this is Thanksgiving dinner exactly as you remember it.
+  why: Holidays in the 60s serisi (2/4, Cadılar Bayramı videosunun devamı). ABD Şükran Günü 26 Kasım'da, yayın Kasım'ın ilk haftasında olmalı. Yorumlarda tarif ve aile anısı paylaşımını tetikler.
+  score: 9
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-we-circled-in-the-christmas-catalog-in-the-1960s
+  title: 15 Things We Circled in the Christmas Catalog in the 1960s
+  query: christmas 1960s memories
+  tools:
+    - 1960s
+    - Christmas
+    - toys
+  format: listicle
+  angle: Remember lying on the floor with the big Christmas wish book, a pen in hand, circling every toy you dreamed of? Fifteen of the toys and gifts every kid wanted most.
+  why: "Holidays in the 60s serisi (3/4). 'christmas 1960s memories' ve 'christmas nostalgia 1960s' aramalarına dayanıyor. Bekleyen Noel anıları videosundan farklı olarak dilek kataloğuna ve oyuncaklara odaklanıyor. Kasım ortasında yayınlanmalı. Kapak: halıda katalog karıştıran çocuk."
+  score: 9
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-every-family-did-in-the-fall-in-the-1960s
+  title: 15 Things Every Family Did in the Fall in the 1960s — Unthinkable Today
+  query: growing up in the 60s
+  tools:
+    - 1960s
+    - fall
+    - family
+  format: listicle
+  angle: Burning leaf piles at the curb, storm windows going up, the station wagon loaded for apple picking, new school shoes. These were the autumn rituals nobody does anymore.
+  why: "Growing Up in the 60s serisi (mevsim bölümü). Ekim sonuna tam uyuyor ve 'growing up in the 60s' aramalarına dayanıyor. Mevcut Cadılar Bayramı videosuyla çakışmıyor. Kapak: kaldırımda yanan yaprak yığını."
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-that-were-completely-normal-in-the-1950s
+  title: 15 Things That Were Completely Normal in the 1950s — Unthinkable Today
+  query: growing up in the 1950s
+  tools:
+    - 1950s
+    - everyday life
+  format: listicle
+  angle: The milkman at the door, doctors making house calls, kids riding in the back of a pickup, ashtrays on every table. Everyday 1950s life that would shock your grandchildren.
+  why: "'Normal Back Then' serisi. Bekleyen 1970'ler versiyonunun 1950'ler eşi. '1950s things', '1950s facts' ve 'growing up in the 1950s' aramalarıyla güçlü talep var. Kanıtlanmış başlık kalıbını kullanıyor."
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-every-family-did-on-a-1960s-road-trip-unthinkable
+  title: 15 Things Every Family Did on a 1960s Road Trip — Unthinkable Today
+  query: 1960s road trip memories
+  tools:
+    - 1960s
+    - road trip
+    - cars
+  format: listicle
+  angle: No seatbelts, kids sprawled in the back of the station wagon, paper maps, motel pools and Dad refusing to stop. A road trip just like the ones you took.
+  why: "Cars & Road Trips serisi (1/3). Outside'ın 10 Ekim 'nostalji seyahati' trendiyle örtüşüyor. ABD ve Kanada'da ortak bir anı. Kapak: ahşap panelli station wagon ve tavan bagajı."
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-about-listening-to-music-in-the-1960s-only-people
+  title: 15 Things About Listening to Music in the 1960s Only People Over 60 Remember
+  query: 1960s music nostalgia
+  tools:
+    - 1960s
+    - music
+    - radio
+  format: listicle
+  angle: Stacking 45s on the record changer, the transistor radio under your pillow, the jukebox at the diner, the family hi-fi console. How music filled your home before streaming.
+  why: Sounds & Music serisi. Listedeki en yüksek arama hacmi '1960s music' ve 'nostalgia music' aramalarında. Ünlü isim gerekmiyor, odak nesnelerde. eonmusic'in nostalji canlanması haberiyle destekleniyor.
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-christmas-things-from-the-1970s-that-have-vanished
+  title: 15 Christmas Things From the 1970s That Have Vanished Forever
+  query: 1970s nostalgia christmas
+  tools:
+    - 1970s
+    - Christmas
+  format: listicle
+  angle: Tinsel by the handful, aluminum trees with color wheels, giant bubble lights, Christmas cards taped around the door frame. The holiday decorations that disappeared.
+  why: Holidays serisinin 1970'ler ayağı (4/4). Noel aramaları yükseliyor. Bekleyen 1960'lar Noel videosuyla on yıl ve nesne odağı bakımından ayrışıyor. Aralık başında yayınlanmalı.
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-sounds-from-the-1960s-you-ll-recognize-instantly
+  title: 15 Sounds From the 1960s You'll Recognize Instantly
+  query: 1960s memories
+  tools:
+    - 1960s
+    - sounds
+  format: listicle
+  angle: The rotary phone dial, the ice cream truck jingle, the screen door slam, the TV sign-off tone. Close your eyes and you're back in 1965.
+  why: Sounds & Music serisi (2/2). Kanıtlanmış 'Sounds' başlık kalıbını kullanıyor ve '1960s memories' aramasına dayanıyor. Yorumlarda 'şu sesi de unutmayın' katılımını çok güçlü tetikler. Her ses bir nesne sahnesiyle gösterilebilir.
+  score: 8
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-every-canadian-kid-did-in-winter-in-the-1960s
+  title: 15 Things Every Canadian Kid Did in Winter in the 1960s
+  query: 1960s canada
+  tools:
+    - Canada
+    - 1960s
+    - winter
+  format: listicle
+  angle: Backyard rinks, snowsuits so thick you couldn't bend, frozen mittens on the radiator and hockey on the street until dark. A true Canadian winter childhood.
+  why: "Kanada'ya özgü konu (1/4 kuralı). '1960s canada' ve '1960s toronto' aramalarına dayanıyor. Mevcut genel Kanada videosundan farklı olarak kışa odaklanıyor ve mevsime uygun. Kapak: arka bahçe pistinde çocuklar."
+  score: 7
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-every-teenager-did-in-the-1970s-unthinkable-today
+  title: 15 Things Every Teenager Did in the 1970s — Unthinkable Today
+  query: 1970s teen
+  tools:
+    - 1970s
+    - teenagers
+  format: listicle
+  angle: Cruising Main Street on a Friday night, drive-in movies, roller rinks, the phone stretched into the closet for privacy. Teenage freedom the 1970s way.
+  why: "Growing Up in the 70s serisi. Dayandığı aramalar: '1970s teen', 'things we did in the 70s' ve '1970s life'. Kitlenin genç kesimine (1955–65 doğumlular) hitap ediyor. Kapak: gece drive-in sineması."
+  score: 7
+  status: bekliyor
+  added: 2026-10-18
+- id: 15-things-every-canadian-family-did-at-christmas-in-the
+  title: 15 Things Every Canadian Family Did at Christmas in the 1950s and 60s
+  query: 1950s canada
+  tools:
+    - Canada
+    - Christmas
+    - 1950s
+  format: listicle
+  angle: The Santa Claus parade, the department store catalog, tourtière on Christmas Eve, skating after dinner. A Canadian Christmas the way you remember it.
+  why: "Kanada'ya özgü ikinci konu ve Holidays serisinin Kanada versiyonu. '1950s canada' ve '1960s montreal' aramalarına dayanıyor. Kasım sonunda yayınlanmalı. Kapak: karlı sokakta Noel Baba geçidi."
+  score: 7
+  status: bekliyor
+  added: 2026-10-18
