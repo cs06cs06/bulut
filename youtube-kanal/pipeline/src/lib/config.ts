@@ -57,7 +57,10 @@ export interface ChannelConfig {
     use_seconds: number;
     price_per_second: number;
     hook_clips: number;
-    top_items: number;
+    /** video başına en çok klip (kanca dahil); maddeler #1'den başlayarak seçilir */
+    max_clips: number;
+    /** ön eleme: görselin hareketlendirme güvenliği (1–5, Gemini) en az bu olmalı; kalabalık sahneler Veo'ya gönderilmez */
+    screen_min_safety?: number;
     concurrency: number;
     prompt: string;
     /** klip kalite kontrolü (Gemini görsel modeli): bozulmanın başladığı saniyeden sonrası kullanılmaz */

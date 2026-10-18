@@ -4,6 +4,8 @@
 // yalnızca ilk birkaç saniye kullanılır (config: motion.use_seconds). Ayrıca her klip, Gemini'nin görsel modeline
 // saniyede bir kare olarak (iki kez, bağımsız) gösterilir; bozulma (yüz/beden bozulması, beliren ya da kaybolan
 // kişi/nesne) başladıysa klibin yalnızca öncesi kullanılır, temiz kısım çok kısaysa klip atılır.
+// Veo kalabalık sahnelerde (çok kişi, iç içe bedenler) güvenilmez; bu yüzden klip üretmeden önce her aday görsel
+// Gemini'ye puanlatılır (1–5) ve her maddenin en güvenli görseli seçilir, kalabalık görseller hiç gönderilmez.
 
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -32,6 +34,8 @@ export interface MotionProvider {
   generate(target: MotionTarget, out: string): Promise<void>;
   /** klip kalite kontrolü (isteğe bağlı) */
   check?(file: string): Promise<ClipCheck>;
+  /** ön eleme: görselin hareketlendirme güvenliği 1 (riskli) – 5 (güvenli) (isteğe bağlı) */
+  screen?(image: string): Promise<number>;
 }
 
 /** Kontrol sonucuna göre klipten kullanılacak saniye; 0 = klip kullanılmaz. */
@@ -40,23 +44,78 @@ export function usableSeconds(cfg: MotionConfig, check: ClipCheck | null): numbe
   return s >= (cfg.min_seconds ?? 2) ? s : 0;
 }
 
-/** Klip seçimi: kancanın ilk N görseli + en güçlü maddelerin (#top_items … #1) ilk görseli. */
-export function pickMotionTargets(script: Script, images: Record<string, string[]>, cfg: MotionConfig): MotionTarget[] {
-  const out: MotionTarget[] = [];
-  const add = (sceneId: string, index: number, desc: string) => {
+/** Aday görseller: kancanın görselleri (sırayla) ve maddelerin görselleri (#1, #2, … sırasıyla). */
+export function motionCandidates(
+  script: Script,
+  images: Record<string, string[]>,
+  cfg: MotionConfig,
+): { hook: MotionTarget[]; items: MotionTarget[][] } {
+  const target = (sceneId: string, index: number, desc: string): MotionTarget | null => {
     const image = images[sceneId]?.[index];
-    if (!image) return;
-    out.push({ sceneId, index, image, prompt: motionPrompt(cfg, desc) });
+    return image ? { sceneId, index, image, prompt: motionPrompt(cfg, desc) } : null;
   };
+  let hook: MotionTarget[] = [];
+  const items: { n: number; list: MotionTarget[] }[] = [];
   script.scenes.forEach((sc, i) => {
     const v = sc.visual;
     if (v.type !== 'photos') return;
-    if (i === 0 && v.number === 0) {
-      for (let k = 0; k < cfg.hook_clips; k++) add(sc.id, k, v.prompts[k] ?? '');
-    } else if (v.number >= 1 && v.number <= cfg.top_items) {
-      add(sc.id, 0, v.prompts[0] ?? '');
-    }
+    const all = (images[sc.id] ?? []).map((_, k) => target(sc.id, k, v.prompts[k] ?? '')).filter((t): t is MotionTarget => !!t);
+    if (i === 0 && v.number === 0) hook = all;
+    else if (v.number >= 1) items.push({ n: v.number, list: all });
   });
+  return { hook, items: items.sort((a, b) => a.n - b.n).map((x) => x.list) };
+}
+
+/** Ön elemesiz seçim: kancanın ilk N görseli + #1'den başlayarak maddelerin ilk görseli (en çok max_clips). */
+export function pickMotionTargets(script: Script, images: Record<string, string[]>, cfg: MotionConfig): MotionTarget[] {
+  const { hook, items } = motionCandidates(script, images, cfg);
+  const out = hook.slice(0, cfg.hook_clips);
+  for (const list of items) {
+    if (out.length >= cfg.max_clips) break;
+    if (list[0]) out.push(list[0]);
+  }
+  return out.slice(0, cfg.max_clips);
+}
+
+/**
+ * Ön elemeli seçim: her aday görsel puanlanır (önbellekli). Kancadan güvenli ilk N görsel; sonra #1, #2, … için
+ * maddenin en güvenli görseli (puan ≥ screen_min_safety) — toplam en çok max_clips. Puanlama yoksa pickMotionTargets.
+ */
+export async function selectMotionTargets(
+  script: Script,
+  images: Record<string, string[]>,
+  cfg: MotionConfig,
+  provider: MotionProvider,
+  cacheFile: string,
+  log: (m: string) => void = () => {},
+): Promise<MotionTarget[]> {
+  if (!provider.screen) return pickMotionTargets(script, images, cfg);
+  const { hook, items } = motionCandidates(script, images, cfg);
+  const cache: Record<string, number> = existsSync(cacheFile) ? JSON.parse(readFileSync(cacheFile, 'utf8')) : {};
+  const all = [...hook, ...items.flat()];
+  const queue = all.filter((t) => cache[t.image] === undefined);
+  await Promise.all(
+    Array.from({ length: Math.min(8, queue.length) }, async () => {
+      for (let t = queue.shift(); t; t = queue.shift()) {
+        try {
+          cache[t.image] = await provider.screen!(t.image);
+        } catch (e) {
+          log(`   ⚠️ ${t.sceneId} görseli puanlanamadı: ${(e as Error).message.slice(0, 120)}`);
+          cache[t.image] = 0;
+        }
+      }
+    }),
+  );
+  mkdirSync(join(cacheFile, '..'), { recursive: true });
+  writeFileSync(cacheFile, JSON.stringify(cache, null, 1));
+  const min = cfg.screen_min_safety ?? 4;
+  const ok = (t: MotionTarget) => (cache[t.image] ?? 0) >= min;
+  const out = hook.filter(ok).slice(0, cfg.hook_clips);
+  for (const list of items) {
+    if (out.length >= cfg.max_clips) break;
+    const best = list.filter(ok).sort((a, b) => cache[b.image] - cache[a.image] || a.index - b.index)[0];
+    if (best) out.push(best);
+  }
   return out;
 }
 
@@ -145,6 +204,39 @@ const CHECK_PROMPT =
   'clean (the last label if every frame is clean), and a short issue description ("none" if clean). Be strict: when in ' +
   'doubt, treat the frame as wrong.';
 
+const SCREEN_PROMPT =
+  'Rate how safely an image-to-video AI could animate this photo for a few seconds without errors (people duplicating, ' +
+  'merging, appearing or vanishing, bodies deforming): 1 = risky (many people, crowds, overlapping bodies, hands busy with ' +
+  'detailed tasks), 5 = safe (no people, or one or two clearly separated people, simple composition). Also count the people.';
+
+async function geminiScreen(model: string, apiKey: string, image: string): Promise<number> {
+  const res = await fetch(`${BASE}/models/${model}:generateContent`, {
+    method: 'POST',
+    headers: { 'x-goog-api-key': apiKey, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      contents: [
+        {
+          role: 'user',
+          parts: [
+            { text: SCREEN_PROMPT },
+            { inline_data: { mime_type: /\.png$/i.test(image) ? 'image/png' : 'image/jpeg', data: readFileSync(image).toString('base64') } },
+          ],
+        },
+      ],
+      generationConfig: {
+        responseMimeType: 'application/json',
+        responseSchema: { type: 'OBJECT', properties: { people: { type: 'INTEGER' }, safety: { type: 'INTEGER' } }, required: ['people', 'safety'] },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const data = (await res.json()) as any;
+  const out = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '{}');
+  const safety = Number(out.safety);
+  if (!Number.isFinite(safety)) throw new Error('geçersiz puan');
+  return Math.max(1, Math.min(5, Math.round(safety)));
+}
+
 async function geminiCheck(model: string, apiKey: string, file: string): Promise<ClipCheck> {
   const { dir, frames } = await sampleFrames(file);
   try {
@@ -190,6 +282,7 @@ export function veoProvider(cfg: MotionConfig, apiKey: string): MotionProvider {
   };
   return {
     name: `google:${cfg.model}:${cfg.resolution}`,
+    screen: cfg.qa_model ? (image) => geminiScreen(cfg.qa_model!, apiKey, image) : undefined,
     // iki bağımsız denetim; daha temkinli olan (bozulmayı daha erken gören) kullanılır
     check: cfg.qa_model
       ? async (file) => {

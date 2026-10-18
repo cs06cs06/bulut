@@ -26,7 +26,7 @@ Pzt / Çar / Cum      Video üret:
                         4. Başlık, açıklama, etiket, kapak metni  → episodes/<id>/metadata.json
                         5. Seslendirme (nostalji: Google Gemini · ai-egitim: ElevenLabs)
                         6. Görseller: nostalji → Google Gemini (Nano Banana) · ai-egitim → web sayfası ekran görüntüleri
-                        6b. Hareketli sahneler (nostalji): kanca + #6…#1 maddelerinin ilk görseli → Google Veo klipleri
+                        6b. Hareketli sahneler (nostalji): kanca + #1'den itibaren maddelerin en uygun görseli → Google Veo klipleri (ön eleme + kalite kontrolü)
                         7. Video (1920×1080) + kapak + altyazı (+ nostalji: 2 dikey Shorts)
                         8. GitHub → Releases: video.mp4, thumbnail.jpg, captions.srt, upload.txt, short-*.mp4
                            (isteğe bağlı: YouTube'a "özel" olarak yükleme)
@@ -157,7 +157,7 @@ Kendi konunuzu eklemek için listenin sonuna şunu yazmanız yeter:
 |---|---|---|
 | Claude (araştırma + senaryo + başlık) | ~1,5–2,5 $ | |
 | Görseller (Gemini Nano Banana 2.1, 2K) | ~3,3 $ | `images.size: 1K` ile ~2,3 $; `listicle.images_per_item` ile görsel sayısı |
-| Hareketli sahneler (Veo 3.1 Lite, 1080p, 8 klip × 8 sn) | ~5,1 $ | `motion.top_items` / `motion.hook_clips` ile klip sayısı; kapatmak için `config/channel.yaml` → `motion` bölümünü silin |
+| Hareketli sahneler (Veo 3.1 Lite, 1080p, en çok 8 klip × 8 sn) | ≤5,1 $ | `motion.max_clips` / `motion.hook_clips` ile klip sayısı; kapatmak için `config/channel.yaml` → `motion` bölümünü silin |
 | Seslendirme (Google Gemini TTS, ~12 dakika + Shorts) | ~0,2 $ | Aynı `GEMINI_API_KEY`; ses `voice.google.voice` (Gacrux). ElevenLabs'e geçilirse ticari lisans için ücretli plan gerekir (ayda 13 video ≈ Pro plan, 99 $) |
 
 `config/ai.yaml` → `budget.monthly_usd` (nostalji: 150 $) Claude, görsel ve klip harcamasını sınırlar. Video başına ~10 $;

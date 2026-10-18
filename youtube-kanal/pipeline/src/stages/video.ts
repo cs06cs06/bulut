@@ -12,7 +12,7 @@ import type { Script } from '../lib/script.ts';
 import { captureAll, type SceneCapture } from '../media/capture.ts';
 import { generateSceneImages, styledPrompt, type ImageProvider } from '../media/images.ts';
 import { probeDuration } from '../media/ffmpeg.ts';
-import { generateMotionClips, pickMotionTargets, type MotionProvider } from '../media/motion.ts';
+import { generateMotionClips, selectMotionTargets, type MotionProvider } from '../media/motion.ts';
 import { buildAudio, buildPlacedAudio, makePop, muxFinal, renderSegments, renderThumbnail, sceneSpecs, type SceneExtras } from '../media/render.ts';
 import { buildJcutTimeline, buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration, type TimedScene } from '../media/timeline.ts';
 import {
@@ -131,7 +131,7 @@ export async function buildVideo(args: {
   let clipSeconds: Record<string, Record<string, number>> = {};
   let clipsGenerated = 0;
   if (needsImages && args.motion && channel.motion) {
-    const targets = pickMotionTargets(script, imageFiles, channel.motion);
+    const targets = await selectMotionTargets(script, imageFiles, channel.motion, args.motion, ep.workPath('clips', 'screen.json'), log);
     if (targets.length) {
       log(`🎞️  Hareketli sahneler (${targets.length} klip)`);
       const res = await generateMotionClips(targets, args.motion, channel.motion, ep.workPath('clips'), (m) => {

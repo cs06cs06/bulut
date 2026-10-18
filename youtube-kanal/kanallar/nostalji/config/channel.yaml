@@ -75,9 +75,10 @@ images:
     North American setting and period-correct details. No text, no captions, no watermark, no readable
     brand logos, no modern objects.
 
-# Hareketli sahneler (Google Veo, aynı GEMINI_API_KEY): kancanın ilk 2 görseli ve en güçlü 6 maddenin (#6–#1)
-# ilk görseli kısa kliplere çevrilir; diğer görseller kayan/yakınlaşan fotoğraf olarak kalır. Kapatmak için bu
-# bölümü silin. Maliyet: 8 klip × 8 sn × 0,08 $ ≈ 5,1 $ / video.
+# Hareketli sahneler (Google Veo, aynı GEMINI_API_KEY): kancadan 2 görsel ve #1'den başlayarak maddelerin en uygun
+# görseli kısa kliplere çevrilir (en çok 8 klip); diğer görseller kayan/yakınlaşan fotoğraf olarak kalır. Veo
+# kalabalık sahnelerde hata yaptığı için adaylar önce Gemini ile puanlanır, kalabalık görseller gönderilmez.
+# Kapatmak için bu bölümü silin. Maliyet: en çok 8 klip × 8 sn × 0,08 $ ≈ 5,1 $ / video.
 motion:
   provider: google
   model: veo-3.1-lite-generate-preview
@@ -85,8 +86,9 @@ motion:
   duration_seconds: 8           # üretilen klip süresi (ücret buna göre)
   use_seconds: 6                # videoda klibin en çok ilk 6 sn'si kullanılır (Veo hataları genelde sonda olur)
   price_per_second: 0.08        # maliyet takibi için (Veo 3.1 Lite, 1080p)
-  hook_clips: 2                 # kancanın ilk kaç görseli hareketli olsun
-  top_items: 6                  # #6 … #1 maddelerinin ilk görseli hareketli olsun
+  hook_clips: 2                 # kancadan en çok kaç görsel hareketli olsun
+  max_clips: 8                  # video başına en çok klip (kanca dahil); maddeler #1, #2, … sırasıyla
+  screen_min_safety: 4          # ön eleme: görselin hareketlendirme güvenliği (1–5) en az 4 (0–2 kişi, sade sahne)
   concurrency: 4
   qa_model: gemini-3.8-flash    # her klip saniyede bir kareyle denetlenir; bozulma başladığı saniyeden sonrası kullanılmaz
   min_seconds: 2                # temiz kısmı 2 sn'den kısa klip atılır (o görsel sabit fotoğraf kalır)

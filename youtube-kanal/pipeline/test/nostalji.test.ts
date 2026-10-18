@@ -9,7 +9,7 @@ import { channelFormat, loadAiConfig, loadChannel } from '../src/lib/config.ts';
 import { fitPrompts, normalizeListicle, type Script } from '../src/lib/script.ts';
 import { findImageData, generateSceneImages, ImageRefusedError, styledPrompt, type ImageProvider } from '../src/media/images.ts';
 import { lookFilters, mergeClipShots, overlayTimings, planShots, splitEven, type Shot } from '../src/media/photoscene.ts';
-import { generateMotionClips, motionPrompt, pickMotionTargets, usableSeconds, type MotionProvider } from '../src/media/motion.ts';
+import { generateMotionClips, motionPrompt, pickMotionTargets, selectMotionTargets, usableSeconds, type MotionProvider } from '../src/media/motion.ts';
 import { buildJcutTimeline, chapters } from '../src/media/timeline.ts';
 import { alignSentences, assColor, buildAss, captionEvents, chunkSentence, highlight, parseSilences, phraseTime, windowEvents } from '../src/media/align.ts';
 import { findAudioData, ttsFromConfig } from '../src/media/tts.ts';
@@ -279,26 +279,53 @@ test('Google seslendirme: ayar ve yanıttan ses verisini okuma', () => {
   assert.equal(findAudioData({ steps: [{ content: [{ type: 'text', text: 'no' }] }] }), null);
 });
 
-test('hareketli sahneler: kancanın ilk 2 görseli + #6…#1 maddelerinin ilk görseli', () => {
+test('hareketli sahneler (ön elemesiz): kancanın ilk 2 görseli + #1\'den başlayarak maddelerin ilk görseli', () => {
   const ch = loadChannel();
   const cfg = ch.motion!;
   assert.equal(cfg.hook_clips, 2);
-  assert.equal(cfg.top_items, 6);
+  assert.equal(cfg.max_clips, 8);
   assert.ok(cfg.use_seconds <= cfg.duration_seconds);
   const s = normalizeListicle(rawListicle(15, 90), shape);
   const images: Record<string, string[]> = {};
   for (const sc of s.scenes) images[sc.id] = ['a.jpg', 'b.jpg', 'c.jpg'].map((f) => `${sc.id}-${f}`);
   const targets = pickMotionTargets(s, images, cfg);
-  assert.equal(targets.length, 2 + 6);
+  assert.equal(targets.length, 8);
   assert.deepEqual(targets.slice(0, 2).map((t) => [t.sceneId, t.index]), [[s.scenes[0].id, 0], [s.scenes[0].id, 1]]);
-  const nums = targets.slice(2).map((t) => (s.scenes.find((x) => x.id === t.sceneId)!.visual as { number: number }).number);
-  assert.deepEqual(nums, [6, 5, 4, 3, 2, 1]);
+  const num = (id: string) => (s.scenes.find((x) => x.id === id)!.visual as { number: number }).number;
+  assert.deepEqual(targets.slice(2).map((t) => num(t.sceneId)), [1, 2, 3, 4, 5, 6]);
   assert.ok(targets.slice(2).every((t) => t.index === 0));
   assert.ok(targets.every((t) => t.prompt.startsWith(cfg.prompt.trim().slice(0, 30))));
-  // görseli olmayan sahne atlanır
-  delete images[s.scenes[1].id];
-  assert.equal(pickMotionTargets(s, images, cfg).length, 8);
   assert.ok(motionPrompt(cfg, 'x '.repeat(400)).length < cfg.prompt.length + 360);
+});
+
+test('hareketli sahneler (ön elemeli): kalabalık görseller elenir, her maddenin en güvenli görseli seçilir', async () => {
+  const cfg = loadChannel().motion!;
+  const s = normalizeListicle(rawListicle(15, 90), shape);
+  const images: Record<string, string[]> = {};
+  for (const sc of s.scenes) images[sc.id] = [0, 1, 2].map((k) => `${sc.id}-${k}.jpg`);
+  const num = (id: string) => (s.scenes.find((x) => x.id === id)!.visual as { number: number }).number;
+  const hookId = s.scenes[0].id;
+  // kanca: 0. görsel kalabalık; maddeler: #1 tamamen kalabalık, #2'nin 2. görseli güvenli, diğerleri 0. görsel 4 puan
+  const score = (img: string) => {
+    const [id, k] = img.replace('.jpg', '').split('-');
+    if (id === hookId) return k === '0' ? 2 : 5;
+    const n = num(id);
+    if (n === 1) return 2;
+    if (n === 2) return k === '2' ? 5 : 3;
+    return k === '0' ? 4 : 3;
+  };
+  let calls = 0;
+  const provider: MotionProvider = { name: 'f', generate: async () => {}, screen: async (img) => (calls++, score(img)) };
+  const cache = join(mkdtempSync(join(tmpdir(), 'screen-')), 'screen.json');
+  const t = await selectMotionTargets(s, images, cfg, provider, cache);
+  assert.equal(t.length, 8);
+  assert.deepEqual(t.slice(0, 2).map((x) => [x.sceneId, x.index]), [[hookId, 1], [hookId, 2]]);
+  assert.deepEqual(t.slice(2).map((x) => [num(x.sceneId), x.index]), [[2, 2], [3, 0], [4, 0], [5, 0], [6, 0], [7, 0]]);
+  const before = calls;
+  await selectMotionTargets(s, images, cfg, provider, cache);
+  assert.equal(calls, before); // puanlar önbellekten
+  // puanlama yoksa ön elemesiz seçim
+  assert.deepEqual(await selectMotionTargets(s, images, cfg, { name: 'x', generate: async () => {} }, cache), pickMotionTargets(s, images, cfg));
 });
 
 test('klip çekimleri: görselin ilk çekimleri en çok 6 sn\'lik tek klibe dönüşür, toplam kare korunur', () => {
