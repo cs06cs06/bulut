@@ -10,12 +10,30 @@ import { fitPrompts, normalizeListicle, type Script } from '../src/lib/script.ts
 import { findImageData, generateSceneImages, ImageRefusedError, styledPrompt, type ImageProvider } from '../src/media/images.ts';
 import { lookFilters, mergeClipShots, overlayTimings, planShots, splitEven, type Shot } from '../src/media/photoscene.ts';
 import { generateMotionClips, motionPrompt, pickMotionTargets, selectMotionTargets, usableSeconds, type MotionProvider } from '../src/media/motion.ts';
+import { generateParallaxClips, parallaxAvailable, pickParallaxTargets } from '../src/media/parallax.ts';
 import { buildJcutTimeline, chapters } from '../src/media/timeline.ts';
 import { alignSentences, assColor, buildAss, captionEvents, chunkSentence, highlight, parseSilences, phraseTime, windowEvents } from '../src/media/align.ts';
 import { findAudioData, ttsFromConfig } from '../src/media/tts.ts';
 import { writeScript } from '../src/stages/write.ts';
 
 const shape = { items: 15, images_per_item: 3, intro_images: 4, outro_images: 2 };
+
+// Veo hareketli sahneleri isteğe bağlıdır (kanal ayarında kapalı); testler için örnek ayar
+const sampleMotion = {
+  provider: 'google' as const,
+  model: 'veo-3.1-lite-generate-preview',
+  resolution: '1080p' as const,
+  duration_seconds: 8,
+  use_seconds: 6,
+  price_per_second: 0.08,
+  hook_clips: 2,
+  max_clips: 8,
+  screen_min_safety: 4,
+  concurrency: 4,
+  qa_model: 'gemini-3.8-flash',
+  min_seconds: 2,
+  prompt: 'Bring this photograph to life with subtle, natural, realistic motion.',
+};
 
 function rawListicle(items: number, wordsPerItem: number) {
   const w = (n: number) => Array.from({ length: n }, (_, i) => `word${i}`).join(' ') + '.';
@@ -281,7 +299,7 @@ test('Google seslendirme: ayar ve yanıttan ses verisini okuma', () => {
 
 test('hareketli sahneler (ön elemesiz): kancanın ilk 2 görseli + #1\'den başlayarak maddelerin ilk görseli', () => {
   const ch = loadChannel();
-  const cfg = ch.motion!;
+  const cfg = ch.motion ?? sampleMotion;
   assert.equal(cfg.hook_clips, 2);
   assert.equal(cfg.max_clips, 8);
   assert.ok(cfg.use_seconds <= cfg.duration_seconds);
@@ -299,7 +317,7 @@ test('hareketli sahneler (ön elemesiz): kancanın ilk 2 görseli + #1\'den baş
 });
 
 test('hareketli sahneler (ön elemeli): kalabalık görseller elenir, her maddenin en güvenli görseli seçilir', async () => {
-  const cfg = loadChannel().motion!;
+  const cfg = loadChannel().motion ?? sampleMotion;
   const s = normalizeListicle(rawListicle(15, 90), shape);
   const images: Record<string, string[]> = {};
   for (const sc of s.scenes) images[sc.id] = [0, 1, 2].map((k) => `${sc.id}-${k}.jpg`);
@@ -351,7 +369,7 @@ test('klip çekimleri: görselin ilk çekimleri en çok 6 sn\'lik tek klibe dön
 
 test('klip üretimi: önbellek, başarısız klip atlanır (sabit görsel kalır)', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'clips-'));
-  const cfg = { ...loadChannel().motion!, concurrency: 2 };
+  const cfg = { ...(loadChannel().motion ?? sampleMotion), concurrency: 2 };
   let calls = 0;
   const provider: MotionProvider = {
     name: 'fake',
@@ -375,7 +393,7 @@ test('klip üretimi: önbellek, başarısız klip atlanır (sabit görsel kalır
 });
 
 test('klip kalite kontrolü: bozulma öncesi kullanılır, 2 sn\'den kısaysa klip atılır, sonuç önbellekte', async () => {
-  const cfg = loadChannel().motion!;
+  const cfg = loadChannel().motion ?? sampleMotion;
   assert.equal(usableSeconds(cfg, null), cfg.use_seconds);
   assert.equal(usableSeconds(cfg, { goodUntil: 8, issue: 'none' }), cfg.use_seconds);
   assert.equal(usableSeconds(cfg, { goodUntil: 3, issue: 'x' }), 3);
@@ -402,4 +420,39 @@ test('klip kalite kontrolü: bozulma öncesi kullanılır, 2 sn\'den kısaysa kl
   assert.ok(logs.some((l) => l.includes('face melts')));
   await generateMotionClips(targets, provider, cfg, dir);
   assert.equal(checks, 3); // ikinci çalıştırmada denetim önbellekten
+});
+
+test('derinlik efekti: karışık seçim (görsellerin yarısı, sahneden sahneye kayar), hareket türleri sırayla', () => {
+  const ch = loadChannel();
+  const cfg = ch.parallax!;
+  assert.equal(cfg.every, 2);
+  assert.equal(ch.motion, undefined); // ücretli Veo kapalı
+  const s = normalizeListicle(rawListicle(15, 90), shape);
+  const images: Record<string, string[]> = {};
+  for (const sc of s.scenes) images[sc.id] = [0, 1, 2, 3].map((k) => `${sc.id}-${k}.jpg`);
+  const t = pickParallaxTargets(s, images, cfg);
+  const total = Object.values(images).reduce((a, b) => a + b.length, 0);
+  assert.equal(t.length, total / 2);
+  const first = s.scenes[0].id;
+  const second = s.scenes[1].id;
+  assert.deepEqual(t.filter((x) => x.sceneId === first).map((x) => x.index), [0, 2]);
+  assert.deepEqual(t.filter((x) => x.sceneId === second).map((x) => x.index), [1, 3]);
+  assert.deepEqual(t.slice(0, 4).map((x) => x.mode), ['push', 'left', 'pull', 'right']);
+  assert.equal(pickParallaxTargets(s, images, { ...cfg, every: 1 }).length, total);
+});
+
+test('derinlik efekti: Python yoksa uyarı verir, görseller klasik harekette kalır', async () => {
+  assert.equal(await parallaxAvailable('python-yok-xyz'), false);
+  const cfg = loadChannel().parallax!;
+  const logs: string[] = [];
+  const r = await generateParallaxClips([{ sceneId: 's1', index: 0, image: 'yok.jpg', mode: 'push' }], cfg, {
+    model: 'yok.onnx',
+    dir: mkdtempSync(join(tmpdir(), 'plx-')),
+    fps: 25,
+    python: 'python-yok-xyz',
+    log: (m) => logs.push(m),
+  });
+  assert.deepEqual(r.files, {});
+  assert.equal(r.generated, 0);
+  assert.ok(logs.some((l) => l.includes('klasik hareket')));
 });

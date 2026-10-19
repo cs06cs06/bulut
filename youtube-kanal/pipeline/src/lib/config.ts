@@ -48,7 +48,15 @@ export interface ChannelConfig {
     concurrency: number;
     style: string;
   };
-  /** Hareketli sahneler: seçili görseller Google Veo ile kısa kliplere çevrilir (yoksa yalnızca sabit görseller). */
+  /** Derinlik (parallax) efekti: görsellerin bir kısmı "3D fotoğraf" klibine çevrilir (ücretsiz, bilgisayarda). */
+  parallax?: {
+    every: number;
+    seconds: number;
+    strength: number;
+    concurrency: number;
+    model_url: string;
+  };
+  /** Hareketli sahneler (isteğe bağlı, ücretli): seçili görseller Google Veo ile kısa kliplere çevrilir. */
   motion?: {
     provider: 'google';
     model: string;

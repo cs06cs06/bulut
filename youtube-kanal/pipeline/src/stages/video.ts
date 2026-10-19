@@ -13,6 +13,7 @@ import { captureAll, type SceneCapture } from '../media/capture.ts';
 import { generateSceneImages, styledPrompt, type ImageProvider } from '../media/images.ts';
 import { probeDuration } from '../media/ffmpeg.ts';
 import { generateMotionClips, selectMotionTargets, type MotionProvider } from '../media/motion.ts';
+import { ensureDepthModel, generateParallaxClips, parallaxAvailable, pickParallaxTargets } from '../media/parallax.ts';
 import { buildAudio, buildPlacedAudio, makePop, muxFinal, renderSegments, renderThumbnail, sceneSpecs, type SceneExtras } from '../media/render.ts';
 import { buildJcutTimeline, buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration, type TimedScene } from '../media/timeline.ts';
 import {
@@ -126,10 +127,32 @@ export async function buildVideo(args: {
     ep.finish('images');
   }
 
-  // Hareketli sahneler: kancanın ve en güçlü maddelerin ilk görselleri Veo ile kısa kliplere çevrilir
   let clipFiles: Record<string, Record<string, string>> = {};
   let clipSeconds: Record<string, Record<string, number>> = {};
   let clipsGenerated = 0;
+  const addClips = (files: typeof clipFiles, secs: typeof clipSeconds) => {
+    for (const [id, m] of Object.entries(files)) Object.assign((clipFiles[id] ??= {}), m);
+    for (const [id, m] of Object.entries(secs)) Object.assign((clipSeconds[id] ??= {}), m);
+  };
+
+  // Derinlik efekti (ücretsiz): görsellerin bir kısmı "3D fotoğraf" klibine çevrilir, kalanı klasik kayma/yakınlaşma
+  if (needsImages && channel.parallax) {
+    if (!(await parallaxAvailable())) {
+      log('   ⚠️ Derinlik efekti atlandı: Python paketleri (numpy, opencv-python-headless, onnxruntime) kurulu değil');
+    } else {
+      try {
+        const targets = pickParallaxTargets(script, imageFiles, channel.parallax);
+        log(`🌄 Derinlik efekti (${targets.length} görsel)`);
+        const model = await ensureDepthModel(channel.parallax, log);
+        const res = await generateParallaxClips(targets, channel.parallax, { model, dir: ep.workPath('parallax'), fps, log });
+        addClips(res.files, res.seconds);
+      } catch (e) {
+        log(`   ⚠️ Derinlik efekti atlandı: ${(e as Error).message.slice(0, 200)}`);
+      }
+    }
+  }
+
+  // Hareketli sahneler (isteğe bağlı, Veo): seçili görseller kısa kliplere çevrilir
   if (needsImages && args.motion && channel.motion) {
     const targets = await selectMotionTargets(script, imageFiles, channel.motion, args.motion, ep.workPath('clips', 'screen.json'), log);
     if (targets.length) {
@@ -137,8 +160,7 @@ export async function buildVideo(args: {
       const res = await generateMotionClips(targets, args.motion, channel.motion, ep.workPath('clips'), (m) => {
         if (m.includes('⚠️') || m.startsWith(`   ${targets.length}/`)) log(m);
       });
-      clipFiles = res.files;
-      clipSeconds = res.seconds;
+      addClips(res.files, res.seconds);
       clipsGenerated = res.generated;
       log(`   ${targets.length - res.dropped} klip kullanılacak, ${res.dropped} klip kalite kontrolünden geçemedi`);
       ep.finish('clips');

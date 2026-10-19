@@ -28,7 +28,7 @@ metadata:
   max_tokens: 8000
 
 budget:
-  monthly_usd: 150          # yapay zekâ + görsel + hareketli klip üretimi; aşılırsa yeni video başlamaz (video başına ~10 $)
+  monthly_usd: 80           # yapay zekâ + görsel üretimi; aşılırsa yeni video başlamaz (video başına ~4–5 $)
 
 prices:
   claude-opus-5-5:   { input: 4.00, output: 20.00, cache_write: 5.00, cache_read: 0.20 }

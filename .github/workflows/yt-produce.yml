@@ -50,12 +50,22 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: youtube-kanal/pipeline/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Araçları kur (ffmpeg, yazı tipi, Chromium)
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq ffmpeg fonts-inter fonts-dejavu-core > /dev/null
           npm ci
           npx playwright install --with-deps chromium
+          # derinlik (parallax) efekti için (ücretsiz, bilgisayarda çalışır)
+          python -m pip install -q numpy opencv-python-headless onnxruntime
+      - name: Derinlik modelini önbellekten al
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/yt-kanal
+          key: yt-depth-anything-v2-small
       - name: Yarım kalan çalışmayı geri yükle
         uses: actions/cache/restore@v4
         with:
