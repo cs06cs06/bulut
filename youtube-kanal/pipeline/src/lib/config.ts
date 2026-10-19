@@ -48,6 +48,34 @@ export interface ChannelConfig {
     concurrency: number;
     style: string;
   };
+  /** Derinlik (parallax) efekti: görsellerin bir kısmı "3D fotoğraf" klibine çevrilir (ücretsiz, bilgisayarda). */
+  parallax?: {
+    every: number;
+    seconds: number;
+    strength: number;
+    concurrency: number;
+    model_url: string;
+  };
+  /** Hareketli sahneler (isteğe bağlı, ücretli): seçili görseller Google Veo ile kısa kliplere çevrilir. */
+  motion?: {
+    provider: 'google';
+    model: string;
+    resolution: '720p' | '1080p';
+    duration_seconds: number;
+    use_seconds: number;
+    price_per_second: number;
+    hook_clips: number;
+    /** video başına en çok klip (kanca dahil); maddeler #1'den başlayarak seçilir */
+    max_clips: number;
+    /** ön eleme: görselin hareketlendirme güvenliği (1–5, Gemini) en az bu olmalı; kalabalık sahneler Veo'ya gönderilmez */
+    screen_min_safety?: number;
+    concurrency: number;
+    prompt: string;
+    /** klip kalite kontrolü (Gemini görsel modeli): bozulmanın başladığı saniyeden sonrası kullanılmaz */
+    qa_model?: string;
+    /** temiz kısmı bundan kısa klip atılır (sabit görsel kalır) */
+    min_seconds?: number;
+  };
   /** Film görünümü: video kodlanırken ffmpeg ile uygulanır (tarayıcıda her karede hesaplamaktan çok daha hızlı). */
   look?: { grade: string; grain: number; vignette: number };
   thumbnail?: { style: 'browser' | 'bar' };

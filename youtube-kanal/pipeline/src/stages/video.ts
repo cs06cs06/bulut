@@ -12,7 +12,9 @@ import type { Script } from '../lib/script.ts';
 import { captureAll, type SceneCapture } from '../media/capture.ts';
 import { generateSceneImages, styledPrompt, type ImageProvider } from '../media/images.ts';
 import { probeDuration } from '../media/ffmpeg.ts';
-import { buildAudio, buildPlacedAudio, makePop, muxFinal, renderSegments, renderThumbnail, sceneSpecs } from '../media/render.ts';
+import { generateMotionClips, selectMotionTargets, type MotionProvider } from '../media/motion.ts';
+import { ensureDepthModel, generateParallaxClips, parallaxAvailable, pickParallaxTargets } from '../media/parallax.ts';
+import { buildAudio, buildPlacedAudio, makePop, muxFinal, renderSegments, renderThumbnail, sceneSpecs, type SceneExtras } from '../media/render.ts';
 import { buildJcutTimeline, buildSrt, buildTimeline, chapters, formatTimestamp, totalDuration, type TimedScene } from '../media/timeline.ts';
 import {
   alignSentences,
@@ -42,6 +44,8 @@ export interface VideoOutputs {
   ttsChars: number;
   /** bu çalıştırmada üretilen görsel sayısı (maliyet için) */
   imagesGenerated: number;
+  /** üretilen Veo klibi sayısı (maliyet takibi) */
+  clipsGenerated: number;
   shorts: string[];
 }
 
@@ -84,6 +88,7 @@ export async function buildVideo(args: {
   links: AffiliateLink[];
   tts: TtsProvider;
   images?: ImageProvider;
+  motion?: MotionProvider;
   log?: (msg: string) => void;
 }): Promise<VideoOutputs> {
   const { ep, browser, channel, script, meta, links, tts } = args;
@@ -122,6 +127,46 @@ export async function buildVideo(args: {
     ep.finish('images');
   }
 
+  let clipFiles: Record<string, Record<string, string>> = {};
+  let clipSeconds: Record<string, Record<string, number>> = {};
+  let clipsGenerated = 0;
+  const addClips = (files: typeof clipFiles, secs: typeof clipSeconds) => {
+    for (const [id, m] of Object.entries(files)) Object.assign((clipFiles[id] ??= {}), m);
+    for (const [id, m] of Object.entries(secs)) Object.assign((clipSeconds[id] ??= {}), m);
+  };
+
+  // Derinlik efekti (ücretsiz): görsellerin bir kısmı "3D fotoğraf" klibine çevrilir, kalanı klasik kayma/yakınlaşma
+  if (needsImages && channel.parallax) {
+    if (!(await parallaxAvailable())) {
+      log('   ⚠️ Derinlik efekti atlandı: Python paketleri (numpy, opencv-python-headless, onnxruntime) kurulu değil');
+    } else {
+      try {
+        const targets = pickParallaxTargets(script, imageFiles, channel.parallax);
+        log(`🌄 Derinlik efekti (${targets.length} görsel)`);
+        const model = await ensureDepthModel(channel.parallax, log);
+        const res = await generateParallaxClips(targets, channel.parallax, { model, dir: ep.workPath('parallax'), fps, log });
+        addClips(res.files, res.seconds);
+      } catch (e) {
+        log(`   ⚠️ Derinlik efekti atlandı: ${(e as Error).message.slice(0, 200)}`);
+      }
+    }
+  }
+
+  // Hareketli sahneler (isteğe bağlı, Veo): seçili görseller kısa kliplere çevrilir
+  if (needsImages && args.motion && channel.motion) {
+    const targets = await selectMotionTargets(script, imageFiles, channel.motion, args.motion, ep.workPath('clips', 'screen.json'), log);
+    if (targets.length) {
+      log(`🎞️  Hareketli sahneler (${targets.length} klip)`);
+      const res = await generateMotionClips(targets, args.motion, channel.motion, ep.workPath('clips'), (m) => {
+        if (m.includes('⚠️') || m.startsWith(`   ${targets.length}/`)) log(m);
+      });
+      addClips(res.files, res.seconds);
+      clipsGenerated = res.generated;
+      log(`   ${targets.length - res.dropped} klip kullanılacak, ${res.dropped} klip kalite kontrolünden geçemedi`);
+      ep.finish('clips');
+    }
+  }
+
   log('🌐 Web sayfalarının ekran görüntüleri');
   const capPath = ep.workPath('captures.json');
   const previous: SceneCapture[] = existsSync(capPath) ? JSON.parse(readFileSync(capPath, 'utf8')) : [];
@@ -134,7 +179,8 @@ export async function buildVideo(args: {
 
   // Kurgu zamanlamaları: cümle sınırları → altyazılar, vurgu (punch-in) ve abone çağrısı anları
   let captions: CaptionEvent[] = [];
-  const extras: Record<string, { punchAt?: number | null; subscribeAt?: number | null; assFile?: string }> = {};
+  const extras: Record<string, SceneExtras> = {};
+  for (const [id, clips] of Object.entries(clipFiles)) extras[id] = { clips, clipSeconds: clipSeconds[id] };
   const sfx: { file: string; start: number; volume?: number }[] = [];
   if (edit) {
     const timing = await sceneTiming(script, tl, voice.files);
@@ -146,6 +192,7 @@ export async function buildVideo(args: {
       const punch = rel(timing.punch[sc.id] ?? null);
       const sub = rel(timing.subscribe[sc.id] ?? null);
       extras[sc.id] = {
+        ...extras[sc.id],
         punchAt: punch != null && punch > 0.6 && punch < t.duration - 0.8 ? punch : null,
         subscribeAt: sub != null && sub >= 0 && sub < t.duration ? sub : null,
       };
@@ -235,7 +282,7 @@ export async function buildVideo(args: {
   const shortFiles: string[] = [];
   if (edit?.shorts && script.shorts?.length) {
     log('📱 Shorts');
-    const res = await renderShorts({ ep, browser, channel, script, tts, images: imageFiles, count: edit.shorts, log });
+    const res = await renderShorts({ ep, browser, channel, script, tts, images: imageFiles, clips: clipFiles, clipSeconds, count: edit.shorts, log });
     shortFiles.push(...res);
   }
   const uploadTxt = join(outDir, 'upload.txt');
@@ -259,7 +306,7 @@ export async function buildVideo(args: {
   copyFileSync(uploadTxt, ep.path('upload.txt'));
   copyFileSync(thumbnail, ep.path('thumbnail.jpg'));
   ep.writeJson('timeline.json', tl.map((t, i) => ({ ...t, chapter: script.scenes[i].chapter, visual: specs[i].visual.type })));
-  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars, imagesGenerated, shorts: shortFiles };
+  return { dir: outDir, video, thumbnail, srt, uploadTxt, duration, ttsChars: voice.chars, imagesGenerated, clipsGenerated, shorts: shortFiles };
 }
 
 /** Sahne sesleri için cümle sınırları; altyazı olayları, vurgu ve abone anlarının mutlak zamanları. */

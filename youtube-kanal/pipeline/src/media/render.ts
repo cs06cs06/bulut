@@ -58,6 +58,8 @@ export interface SceneSpec {
   punchAt?: number | null;
   subscribeAt?: number | null;
   assFile?: string;
+  clips?: Record<string, string>;
+  clipSeconds?: Record<string, number>;
   channel: string;
   chapter: string;
   visual: Visual;
@@ -68,6 +70,8 @@ export interface SceneSpec {
   shots: { src: string; kind: string; box: unknown; caption: string }[];
 }
 
+export type SceneExtras = { punchAt?: number | null; subscribeAt?: number | null; assFile?: string; clips?: Record<string, string>; clipSeconds?: Record<string, number> };
+
 export function sceneSpecs(
   channel: ChannelConfig,
   scenes: Scene[],
@@ -75,7 +79,7 @@ export function sceneSpecs(
   captures: SceneCapture[],
   images: Record<string, string[]> = {},
   videoTitle = '',
-  extras: Record<string, { punchAt?: number | null; subscribeAt?: number | null; assFile?: string }> = {},
+  extras: Record<string, SceneExtras> = {},
 ): SceneSpec[] {
   const byId = new Map(captures.map((c) => [c.sceneId, c]));
   const total = scenes.filter((s) => s.visual.type === 'photos' && s.visual.number > 0).length;

@@ -12,6 +12,7 @@ import { launchBrowser } from '../media/browser.ts';
 import { formatTimestamp } from '../media/timeline.ts';
 import { ttsFromConfig } from '../media/tts.ts';
 import { imagesFromConfig, type ImageProvider } from '../media/images.ts';
+import { motionFromConfig } from '../media/motion.ts';
 import { credsFromEnv, uploadVideo } from '../media/youtube.ts';
 import { generateIdeas } from '../stages/ideas.ts';
 import { buildVideo } from '../stages/video.ts';
@@ -147,12 +148,13 @@ async function main(): Promise<void> {
     const browser = await launchBrowser();
     let out;
     try {
-      out = await buildVideo({ ep, browser, channel, script, meta, links, tts, images, log });
+      out = await buildVideo({ ep, browser, channel, script, meta, links, tts, images, motion: images ? motionFromConfig(channel) : undefined, log });
     } finally {
       await browser.close();
     }
     ledger.add(0, { ttsChars: out.ttsChars });
     if (out.imagesGenerated) charge(out.imagesGenerated * (channel.images?.price_per_image ?? 0));
+    if (out.clipsGenerated && channel.motion) charge(out.clipsGenerated * channel.motion.duration_seconds * channel.motion.price_per_second);
 
     // 8) İsteğe bağlı YouTube yüklemesi
     if (channel.youtube.upload && !ep.meta.youtube_id) {

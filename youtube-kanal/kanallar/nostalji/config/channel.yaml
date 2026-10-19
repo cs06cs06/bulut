@@ -75,6 +75,17 @@ images:
     North American setting and period-correct details. No text, no captions, no watermark, no readable
     brand logos, no modern objects.
 
+# Derinlik (parallax) efekti — ücretsiz: derinlik haritası bilgisayarda açık kaynak bir modelle (Depth Anything V2)
+# çıkarılır; kamera hafifçe kayarken/yaklaşırken yakın nesneler uzaktakilerden daha çok hareket eder ("3D fotoğraf").
+# Karışık kullanım: her sahnede görseller sırayla derinlik efektli ve klasik kayma/yakınlaşmalı gelir.
+# Kapatmak için bu bölümü silin. (Ücretli Veo hareketli sahneleri: motion bölümü — şu an kapalı, README'ye bakın.)
+parallax:
+  every: 2                      # 2: görsellerin yarısı derinlik efektli (sırayla); 3: üçte biri
+  seconds: 6                    # efektli kısmın süresi (görselin kalan süresi klasik kadrajlarla devam eder)
+  strength: 0.022               # yakın–uzak arası en fazla kayma (görüntü genişliğine oran)
+  concurrency: 3
+  model_url: https://huggingface.co/onnx-community/depth-anything-v2-small/resolve/main/onnx/model.onnx
+
 # Videodaki film görünümü (ffmpeg filtreleri; görsel sahnelerine uygulanır)
 look:
   grade: "eq=contrast=1.06:saturation=1.05:brightness=-0.01,colorbalance=rs=0.05:gs=0.01:bs=-0.06:rm=0.03:bm=-0.04"   # sıcak 70'ler tonu
