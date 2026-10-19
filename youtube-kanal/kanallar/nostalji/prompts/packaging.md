@@ -20,8 +20,9 @@ Tıklanmayan video en iyi içerik olsa da algoritmada gömülür; bu yüzden pak
   "WE ALL DID THIS"). Son kelime sarıyla vurgulanacak; en güçlü kelimeyi sona koy.
 - `thumbnail_prompt`: Kapağın fotoğrafı için İngilizce 30–50 kelimelik tarif. **#1 maddeden** tek, güçlü, yakın ve
   sade bir sahne: merkezde tek ana öğe ya da bir-iki kişi, abartılı ama gerçekçi bir duygu (şaşkınlık, kahkaha, korku),
-  sıcak ışık; alt %25 boş kalsın (yazı şeridi gelecek). Konuya uyuyorsa sahnede döneme uygun giyinmiş, orta yaşlı,
-  bakımlı ve çekici bir kadın olsun (1966 sonrası için mini etek ya da askılı bluz olabilir; zarif, cinsel imasız).
+  sıcak ışık; alt %25 boş kalsın (yazı şeridi gelecek). Konuya uyuyorsa sahnede olgun (40–55), bakımlı, çekici ve
+  dolgun, kıvrımlı bir kadın olsun; döneme uygun açık kıyafet (1966 sonrası mini etek, halter ya da askılı üst; zarif,
+  cinsel pozsuz).
   Yazı, logo, ünlü kişi yok; çocuklar güvenli ve uygun durumda.
 
 ## Merak ve açık döngü
