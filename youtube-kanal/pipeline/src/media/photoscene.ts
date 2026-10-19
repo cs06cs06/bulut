@@ -50,7 +50,7 @@ export function lookFilters(look: ChannelConfig['look'] | undefined, temporal = 
   const f: string[] = [];
   if (look?.grade?.trim()) f.push(look.grade.trim());
   if (look && look.vignette > 0) f.push(`vignette=angle=${((Math.min(1, look.vignette) * Math.PI) / 3).toFixed(3)}`);
-  if (look && look.grain > 0) f.push(`noise=alls=${Math.round(Math.min(0.3, look.grain) * (temporal ? 70 : 100))}:allf=${temporal ? 't' : '0'}`);
+  if (look && look.grain > 0) f.push(`noise=alls=${Math.round(Math.min(0.3, look.grain) * (temporal ? 30 : 100))}:allf=${temporal ? 't' : '0'}`); // videoda hafif: karede değişen gren sıkıştırılamaz, dosyayı şişirir
   return f;
 }
 
@@ -328,7 +328,7 @@ export async function renderPhotoScene(
     '-map', '[out]',
     '-frames:v', String(frames),
     '-r', String(fps),
-    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-pix_fmt', 'yuv420p',
+    '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '21', '-maxrate', '8M', '-bufsize', '16M', '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
     out,
   ]);
