@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 21.36,
+    "frames": 534,
+    "audioOffset": 0.4,
+    "audioDuration": 19.848,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 21.36,
+    "duration": 38.44,
+    "frames": 961,
+    "audioOffset": -0.6120000000000019,
+    "audioDuration": 37.944,
+    "audioStart": 20.747999999999998,
+    "chapter": "#15 Riding in the Back of the Pickup",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 59.8,
+    "duration": 41.68,
+    "frames": 1042,
+    "audioOffset": -0.607999999999997,
+    "audioDuration": 41.184,
+    "audioStart": 59.192,
+    "chapter": "#14 Hot Steel Slides Over Concrete",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 101.48,
+    "duration": 45.52,
+    "frames": 1138,
+    "audioOffset": -0.6039999999999992,
+    "audioDuration": 45.024,
+    "audioStart": 100.876,
+    "chapter": "#13 Burning Leaves at the Curb",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 147,
+    "duration": 37.92,
+    "frames": 948,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 37.416,
+    "audioStart": 146.4,
+    "chapter": "#12 Full Service, Leaded, Fill 'er Up",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 184.92,
+    "duration": 47.92,
+    "frames": 1198,
+    "audioOffset": -0.603999999999985,
+    "audioDuration": 47.424,
+    "audioStart": 184.316,
+    "chapter": "#11 Lead Paint on the Windowsill",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 232.84,
+    "duration": 41.32,
+    "frames": 1033,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 40.824,
+    "audioStart": 232.24,
+    "chapter": "#10 Chasing the Mosquito Fogging Truck",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 274.16,
+    "duration": 50.32,
+    "frames": 1258,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 49.824,
+    "audioStart": 273.564,
+    "chapter": "#9 Walking Grandma Right to the Gate",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 324.48,
+    "duration": 43.68,
+    "frames": 1092,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 43.176,
+    "audioStart": 323.88800000000003,
+    "chapter": "#8 Eighteen and Legal at the Bar",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 368.16,
+    "duration": 40.56,
+    "frames": 1014,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 40.056,
+    "audioStart": 367.564,
+    "chapter": "#7 Running to the Store for Mom's Cigarettes",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 408.72,
+    "duration": 48.32,
+    "frames": 1208,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 47.808,
+    "audioStart": 408.12,
+    "chapter": "#6 Ashtrays in Every Room in Town",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 457.04,
+    "duration": 42.96,
+    "frames": 1074,
+    "audioOffset": -0.6120000000000232,
+    "audioDuration": 42.456,
+    "audioStart": 456.428,
+    "chapter": "#5 No Helmets, Home by Streetlights",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 500,
+    "duration": 39.4,
+    "frames": 985,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 38.928,
+    "audioStart": 499.384,
+    "chapter": "#4 Baby on Mom's Lap, Kids in Back",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 539.4,
+    "duration": 41.24,
+    "frames": 1031,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 40.728,
+    "audioStart": 538.812,
+    "chapter": "#3 Seatbelts Buried in the Seat",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 580.64,
+    "duration": 41.8,
+    "frames": 1045,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 41.304,
+    "audioStart": 580.04,
+    "chapter": "#2 Lawn Darts at the Family Picnic",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 622.44,
+    "duration": 45.6,
+    "frames": 1140,
+    "audioOffset": -0.5960000000001173,
+    "audioDuration": 45.096,
+    "audioStart": 621.8439999999999,
+    "chapter": "#1 Smoking at Thirty Thousand Feet",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 668.04,
+    "duration": 22.64,
+    "frames": 566,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 22.416,
+    "audioStart": 667.4399999999999,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
