@@ -47,8 +47,14 @@ notlarından ve önceden belirlenmiş paketlemeden (başlık + kapak), izleyiciy
   insanlar/eylem, biri yakın plan detay (nesne, el, yüz).
 - Her tarif İngilizce, 25–45 kelime, tek kare: kim (yaş, kıyafet), nerede (şehir/eyalet/il ve yıl:
   "Ohio, 1964", "Winnipeg, 1962"), ne yapıyor, nesneler, ışık, kamera açısı. Ana konu kadrajın ortasında olsun.
-- Yasak: okunur yazı/tabela, gerçek marka logoları, ünlü kişiler, çıplaklık, şiddet; çocuklar güvenli ve uygun
-  durumda (sigara, alkol, silah çocukların elinde değil). Stil ifadesi ekleme; kanal stili otomatik eklenir.
+- **Yetişkin kadınlar daha sık görünsün:** Konuya uyduğu her yerde sahnelere orta yaşlı (yaklaşık 35–50), bakımlı ve
+  çekici kadınlar koy (anneler, komşular, öğretmenler, mağaza çalışanları, eşler); her maddede en az bir tarifte
+  yetişkin bir kadın olsun. Kıyafetleri döneme uygun olsun: **1966 ve sonrası** sahnelerde bazı kadınlar mini etek ya da
+  diz üstü etek, bazıları yaz sahnelerinde askılı bluz veya kolsuz üst giysin; 1950'ler ve 60'ların başında dönemin
+  kıyafetleri (diz altı etek, gömlek elbise, kazak) kullanılır. Tarifler zarif ve doğal olsun, cinsel imadan uzak
+  dur; bu kıyafet tarifleri yalnızca yetişkin kadınlar içindir, çocuklara asla uygulanmaz.
+- Yasak: okunur yazı/tabela, gerçek marka logoları, ünlü kişiler, çıplaklık, cinsel poz ya da ima, şiddet; çocuklar
+  güvenli ve uygun durumda (sigara, alkol, silah çocukların elinde değil). Stil ifadesi ekleme; kanal stili otomatik eklenir.
 
 ## Doğruluk
 - Somut bilgiler (fiyat, yıl, yasa) yalnızca araştırma notlarında doğrulanmış olanlardan; "unverified" olanları kesin
