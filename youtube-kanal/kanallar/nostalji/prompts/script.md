@@ -47,12 +47,14 @@ notlarından ve önceden belirlenmiş paketlemeden (başlık + kapak), izleyiciy
   insanlar/eylem, biri yakın plan detay (nesne, el, yüz).
 - Her tarif İngilizce, 25–45 kelime, tek kare: kim (yaş, kıyafet), nerede (şehir/eyalet/il ve yıl:
   "Ohio, 1964", "Winnipeg, 1962"), ne yapıyor, nesneler, ışık, kamera açısı. Ana konu kadrajın ortasında olsun.
-- **Yetişkin kadınlar daha sık görünsün:** Konuya uyduğu her yerde sahnelere orta yaşlı (yaklaşık 35–50), bakımlı ve
-  çekici kadınlar koy (anneler, komşular, öğretmenler, mağaza çalışanları, eşler); her maddede en az bir tarifte
-  yetişkin bir kadın olsun. Kıyafetleri döneme uygun olsun: **1966 ve sonrası** sahnelerde bazı kadınlar mini etek ya da
-  diz üstü etek, bazıları yaz sahnelerinde askılı bluz veya kolsuz üst giysin; 1950'ler ve 60'ların başında dönemin
-  kıyafetleri (diz altı etek, gömlek elbise, kazak) kullanılır. Tarifler zarif ve doğal olsun, cinsel imadan uzak
-  dur; bu kıyafet tarifleri yalnızca yetişkin kadınlar içindir, çocuklara asla uygulanmaz.
+- **Yetişkin kadınlar daha sık görünsün:** Konuya uyduğu her yerde sahnelere olgun kadınlar koy (yaklaşık 40–55 yaş,
+  yaşı belli olan, bakımlı ve çekici; dolgun, kıvrımlı, hafif balık etli vücut): anneler, komşular, öğretmenler, mağaza
+  çalışanları, eşler. Her maddede en az bir tarifte böyle bir kadın olsun; tarifte yaşı ve vücut yapısını açıkça yaz
+  ("a curvy, full-figured woman about 48"). Kıyafetler döneme uygun ve açık olsun: **1966 ve sonrası** sahnelerde kısa
+  mini etek, boyundan bağlamalı üst (halter top), ince askılı yazlık elbise, kolsuz bluz; **1970 ve sonrası** yaz
+  sahnelerinde şort; plaj, havuz ve göl sahnelerinde dönemin mayosu. 1950'ler ve 60'ların başında dönemin kıyafetleri
+  (diz altı etek, gömlek elbise, kazak) kullanılır. Görüntüler doğal ve zarif olsun: cinsel poz, iç çamaşırı, dekolteye
+  odaklanan kadraj yok. Bu kıyafet ve vücut tarifleri yalnızca yetişkin kadınlar içindir, çocuklara asla uygulanmaz.
 - Yasak: okunur yazı/tabela, gerçek marka logoları, ünlü kişiler, çıplaklık, cinsel poz ya da ima, şiddet; çocuklar
   güvenli ve uygun durumda (sigara, alkol, silah çocukların elinde değil). Stil ifadesi ekleme; kanal stili otomatik eklenir.
 
