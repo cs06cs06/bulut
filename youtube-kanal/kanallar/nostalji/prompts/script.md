@@ -48,9 +48,9 @@ notlarından ve önceden belirlenmiş paketlemeden (başlık + kapak), izleyiciy
 - Her tarif İngilizce, 25–45 kelime, tek kare: kim (yaş, kıyafet), nerede (şehir/eyalet/il ve yıl:
   "Ohio, 1964", "Winnipeg, 1962"), ne yapıyor, nesneler, ışık, kamera açısı. Ana konu kadrajın ortasında olsun.
 - **Yetişkin kadınlar çok sık görünsün:** İnsan olan hemen her tarifte en az bir yetişkin kadın olsun: olgun (yaklaşık
-  40–55 yaş, yaşı belli olan), dolgun ve kıvrımlı, bakımlı, şık ve kendinden emin; 70'lerin dergi reklamlarındaki gibi
+  40–55 yaş, yaşı belli olan), ince ya da orta yapılı ama kıvrımlı (biçimli), bakımlı, şık ve kendinden emin; 70'lerin dergi reklamlarındaki gibi
   sıcak gülümseyen, karizmatik kadınlar (anneler, komşular, öğretmenler, sekreterler, garsonlar, kuaförler, eşler).
-  Tarifte yaşı ve vücut yapısını açıkça yaz ("a confident, curvy woman about 48").
+  Tarifte yaşı ve vücut yapısını açıkça yaz ("a confident, slender but shapely woman about 48").
 - **Yetişkin sahneleri:** Madde izin verdiği ölçüde her maddenin görsellerinden en az biri yalnızca yetişkinlerin olduğu bir
   sahne olsun (ev partisi, dans salonu, diner, ofis, kuaför, plaj, göl evi, araba gezisi, mahalle barbeküsü). Bu
   sahnelerde kadınlar göz alıcı ve son moda giyinsin: **1966 ve sonrası** dönemin en kısa mini etekleri ve mini
