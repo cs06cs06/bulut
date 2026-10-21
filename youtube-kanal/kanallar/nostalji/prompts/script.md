@@ -52,7 +52,9 @@ notlarından ve önceden belirlenmiş paketlemeden (başlık + kapak), izleyiciy
   sıcak gülümseyen, karizmatik kadınlar (anneler, komşular, öğretmenler, sekreterler, garsonlar, kuaförler, eşler).
   Tarifte yaşı ve vücut yapısını açıkça yaz ("a confident, slender but shapely woman about 48").
 - **Yetişkin sahneleri:** Madde izin verdiği ölçüde her maddenin görsellerinden en az biri yalnızca yetişkinlerin olduğu bir
-  sahne olsun (ev partisi, dans salonu, diner, ofis, kuaför, plaj, göl evi, araba gezisi, mahalle barbeküsü). Bu
+  sahne olsun (ev partisi, dans salonu, diner, ofis, kuaför, plaj, göl evi, araba gezisi, mahalle barbeküsü). Konu
+  bir on yılı kapsıyorsa ("the 1960s") bu yetişkin sahnelerinin yılını tercihen on yılın son yarısından seç (1960'lar
+  için 1966–1969), böylece mini etek ve mini elbiseler düzenli olarak görünsün. Bu
   sahnelerde kadınlar göz alıcı ve son moda giyinsin: **1966 ve sonrası** dönemin en kısa mini etekleri ve mini
   elbiseleri, vücuda oturan kıyafetler, halter ve ince askılı üstler; **1970 ve sonrası** yazın kısa şort; plaj, havuz ve
   göl sahnelerinde dönemin mayoları. **1950'ler ve 60'ların başında** (mini etek henüz yok) vücuda oturan, göz alıcı
