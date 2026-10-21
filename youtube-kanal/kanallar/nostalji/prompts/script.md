@@ -47,14 +47,19 @@ notlarından ve önceden belirlenmiş paketlemeden (başlık + kapak), izleyiciy
   insanlar/eylem, biri yakın plan detay (nesne, el, yüz).
 - Her tarif İngilizce, 25–45 kelime, tek kare: kim (yaş, kıyafet), nerede (şehir/eyalet/il ve yıl:
   "Ohio, 1964", "Winnipeg, 1962"), ne yapıyor, nesneler, ışık, kamera açısı. Ana konu kadrajın ortasında olsun.
-- **Yetişkin kadınlar daha sık görünsün:** Konuya uyduğu her yerde sahnelere olgun kadınlar koy (yaklaşık 40–55 yaş,
-  yaşı belli olan, bakımlı ve çekici; dolgun, kıvrımlı, hafif balık etli vücut): anneler, komşular, öğretmenler, mağaza
-  çalışanları, eşler. Her maddede en az bir tarifte böyle bir kadın olsun; tarifte yaşı ve vücut yapısını açıkça yaz
-  ("a curvy, full-figured woman about 48"). Kıyafetler döneme uygun ve açık olsun: **1966 ve sonrası** sahnelerde kısa
-  mini etek, boyundan bağlamalı üst (halter top), ince askılı yazlık elbise, kolsuz bluz; **1970 ve sonrası** yaz
-  sahnelerinde şort; plaj, havuz ve göl sahnelerinde dönemin mayosu. 1950'ler ve 60'ların başında dönemin kıyafetleri
-  (diz altı etek, gömlek elbise, kazak) kullanılır. Görüntüler doğal ve zarif olsun: cinsel poz, iç çamaşırı, dekolteye
-  odaklanan kadraj yok. Bu kıyafet ve vücut tarifleri yalnızca yetişkin kadınlar içindir, çocuklara asla uygulanmaz.
+- **Yetişkin kadınlar çok sık görünsün:** İnsan olan hemen her tarifte en az bir yetişkin kadın olsun: olgun (yaklaşık
+  40–55 yaş, yaşı belli olan), dolgun ve kıvrımlı, bakımlı, şık ve kendinden emin; 70'lerin dergi reklamlarındaki gibi
+  sıcak gülümseyen, karizmatik kadınlar (anneler, komşular, öğretmenler, sekreterler, garsonlar, kuaförler, eşler).
+  Tarifte yaşı ve vücut yapısını açıkça yaz ("a confident, curvy woman about 48").
+- **Yetişkin sahneleri:** Madde izin verdiği ölçüde her maddenin görsellerinden en az biri yalnızca yetişkinlerin olduğu bir
+  sahne olsun (ev partisi, dans salonu, diner, ofis, kuaför, plaj, göl evi, araba gezisi, mahalle barbeküsü). Bu
+  sahnelerde kadınlar göz alıcı ve son moda giyinsin: **1966 ve sonrası** dönemin en kısa mini etekleri ve mini
+  elbiseleri, vücuda oturan kıyafetler, halter ve ince askılı üstler; **1970 ve sonrası** yazın kısa şort; plaj, havuz ve
+  göl sahnelerinde dönemin mayoları. 1950'ler ve 60'ların başında dönemin şık kıyafetleri (kalem etek, bel vurgulu elbise).
+- **Çocuklu sahneler:** Kadınlar yine bakımlı ve şık, ama gündelik aile kıyafetiyle (diz üstü etek, kolsuz bluz, yazlık
+  elbise).
+- Görüntüler doğal ve zarif olsun: cinsel poz, flörtöz ima, iç çamaşırı, dekolteye ya da vücuda odaklanan kadraj yok. Bu
+  kıyafet ve vücut tarifleri yalnızca yetişkin kadınlar içindir, çocuklara asla uygulanmaz.
 - Yasak: okunur yazı/tabela, gerçek marka logoları, ünlü kişiler, çıplaklık, cinsel poz ya da ima, şiddet; çocuklar
   güvenli ve uygun durumda (sigara, alkol, silah çocukların elinde değil). Stil ifadesi ekleme; kanal stili otomatik eklenir.
 
