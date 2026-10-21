@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 23.48,
+    "frames": 587,
+    "audioOffset": 0.4,
+    "audioDuration": 21.984,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 23.48,
+    "duration": 48.96,
+    "frames": 1224,
+    "audioOffset": -0.5960000000000001,
+    "audioDuration": 48.456,
+    "audioStart": 22.884,
+    "chapter": "#15 Santa on Military Radar",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 72.44,
+    "duration": 49.6,
+    "frames": 1240,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 49.104,
+    "audioStart": 71.84,
+    "chapter": "#14 The Four-Cent Christmas Stamp",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 122.04,
+    "duration": 44.08,
+    "frames": 1102,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 43.584,
+    "audioStart": 121.444,
+    "chapter": "#13 Angel Hair That Made Us Itch",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 166.12,
+    "duration": 39.48,
+    "frames": 987,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 38.976,
+    "audioStart": 165.52800000000002,
+    "chapter": "#12 Big Hot Bulbs and Tangled Strings",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 205.6,
+    "duration": 40.24,
+    "frames": 1006,
+    "audioOffset": -0.5959999999999752,
+    "audioDuration": 39.744,
+    "audioStart": 205.00400000000002,
+    "chapter": "#11 Glass Ornaments Thin as Bubbles",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 245.84,
+    "duration": 42.92,
+    "frames": 1073,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 42.408,
+    "audioStart": 245.24800000000002,
+    "chapter": "#10 An Orange in the Toe",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 288.76,
+    "duration": 48.8,
+    "frames": 1220,
+    "audioOffset": -0.603999999999985,
+    "audioDuration": 48.288,
+    "audioStart": 288.156,
+    "chapter": "#9 TV Specials Only Once a Year",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 337.56,
+    "duration": 41.44,
+    "frames": 1036,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 40.968,
+    "audioStart": 336.944,
+    "chapter": "#8 Christmas Records From the Tire Store",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 379,
+    "duration": 47.72,
+    "frames": 1193,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 47.208,
+    "audioStart": 378.41200000000003,
+    "chapter": "#7 Eaton's, the Parade and Toyland",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 426.72,
+    "duration": 45.36,
+    "frames": 1134,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 44.856,
+    "audioStart": 426.12,
+    "chapter": "#6 Batteries Not Included",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 472.08,
+    "duration": 43.92,
+    "frames": 1098,
+    "audioOffset": -0.603999999999985,
+    "audioDuration": 43.416,
+    "audioStart": 471.476,
+    "chapter": "#5 Bubble Lights We Waited For",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 516,
+    "duration": 46.48,
+    "frames": 1162,
+    "audioOffset": -0.6079999999999472,
+    "audioDuration": 45.984,
+    "audioStart": 515.392,
+    "chapter": "#4 The Sears Wish Book",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 562.48,
+    "duration": 50.8,
+    "frames": 1270,
+    "audioOffset": -0.6039999999999281,
+    "audioDuration": 50.304,
+    "audioStart": 561.8760000000001,
+    "chapter": "#3 The Silver Aluminum Tree",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 613.28,
+    "duration": 48.44,
+    "frames": 1211,
+    "audioOffset": -0.599999999999909,
+    "audioDuration": 47.928,
+    "audioStart": 612.6800000000001,
+    "chapter": "#2 The Turning Color Wheel",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 661.72,
+    "duration": 49.72,
+    "frames": 1243,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 49.224,
+    "audioStart": 661.1080000000001,
+    "chapter": "#1 Tinsel, One Strand at a Time",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 711.44,
+    "duration": 25.36,
+    "frames": 634,
+    "audioOffset": -0.6079999999999472,
+    "audioDuration": 25.128,
+    "audioStart": 710.8320000000001,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
