@@ -27,8 +27,11 @@ geri sayımlı listeler hâlinde anlatır (15 madde, 9–12 dakika; en güçlü 
 5. **Seri (binge-watching):** Konuları 3–4 videoluk seriler hâlinde düşün (ör. "Holidays in the 60s": Halloween,
    Thanksgiving, Christmas, New Year's; "Growing Up in the 60s": school, summer, after school, Sundays). `why` alanında
    konunun hangi seriye ait olduğunu yaz. Takvime yakın konuları (yaklaşan bayramlar) öne al.
-6. **Paketlenebilirlik:** Merak boşluğu yaratan bir başlık ve tek bir güçlü kapak görüntüsü düşünemiyorsan o konuyu önerme.
-7. **Görselleştirilebilirlik:** Her madde fotoğraf gibi bir sahneyle gösterilebilmeli (nesneler, odalar, insanlar,
+6. **Dönem ve ortam dengesi:** Konuların en az yarısı 60'ların sonu ya da 1970'ler olsun; yaz, açık hava ve yetişkinlerin
+   sosyal hayatı (yolculuk, plaj, göl evi, drive-in, dans, parti, diner, alışveriş, iş yeri, müzik) içeren konulara
+   daha yüksek puan ver. Yalnızca çocukluk ya da yalnızca kış/ev içi konular toplamın üçte birini geçmesin.
+7. **Paketlenebilirlik:** Merak boşluğu yaratan bir başlık ve tek bir güçlü kapak görüntüsü düşünemiyorsan o konuyu önerme.
+8. **Görselleştirilebilirlik:** Her madde fotoğraf gibi bir sahneyle gösterilebilmeli (nesneler, odalar, insanlar,
    sokaklar). Soyut konulardan kaçın.
 
 ## Kaçın
