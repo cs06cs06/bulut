@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 19.64,
+    "frames": 491,
+    "audioOffset": 0.4,
+    "audioDuration": 18.144,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 19.64,
+    "duration": 46.28,
+    "frames": 1157,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 45.768,
+    "audioStart": 19.043999999999997,
+    "chapter": "#15 The Percolator Going Blub-Blub",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 65.92,
+    "duration": 39.12,
+    "frames": 978,
+    "audioOffset": -0.6080000000000041,
+    "audioDuration": 38.616,
+    "audioStart": 65.312,
+    "chapter": "#14 The Aluminum Ice Cube Tray",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 105.04,
+    "duration": 41.2,
+    "frames": 1030,
+    "audioOffset": -0.612000000000009,
+    "audioDuration": 40.728,
+    "audioStart": 104.428,
+    "chapter": "#13 The Bread Box by the Toaster",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 146.24,
+    "duration": 38.4,
+    "frames": 960,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 37.896,
+    "audioStart": 145.656,
+    "chapter": "#12 The Church Key and Wall Opener",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 184.64,
+    "duration": 39.2,
+    "frames": 980,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 38.688,
+    "audioStart": 184.05200000000002,
+    "chapter": "#11 The Matching Canister Set",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 223.84,
+    "duration": 37.48,
+    "frames": 937,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 36.984,
+    "audioStart": 223.24,
+    "chapter": "#10 The Grease Can on the Stove",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 261.32,
+    "duration": 49.96,
+    "frames": 1249,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 49.464,
+    "audioStart": 260.724,
+    "chapter": "#9 Washing and Drying, Side by Side",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 311.28,
+    "duration": 43.28,
+    "frames": 1082,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 42.768,
+    "audioStart": 310.688,
+    "chapter": "#8 The Chrome and Formica Table",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 354.56,
+    "duration": 43.56,
+    "frames": 1089,
+    "audioOffset": -0.603999999999985,
+    "audioDuration": 43.056,
+    "audioStart": 353.956,
+    "chapter": "#7 The Deep Freeze in the Basement",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 398.12,
+    "duration": 44.6,
+    "frames": 1115,
+    "audioOffset": -0.6080000000000041,
+    "audioDuration": 44.088,
+    "audioStart": 397.512,
+    "chapter": "#6 Milk Bottles on the Doorstep",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 442.72,
+    "duration": 39.52,
+    "frames": 988,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 39.048,
+    "audioStart": 442.1,
+    "chapter": "#5 TV Dinners on Folding Trays",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 482.24,
+    "duration": 42.52,
+    "frames": 1063,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 42.024,
+    "audioStart": 481.648,
+    "chapter": "#4 Avocado and Harvest Gold Everything",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 524.76,
+    "duration": 43.6,
+    "frames": 1090,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 43.104,
+    "audioStart": 524.172,
+    "chapter": "#3 The Wobbling Gelatin Mold",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 568.36,
+    "duration": 45.68,
+    "frames": 1142,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 45.144,
+    "audioStart": 567.7760000000001,
+    "chapter": "#2 Mom's Recipe Box",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 614.04,
+    "duration": 49.28,
+    "frames": 1232,
+    "audioOffset": -0.6199999999998909,
+    "audioDuration": 48.816,
+    "audioStart": 613.4200000000001,
+    "chapter": "#1 The Wall Phone with the Long Cord",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 663.32,
+    "duration": 25.64,
+    "frames": 641,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 25.416,
+    "audioStart": 662.7360000000001,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
