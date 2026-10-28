@@ -193,8 +193,8 @@
   status: üretiliyor
   added: 2026-10-18
   episode: 2026-10-26-15-things-on-every-thanksgiving-table-in-the-1960s-almost
-  failures: 1
-  error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CgQqWFq4G2sXWSisF3PWe"}
+  failures: 2
+  error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CgUZ5jGX6afeSzbEm6JAP"}
 - id: 15-things-we-circled-in-the-christmas-catalog-in-the-1960s
   title: 15 Things We Circled in the Christmas Catalog in the 1960s
   query: christmas 1960s memories
