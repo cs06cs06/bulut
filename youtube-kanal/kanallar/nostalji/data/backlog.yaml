@@ -190,11 +190,11 @@
   angle: From the kids' table and the relish tray to the green bean casserole, the good china and Dad carving at the head of the table, this is Thanksgiving dinner exactly as you remember it.
   why: Holidays in the 60s serisi (2/4, Cadılar Bayramı videosunun devamı). ABD Şükran Günü 26 Kasım'da, yayın Kasım'ın ilk haftasında olmalı. Yorumlarda tarif ve aile anısı paylaşımını tetikler.
   score: 10
-  status: üretiliyor
+  status: reddedildi
   added: 2026-10-18
   episode: 2026-10-26-15-things-on-every-thanksgiving-table-in-the-1960s-almost
-  failures: 2
-  error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CgUZ5jGX6afeSzbEm6JAP"}
+  failures: 3
+  error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Your credit balance is too low to access the Anthropic API. Please go to Plans & Billing to upgrade or purchase credits."},"request_id":"req_011CgYLrnu3hpLdatErtjrig"}
 - id: 15-things-we-circled-in-the-christmas-catalog-in-the-1960s
   title: 15 Things We Circled in the Christmas Catalog in the 1960s
   query: christmas 1960s memories
