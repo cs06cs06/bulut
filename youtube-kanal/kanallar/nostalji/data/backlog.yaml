@@ -321,3 +321,159 @@
   score: 7
   status: bekliyor
   added: 2026-10-18
+- id: 15-things-every-family-did-on-thanksgiving-day-in-the-1970s
+  title: 15 Things Every Family Did on Thanksgiving Day in the 1970s — Unthinkable Today
+  query: thanksgiving 1970s memories
+  tools:
+    - 1970s
+    - thanksgiving
+    - family
+  format: listicle
+  angle: "Not the food but the whole day: the parade on the console TV, the kids' table, everyone in their Sunday best, ashtrays in the living room and Dad asleep in the recliner. A full Thanksgiving day, hour by hour."
+  why: First video in the 'Holidays in the 70s' series. Thanksgiving is Nov 26, so this is the most urgent topic. It follows the day's rituals rather than the table, which keeps it clear of the rejected 'Thanksgiving table' video. It draws on 'things we did in the 70s' and '1970s holiday nostalgia'.
+  score: 9
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-1970s-christmas-party-had-almost-forgotten
+  title: 15 Things Every 1970s Christmas Party Had — Almost Forgotten
+  query: 1970s christmas nostalgia
+  tools:
+    - 1970s
+    - christmas
+    - party
+  format: listicle
+  angle: "Office parties and neighborhood holiday parties: the punch bowl, fondue, the cheese ball, the aluminum tree, records on the hi-fi and cigarette smoke everywhere. The adults' Christmas the grandkids never saw."
+  why: Second video in the 'Holidays in the 70s' series. It matches the strong '1970s christmas nostalgia' search, focuses on adult social life and makes an easy cover image (a party in a wood-paneled basement).
+  score: 9
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-new-year-s-eve-traditions-from-the-1960s-and-70s-only
+  title: 15 New Year's Eve Traditions From the 1960s and 70s Only People Over 60 Remember
+  query: 1960s holiday nostalgia
+  tools:
+    - 1960s
+    - 1970s
+    - new year's eve
+  format: listicle
+  angle: Party hats and noisemakers, the countdown on TV, the champagne coupe, the house party with the record player, kids sneaking a sip of the punch. How we welcomed the new year back then.
+  why: Closes out the 'Holidays in the 60s/70s' series and should go up late December. It is based on '1960s holiday nostalgia' and is built around adult parties.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-1970s-diner-served-almost-forgotten
+  title: 15 Things Every 1970s Diner Served — Almost Forgotten
+  query: things from the 70s you don't see anymore
+  tools:
+    - 1970s
+    - diner
+    - food
+  format: listicle
+  angle: The tabletop jukebox, the patty melt, the endless coffee refill, the pie case on the counter, the waitress who called you 'hon'. A forgotten diner menu, dish by dish.
+  why: First video in a new 'Eating Out in the 70s' series. It ties into the news about retro food and packaging comebacks and Circana's finding that retro restaurant promotions do well. The visuals are very strong.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-woman-wore-in-the-1970s-grandkids-are
+  title: 15 Things Every Woman Wore in the 1970s — Grandkids Are Copying Them Now
+  query: 1970s looks
+  tools:
+    - 1970s
+    - fashion
+    - women
+  format: listicle
+  angle: Bell-bottoms, the '70s ponytail, platform shoes, the granny bag, polyester pantsuits. The 1970s wardrobe that's back in style and turning up in your granddaughter's closet.
+  why: Belongs to a 'Style of the 70s' series. It ties into October 2026 news about granny fashion and the retro '70s ponytail, matches the '1950s looks' and '1970s aesthetic' searches, and is something to share with grandchildren.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-everyone-did-at-the-drive-in-in-the-1960s
+  title: 15 Things Everyone Did at the Drive-In in the 1960s — Unthinkable Today
+  query: growing up in the 60s and 70s
+  tools:
+    - 1960s
+    - drive-in
+    - movies
+  format: listicle
+  angle: The speaker hooked on the car window, kids in pajamas in the back seat, the snack bar countdown on the screen, sneaking friends in the trunk. A summer night at the drive-in.
+  why: First video in a 'Saturday Night Out' series. It's adult social life outdoors and draws on the strong '1960s movies' and 'growing up in the 60s and 70s' searches. Every item can be shown as a clear scene.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-office-worker-did-in-the-1970s-unthinkable
+  title: 15 Things Every Office Worker Did in the 1970s — Unthinkable Today
+  query: 1970s things that are no longer allowed
+  tools:
+    - 1970s
+    - office
+    - work
+  format: listicle
+  angle: An ashtray on every desk, typewriters and carbon paper, the three-martini lunch, the coffee cart, the Rolodex, the office party. Work life that would get you fired today.
+  why: Belongs to a 'Work Life in the 70s' series. It uses the 'no longer allowed' search phrasing, focuses on adult life and is full of humor and things viewers will want to share in the comments.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-canadian-family-did-at-the-cottage-in-the
+  title: 15 Things Every Canadian Family Did at the Cottage in the 1970s
+  query: 1970s canada
+  tools:
+    - canada
+    - 1970s
+    - cottage
+  format: listicle
+  angle: The long drive to cottage country, the dock and the canoe, the outhouse, black flies, card games under a kerosene lamp, the general store in town. A Canadian summer by the lake.
+  why: Canada-only topic, about 1 in 4 of this list. It deliberately takes a different angle (summer, lake and road trip) from the existing Canada 1960s package. It ties into The Chive's popular Canadian nostalgia post and the 'Summers in the 70s' series.
+  score: 8
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-family-did-at-the-beach-in-the-1970s
+  title: 15 Things Every Family Did at the Beach in the 1970s — Unthinkable Today
+  query: 1970s life
+  tools:
+    - 1970s
+    - beach
+    - summer
+  format: listicle
+  angle: Baby oil instead of sunscreen, a transistor radio, a metal cooler, sandy sandwiches, the station wagon packed full. A day at the beach the way it really was.
+  why: Belongs to a 'Summers in the 70s' series. It's a summer and outdoor topic that gets extra points, and it offsets the winter holiday videos. It matches '1970s life' and 'things we did in the 70s'.
+  score: 7
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-at-every-1960s-grocery-store-that-have-vanished
+  title: 15 Things at Every 1960s Grocery Store That Have Vanished Forever
+  query: things from the 1960s
+  tools:
+    - 1960s
+    - grocery store
+    - shopping
+  format: listicle
+  angle: Green stamps, the bag boy carrying groceries to your car, the cash register with the ringing bell, glass milk bottles, the butcher behind the counter. A weekly shopping trip from back then.
+  why: Belongs to a 'Shopping in the 60s/70s' series. It fits the trend of brands and packaging comebacks, is a shared memory across the US and Canada, and every item can be shown as an object.
+  score: 7
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-canadian-remembers-from-shopping-in-the
+  title: 15 Things Every Canadian Remembers From Shopping in the 1970s — Almost Forgotten
+  query: 1960s toronto
+  tools:
+    - canada
+    - 1970s
+    - stores
+  format: listicle
+  angle: The Kresge lunch counter, Woolco, the Simpsons-Sears catalogue, the Consumers Distributing order slip, sales tax added at the till. Vanished Canadian stores and shopping habits.
+  why: Canada-only topic, part of the 'Shopping in the 60s/70s' series. It avoids the existing Canada package's Eaton's and Canadian Tire money items and matches the '1960s toronto/montreal' searches.
+  score: 7
+  status: bekliyor
+  added: 2026-11-01
+- id: 15-things-every-canadian-teenager-did-on-a-saturday-night-in
+  title: 15 Things Every Canadian Teenager Did on a Saturday Night in the 1970s
+  query: 1970s teen
+  tools:
+    - canada
+    - 1970s
+    - teenagers
+  format: listicle
+  angle: The dance at the community hall, the hamburger joint, cruising Main Street, the arena after the game, Canadian rock on CHUM radio. A Canadian Saturday night out.
+  why: Canada-only topic, part of the 'Saturday Night Out' series. It draws on the '1970s teen' and 'radio canada' searches. It's about youth social life rather than childhood and has lots of music, dancing and outdoor scenes.
+  score: 7
+  status: bekliyor
+  added: 2026-11-01
