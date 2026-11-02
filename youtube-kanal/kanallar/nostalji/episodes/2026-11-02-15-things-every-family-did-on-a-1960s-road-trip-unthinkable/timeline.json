@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 19.56,
+    "frames": 489,
+    "audioOffset": 0.4,
+    "audioDuration": 18.048,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 19.56,
+    "duration": 39.4,
+    "frames": 985,
+    "audioOffset": -0.6120000000000019,
+    "audioDuration": 38.928,
+    "audioStart": 18.947999999999997,
+    "chapter": "#15 Dad Refused to Stop",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 58.96,
+    "duration": 40.8,
+    "frames": 1020,
+    "audioOffset": -0.5840000000000103,
+    "audioDuration": 40.296,
+    "audioStart": 58.37599999999999,
+    "chapter": "#14 Free Road Maps and Mom Navigating",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 99.76,
+    "duration": 40.72,
+    "frames": 1018,
+    "audioOffset": -0.5880000000000081,
+    "audioDuration": 40.224,
+    "audioStart": 99.172,
+    "chapter": "#13 Reading the Rhyming Roadside Signs",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 140.48,
+    "duration": 39.28,
+    "frames": 982,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 38.784,
+    "audioStart": 139.896,
+    "chapter": "#12 The License Plate Game",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 179.76,
+    "duration": 43.52,
+    "frames": 1088,
+    "audioOffset": -0.5800000000000125,
+    "audioDuration": 43.008,
+    "audioStart": 179.17999999999998,
+    "chapter": "#11 No Air Conditioning, Hot Vinyl Seats",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 223.28,
+    "duration": 38.64,
+    "frames": 966,
+    "audioOffset": -0.592000000000013,
+    "audioDuration": 38.136,
+    "audioStart": 222.688,
+    "chapter": "#10 Thirty Cents a Gallon",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 261.92,
+    "duration": 46.88,
+    "frames": 1172,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 46.368,
+    "audioStart": 261.324,
+    "chapter": "#9 The Full-Service Attendant",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 308.8,
+    "duration": 39.84,
+    "frames": 996,
+    "audioOffset": -0.6080000000000041,
+    "audioDuration": 39.336,
+    "audioStart": 308.192,
+    "chapter": "#8 Roadside Picnics From the Cooler",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 348.64,
+    "duration": 39.52,
+    "frames": 988,
+    "audioOffset": -0.6119999999999663,
+    "audioDuration": 39.048,
+    "audioStart": 348.028,
+    "chapter": "#7 Dad Smoking With Windows Up",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 388.16,
+    "duration": 47.84,
+    "frames": 1196,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 47.328,
+    "audioStart": 387.576,
+    "chapter": "#6 Brand-New Highways and Open Roads",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 436,
+    "duration": 40.28,
+    "frames": 1007,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 39.768,
+    "audioStart": 435.404,
+    "chapter": "#5 Picking Up Hitchhikers",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 476.28,
+    "duration": 45.28,
+    "frames": 1132,
+    "audioOffset": -0.6079999999999472,
+    "audioDuration": 44.784,
+    "audioStart": 475.672,
+    "chapter": "#4 The Neon Motel With a Pool",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 521.56,
+    "duration": 37.32,
+    "frames": 933,
+    "audioOffset": -0.6039999999999281,
+    "audioDuration": 36.816,
+    "audioStart": 520.956,
+    "chapter": "#3 Secret Seats: Shelf, Hump, Front Bench",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 558.88,
+    "duration": 42.56,
+    "frames": 1064,
+    "audioOffset": -0.6079999999999472,
+    "audioDuration": 42.048,
+    "audioStart": 558.272,
+    "chapter": "#2 Nobody Buckled Up",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 601.44,
+    "duration": 41.68,
+    "frames": 1042,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 41.184,
+    "audioStart": 600.82,
+    "chapter": "#1 The Way-Back of the Station Wagon",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 643.12,
+    "duration": 24.16,
+    "frames": 604,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 23.976,
+    "audioStart": 642.504,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
