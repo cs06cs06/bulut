@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 20.44,
+    "frames": 511,
+    "audioOffset": 0.4,
+    "audioDuration": 18.936,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 20.44,
+    "duration": 42.64,
+    "frames": 1066,
+    "audioOffset": -0.6040000000000028,
+    "audioDuration": 42.144,
+    "audioStart": 19.836,
+    "chapter": "#15 Stacking 45s on the Record Changer",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 63.08,
+    "duration": 41.56,
+    "frames": 1039,
+    "audioOffset": -0.6000000000000014,
+    "audioDuration": 41.064,
+    "audioStart": 62.48,
+    "chapter": "#14 A Hit Single for Under a Dollar",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 104.64,
+    "duration": 41.76,
+    "frames": 1044,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 41.256,
+    "audioStart": 104.044,
+    "chapter": "#13 Mono or Stereo at the Store",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 146.4,
+    "duration": 42.44,
+    "frames": 1061,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 41.928,
+    "audioStart": 145.8,
+    "chapter": "#12 A Record Player in the Car",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 188.84,
+    "duration": 38.32,
+    "frames": 958,
+    "audioOffset": -0.6119999999999948,
+    "audioDuration": 37.848,
+    "audioStart": 188.228,
+    "chapter": "#11 The Glass Listening Booth",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 227.16,
+    "duration": 40.28,
+    "frames": 1007,
+    "audioOffset": -0.5839999999999748,
+    "audioDuration": 39.744,
+    "audioStart": 226.57600000000002,
+    "chapter": "#10 The Record Club by Mail",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 267.44,
+    "duration": 52.84,
+    "frames": 1321,
+    "audioOffset": -0.6199999999999477,
+    "audioDuration": 52.368,
+    "audioStart": 266.82000000000005,
+    "chapter": "#9 Top Forty and the Fast-Talking DJ",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 320.28,
+    "duration": 42.04,
+    "frames": 1051,
+    "audioOffset": -0.5919999999999277,
+    "audioDuration": 41.544,
+    "audioStart": 319.68800000000005,
+    "chapter": "#8 Push Buttons on the AM Car Radio",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 362.32,
+    "duration": 43.04,
+    "frames": 1076,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 42.528,
+    "audioStart": 361.732,
+    "chapter": "#7 The Eight-Track Goes Ka-Chunk",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 405.36,
+    "duration": 45.96,
+    "frames": 1149,
+    "audioOffset": -0.5999999999999659,
+    "audioDuration": 45.456,
+    "audioStart": 404.76000000000005,
+    "chapter": "#6 Taping Songs Off the Radio",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 451.32,
+    "duration": 41.64,
+    "frames": 1041,
+    "audioOffset": -0.6039999999999281,
+    "audioDuration": 41.136,
+    "audioStart": 450.71600000000007,
+    "chapter": "#5 FM Grows Up",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 492.96,
+    "duration": 43.44,
+    "frames": 1086,
+    "audioOffset": -0.6079999999998904,
+    "audioDuration": 42.936,
+    "audioStart": 492.3520000000001,
+    "chapter": "#4 One Radio, a Whole Crowd",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 536.4,
+    "duration": 40.96,
+    "frames": 1024,
+    "audioOffset": -0.6119999999998527,
+    "audioDuration": 40.488,
+    "audioStart": 535.7880000000001,
+    "chapter": "#3 The Jukebox at the Diner",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 577.36,
+    "duration": 49.28,
+    "frames": 1232,
+    "audioOffset": -0.5839999999999463,
+    "audioDuration": 48.744,
+    "audioStart": 576.7760000000001,
+    "chapter": "#2 The Family Hi-Fi Console",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 626.64,
+    "duration": 57.52,
+    "frames": 1438,
+    "audioOffset": -0.6199999999998909,
+    "audioDuration": 57.048,
+    "audioStart": 626.0200000000001,
+    "chapter": "#1 The Transistor Radio Under the Pillow",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 684.16,
+    "duration": 25.32,
+    "frames": 633,
+    "audioOffset": -0.5919999999998709,
+    "audioDuration": 25.104,
+    "audioStart": 683.5680000000001,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
