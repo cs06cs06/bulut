@@ -1,5 +1,6 @@
-# Araba yarışı oyununu GitHub Pages'e yayınlar: https://cs06cs06.github.io/bulut/araba-yarisi/
-name: "GitHub Pages · Yayın"
+# Araba yarışı oyununu gh-pages dalına (GitHub Pages) ekler: https://cs06cs06.github.io/bulut/araba-yarisi/
+# Sitedeki diğer oyunlara dokunmaz; yalnızca araba-yarisi/ klasörünü ve ana sayfadaki kartını günceller.
+name: "GitHub Pages · Araba Yarışı"
 
 on:
   push:
@@ -10,35 +11,41 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: gh-pages
+  cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}araba-yarisi/
     steps:
       - uses: actions/checkout@v5
-      - name: Siteyi hazırla
-        # Yalnızca oyun yayınlanır; deponun geri kalanı siteye konmaz.
+      - name: gh-pages dalına yayınla
         run: |
-          mkdir -p _site
-          cp -r araba-yarisi _site/araba-yarisi
-          printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=araba-yarisi/"><a href="araba-yarisi/">Bulut GP</a>\n' > _site/index.html
-          touch _site/.nojekyll
-      - uses: actions/configure-pages@v5
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v4
-        with:
-          path: _site
-      - id: deployment
-        uses: actions/deploy-pages@v4
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null; then
+            git fetch --depth 1 origin gh-pages
+            git worktree add site origin/gh-pages
+            git -C site checkout -B gh-pages
+          else
+            git worktree add --orphan -b gh-pages site
+          fi
+          rm -rf site/araba-yarisi
+          cp -r araba-yarisi site/araba-yarisi
+          touch site/.nojekyll
+          # Ana sayfa: yoksa oluştur, varsa oyunun kartını bir kez ekle.
+          CARD='<a class="card" href="araba-yarisi/" style="margin-top:18px"><img src="araba-yarisi/kapak.jpg" alt="Bulut GP ekran görüntüsü" /><div class="body"><h2>Bulut GP</h2><p>Gün batımı pistinde 5 rakibe karşı 3 turluk 3D araba yarışı. Drift, nitro; bilgisayarda ve mobilde oynanır.</p><span class="play">OYNA</span></div></a>'
+          if [ ! -f site/index.html ]; then
+            printf '<!doctype html><html lang="tr"><meta charset="utf-8"><title>bulut — oyunlar</title><main>\n%s\n</main></html>\n' "$CARD" > site/index.html
+          elif ! grep -q 'href="araba-yarisi/"' site/index.html; then
+            CARD="$CARD" perl -0pi -e 's{</main>}{    $ENV{CARD}\n  </main>}' site/index.html
+          fi
+          cd site
+          git add -A
+          git diff --cached --quiet && { echo "Değişiklik yok"; exit 0; }
+          git commit -m "Deploy araba-yarisi ${GITHUB_SHA::7}"
+          git push origin gh-pages
