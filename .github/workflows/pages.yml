@@ -1,0 +1,44 @@
+# Araba yarışı oyununu GitHub Pages'e yayınlar: https://cs06cs06.github.io/bulut/araba-yarisi/
+name: "GitHub Pages · Yayın"
+
+on:
+  push:
+    branches: [main, ccr-c75cbc77-56v2tl]
+    paths:
+      - "araba-yarisi/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}araba-yarisi/
+    steps:
+      - uses: actions/checkout@v5
+      - name: Siteyi hazırla
+        # Yalnızca oyun yayınlanır; deponun geri kalanı siteye konmaz.
+        run: |
+          mkdir -p _site
+          cp -r araba-yarisi _site/araba-yarisi
+          printf '<!DOCTYPE html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=araba-yarisi/"><a href="araba-yarisi/">Bulut GP</a>\n' > _site/index.html
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
