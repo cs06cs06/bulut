@@ -18,7 +18,7 @@
     "episode": "2026-11-11-15-things-every-family-did-on-thanksgiving-day-in-the-1970s"
   },
   "created": "2026-11-11T10:54:47.624Z",
-  "updated": "2026-11-11T12:37:38.387Z",
+  "updated": "2026-11-11T12:39:38.894Z",
   "stages": {
     "research": "2026-11-11T10:57:48.103Z",
     "script": "2026-11-11T11:01:36.465Z",
@@ -26,8 +26,9 @@
     "voice": "2026-11-11T12:17:16.185Z",
     "images": "2026-11-11T12:24:32.083Z",
     "capture": "2026-11-11T12:28:04.323Z",
-    "render": "2026-11-11T12:37:38.387Z"
+    "render": "2026-11-11T12:37:38.387Z",
+    "thumbnail": "2026-11-11T12:38:04.537Z"
   },
-  "cost_usd": 1.6473,
+  "cost_usd": 5.0241,
   "duration_seconds": 686
 }
