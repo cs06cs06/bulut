@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 21.6,
+    "frames": 540,
+    "audioOffset": 0.4,
+    "audioDuration": 20.088,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 21.6,
+    "duration": 43.36,
+    "frames": 1084,
+    "audioOffset": -0.6120000000000019,
+    "audioDuration": 42.864,
+    "audioStart": 20.988,
+    "chapter": "#15 The Turkey Went In Before Sunrise",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 64.96,
+    "duration": 38.8,
+    "frames": 970,
+    "audioOffset": -0.6079999999999899,
+    "audioDuration": 38.304,
+    "audioStart": 64.352,
+    "chapter": "#14 No Hotline, You Called Mom",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 103.76,
+    "duration": 40.36,
+    "frames": 1009,
+    "audioOffset": -0.6039999999999992,
+    "audioDuration": 39.864,
+    "audioStart": 103.156,
+    "chapter": "#13 The Parade on the Console TV",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 144.12,
+    "duration": 36.12,
+    "frames": 903,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 35.616,
+    "audioStart": 143.52,
+    "chapter": "#12 Santa Opened the Christmas Season",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 180.24,
+    "duration": 43.48,
+    "frames": 1087,
+    "audioOffset": -0.603999999999985,
+    "audioDuration": 42.984,
+    "audioStart": 179.63600000000002,
+    "chapter": "#11 Everyone in Their Sunday Best",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 223.72,
+    "duration": 41.92,
+    "frames": 1048,
+    "audioOffset": -0.5999999999999659,
+    "audioDuration": 41.424,
+    "audioStart": 223.12000000000003,
+    "chapter": "#10 The Long Drive to Grandma's",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 265.64,
+    "duration": 41.56,
+    "frames": 1039,
+    "audioOffset": -0.5959999999999468,
+    "audioDuration": 41.064,
+    "audioStart": 265.04400000000004,
+    "chapter": "#9 Football All Afternoon",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 307.2,
+    "duration": 47.28,
+    "frames": 1182,
+    "audioOffset": -0.5919999999999277,
+    "audioDuration": 46.776,
+    "audioStart": 306.60800000000006,
+    "chapter": "#8 The Cousins' Backyard Football Game",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 354.48,
+    "duration": 40.92,
+    "frames": 1023,
+    "audioOffset": -0.5959999999999468,
+    "audioDuration": 40.416,
+    "audioStart": 353.88400000000007,
+    "chapter": "#7 One Oven, Five Casseroles",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 395.4,
+    "duration": 51.24,
+    "frames": 1281,
+    "audioOffset": -0.599999999999909,
+    "audioDuration": 50.736,
+    "audioStart": 394.80000000000007,
+    "chapter": "#6 The Gelatin Salad and Ridged Cranberry",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 446.64,
+    "duration": 39.08,
+    "frames": 977,
+    "audioOffset": -0.6039999999999281,
+    "audioDuration": 38.568,
+    "audioStart": 446.03600000000006,
+    "chapter": "#5 The Electric Knife and the Wishbone",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 485.72,
+    "duration": 41.88,
+    "frames": 1047,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 41.376,
+    "audioStart": 485.10400000000004,
+    "chapter": "#4 Dad Asleep in the Recliner",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 527.6,
+    "duration": 47.24,
+    "frames": 1181,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 46.776,
+    "audioStart": 526.98,
+    "chapter": "#3 A Turkey Cost Hours of Pay",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 574.84,
+    "duration": 41.4,
+    "frames": 1035,
+    "audioOffset": -0.58400000000006,
+    "audioDuration": 40.896,
+    "audioStart": 574.256,
+    "chapter": "#2 Ashtrays on the Coffee Table",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 616.24,
+    "duration": 45.64,
+    "frames": 1141,
+    "audioOffset": -0.5880000000000791,
+    "audioDuration": 45.144,
+    "audioStart": 615.6519999999999,
+    "chapter": "#1 The Kids' Table",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 661.88,
+    "duration": 23.88,
+    "frames": 597,
+    "audioOffset": -0.58400000000006,
+    "audioDuration": 23.664,
+    "audioStart": 661.2959999999999,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
