@@ -13,11 +13,22 @@
     "angle": "Remember lying on the floor with the big Christmas wish book, a pen in hand, circling every toy you dreamed of? Fifteen of the toys and gifts every kid wanted most.",
     "why": "Holidays in the 60s serisi (3/4). 'christmas 1960s memories' ve 'christmas nostalgia 1960s' aramalarına dayanıyor. Bekleyen Noel anıları videosundan farklı olarak dilek kataloğuna ve oyuncaklara odaklanıyor. Kasım ortasında yayınlanmalı. Kapak: halıda katalog karıştıran çocuk.",
     "score": 9,
-    "status": "bekliyor",
-    "added": "2026-10-18"
+    "status": "üretiliyor",
+    "added": "2026-10-18",
+    "episode": "2026-11-11-15-things-we-circled-in-the-christmas-catalog-in-the-1960s"
   },
   "created": "2026-11-11T12:53:54.666Z",
-  "updated": "2026-11-11T12:53:54.667Z",
-  "stages": {},
-  "cost_usd": 0
+  "updated": "2026-11-11T13:22:46.070Z",
+  "stages": {
+    "research": "2026-11-11T12:55:55.777Z",
+    "script": "2026-11-11T13:00:13.614Z",
+    "metadata": "2026-11-11T13:00:20.993Z",
+    "voice": "2026-11-11T13:03:48.864Z",
+    "images": "2026-11-11T13:10:47.909Z",
+    "capture": "2026-11-11T13:14:03.410Z",
+    "render": "2026-11-11T13:22:44.258Z",
+    "thumbnail": "2026-11-11T13:22:45.358Z"
+  },
+  "cost_usd": 4.5469,
+  "duration_seconds": 706
 }

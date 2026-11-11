@@ -1,0 +1,189 @@
+[
+  {
+    "id": "s01",
+    "start": 0,
+    "duration": 20.88,
+    "frames": 522,
+    "audioOffset": 0.4,
+    "audioDuration": 19.368,
+    "audioStart": 0.4,
+    "chapter": "Intro",
+    "visual": "photos"
+  },
+  {
+    "id": "s02",
+    "start": 20.88,
+    "duration": 44.4,
+    "frames": 1110,
+    "audioOffset": -0.6120000000000019,
+    "audioDuration": 43.896,
+    "audioStart": 20.267999999999997,
+    "chapter": "#15 The Electric Train Around the Tree",
+    "visual": "photos"
+  },
+  {
+    "id": "s03",
+    "start": 65.28,
+    "duration": 41.08,
+    "frames": 1027,
+    "audioOffset": -0.6159999999999997,
+    "audioDuration": 40.608,
+    "audioStart": 64.664,
+    "chapter": "#14 The Red Screen You Shook Clean",
+    "visual": "photos"
+  },
+  {
+    "id": "s04",
+    "start": 106.36,
+    "duration": 46.24,
+    "frames": 1156,
+    "audioOffset": -0.5880000000000081,
+    "audioDuration": 45.744,
+    "audioStart": 105.77199999999999,
+    "chapter": "#13 The Click-and-Look 3-D Viewer",
+    "visual": "photos"
+  },
+  {
+    "id": "s05",
+    "start": 152.6,
+    "duration": 48.56,
+    "frames": 1214,
+    "audioOffset": -0.5840000000000032,
+    "audioDuration": 48.048,
+    "audioStart": 152.016,
+    "chapter": "#12 The Spinning Gear Drawing Set",
+    "visual": "photos"
+  },
+  {
+    "id": "s06",
+    "start": 201.16,
+    "duration": 45,
+    "frames": 1125,
+    "audioOffset": -0.5960000000000036,
+    "audioDuration": 44.496,
+    "audioStart": 200.564,
+    "chapter": "#11 The Tin Fort Playset",
+    "visual": "photos"
+  },
+  {
+    "id": "s07",
+    "start": 246.16,
+    "duration": 43.2,
+    "frames": 1080,
+    "audioOffset": -0.5999999999999943,
+    "audioDuration": 42.696,
+    "audioStart": 245.56,
+    "chapter": "#10 The Doll That Talked Back",
+    "visual": "photos"
+  },
+  {
+    "id": "s08",
+    "start": 289.36,
+    "duration": 50.24,
+    "frames": 1256,
+    "audioOffset": -0.6040000000000418,
+    "audioDuration": 49.728,
+    "audioStart": 288.756,
+    "chapter": "#9 The Glowing Peg Picture Board",
+    "visual": "photos"
+  },
+  {
+    "id": "s09",
+    "start": 339.6,
+    "duration": 41.16,
+    "frames": 1029,
+    "audioOffset": -0.6160000000000423,
+    "audioDuration": 40.656,
+    "audioStart": 338.984,
+    "chapter": "#8 Tiny Hot Rods and Orange Track",
+    "visual": "photos"
+  },
+  {
+    "id": "s10",
+    "start": 380.76,
+    "duration": 44.32,
+    "frames": 1108,
+    "audioOffset": -0.6200000000000045,
+    "audioDuration": 43.848,
+    "audioStart": 380.14,
+    "chapter": "#7 Canada's Wishing Book Winter Pages",
+    "visual": "photos"
+  },
+  {
+    "id": "s11",
+    "start": 425.08,
+    "duration": 35.8,
+    "frames": 895,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 35.304,
+    "audioStart": 424.488,
+    "chapter": "#6 The Banana-Seat Bike Under the Tree",
+    "visual": "photos"
+  },
+  {
+    "id": "s12",
+    "start": 460.88,
+    "duration": 43.44,
+    "frames": 1086,
+    "audioOffset": -0.5879999999999654,
+    "audioDuration": 42.936,
+    "audioStart": 460.29200000000003,
+    "chapter": "#5 The Buzzing Doctor Game",
+    "visual": "photos"
+  },
+  {
+    "id": "s13",
+    "start": 504.32,
+    "duration": 44.84,
+    "frames": 1121,
+    "audioOffset": -0.5919999999999845,
+    "audioDuration": 44.328,
+    "audioStart": 503.728,
+    "chapter": "#4 The Twelve-Inch Doll for Boys",
+    "visual": "photos"
+  },
+  {
+    "id": "s14",
+    "start": 549.16,
+    "duration": 44.6,
+    "frames": 1115,
+    "audioOffset": -0.6039999999999281,
+    "audioDuration": 44.088,
+    "audioStart": 548.556,
+    "chapter": "#3 Baking Rubber Bugs on a Hot Plate",
+    "visual": "photos"
+  },
+  {
+    "id": "s15",
+    "start": 593.76,
+    "duration": 44.56,
+    "frames": 1114,
+    "audioOffset": -0.6159999999999854,
+    "audioDuration": 44.088,
+    "audioStart": 593.144,
+    "chapter": "#2 The Fashion Doll and Her Wardrobe",
+    "visual": "photos"
+  },
+  {
+    "id": "s16",
+    "start": 638.32,
+    "duration": 42.68,
+    "frames": 1067,
+    "audioOffset": -0.5880000000000791,
+    "audioDuration": 42.168,
+    "audioStart": 637.732,
+    "chapter": "#1 The Oven That Baked With Light Bulbs",
+    "visual": "photos"
+  },
+  {
+    "id": "s17",
+    "start": 681,
+    "duration": 25.64,
+    "frames": 641,
+    "audioOffset": -0.6000000000000227,
+    "audioDuration": 25.416,
+    "audioStart": 680.4,
+    "chapter": "Up next",
+    "visual": "photos"
+  }
+]
