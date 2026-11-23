@@ -209,8 +209,8 @@
   status: üretiliyor
   added: 2026-10-18
   episode: 2026-11-20-15-things-we-circled-in-the-christmas-catalog-in-the-1960s
-  failures: 1
-  error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011ChEKDRQytU5U3zTzjePoH"}
+  failures: 2
+  error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011ChL9yL3MfTxXSkb31ipMG"}
 - id: 15-things-every-family-did-in-the-fall-in-the-1960s
   title: 15 Things Every Family Did in the Fall in the 1960s — Unthinkable Today
   query: growing up in the 60s
