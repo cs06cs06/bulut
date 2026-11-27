@@ -351,8 +351,11 @@
   angle: "Office parties and neighborhood holiday parties: the punch bowl, fondue, the cheese ball, the aluminum tree, records on the hi-fi and cigarette smoke everywhere. The adults' Christmas the grandkids never saw."
   why: Second video in the 'Holidays in the 70s' series. It matches the strong '1970s christmas nostalgia' search, focuses on adult social life and makes an easy cover image (a party in a wood-paneled basement).
   score: 9
-  status: bekliyor
+  status: üretiliyor
   added: 2026-11-01
+  episode: 2026-11-27-15-things-every-1970s-christmas-party-had-almost-forgotten
+  failures: 1
+  error: 401 {"type":"error","error":{"type":"authentication_error","message":"invalid x-api-key"},"request_id":"req_011ChTf6og7exqSEyqbDNnng"}
 - id: 15-new-year-s-eve-traditions-from-the-1960s-and-70s-only
   title: 15 New Year's Eve Traditions From the 1960s and 70s Only People Over 60 Remember
   query: 1960s holiday nostalgia
